@@ -1,0 +1,1 @@
+export { getAntdValidateStatus } from './form';

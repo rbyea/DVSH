@@ -1,0 +1,25 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  margin-bottom: 4px;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+}

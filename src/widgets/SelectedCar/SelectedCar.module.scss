@@ -1,0 +1,41 @@
+.section {
+  border-radius: 16px;
+}
+
+.searchSection {
+  border: 1px solid #91caff;
+}
+
+.sectionTitle {
+  margin: 0 !important;
+}
+
+.sectionHint {
+  margin-bottom: 0;
+  color: #6b7280;
+}
+
+.existingVehicleText {
+  margin: 4px 0 12px;
+}
+
+.vehicleSummary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #111827;
+  font-weight: 500;
+}
+
+.historyList {
+  display: grid;
+  gap: 8px;
+}
+
+.existingVehicle {
+  border: 1px solid #b7eb8f;
+  border-radius: 12px;
+  padding: 16px;
+  background: #f6ffed;
+}
