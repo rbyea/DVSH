@@ -123,25 +123,23 @@ export const RepairDetailsClientStep = () => {
         </Form.Item>
       </Card>
 
-      <Card className={styles.section}>
-        <div className={styles.actions}>
-          <Button htmlType="button" size="large" onClick={() => setCurrentStep(0)}>
-            Назад к проверке авто
-          </Button>
-          <Button htmlType="button" size="large" onClick={() => navigate('/dashboard')}>
-            Отмена
-          </Button>
-          <Button
-            disabled={!isManualMode}
-            htmlType="submit"
-            loading={isSubmitting}
-            size="large"
-            type="primary"
-          >
-            Создать клиента
-          </Button>
-        </div>
-      </Card>
+      <div className={styles.actions}>
+        <Button htmlType="button" size="large" onClick={() => setCurrentStep(0)}>
+          Назад к проверке авто
+        </Button>
+        <Button htmlType="button" size="large" onClick={() => navigate('/dashboard')}>
+          Отмена
+        </Button>
+        <Button
+          disabled={!isManualMode}
+          htmlType="submit"
+          loading={isSubmitting}
+          size="large"
+          type="primary"
+        >
+          Создать клиента
+        </Button>
+      </div>
     </>
   );
 };

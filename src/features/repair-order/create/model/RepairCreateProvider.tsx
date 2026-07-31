@@ -47,12 +47,10 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
     handleSubmit,
     reset,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<RepairCreateFormValues>({
     defaultValues: initialValues,
   });
-
-  console.log(getValues());
 
   const [licensePlate, vin, selectedWorkItems, vehicleSearch, vehicleId] = useWatch({
     control,
@@ -243,6 +241,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
     vinSuggestions,
     availableQuickWorkTemplates,
     isSubmitting,
+    isDirty,
     onSubmit,
     handleStepChange,
     handleSubmit,

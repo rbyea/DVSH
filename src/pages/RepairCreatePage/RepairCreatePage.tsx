@@ -31,7 +31,11 @@ export const RepairCreatePage = () => {
       <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
         {currentStep === 0 && <SearchVInNumber />}
 
-        {currentStep === 1 && <RepairDetailsClientStep />}
+        {currentStep === 1 && (
+          <>
+            <RepairDetailsClientStep />
+          </>
+        )}
 
         {currentStep === 2 && (
           <>

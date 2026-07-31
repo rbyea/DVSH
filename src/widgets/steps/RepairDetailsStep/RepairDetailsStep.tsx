@@ -7,9 +7,12 @@ import { useNavigate } from 'react-router-dom';
 import { useRepairCreateContext } from '@/features/repair-order/create';
 import { statusOptions } from '@/pages/RepairCreatePage/constants';
 import { RepairWorksList } from '@/widgets/RepairWorksList';
+import { useState } from 'react';
+import { ModalRepair } from '@/widgets/Modals/ModalRepair/ModalRepair';
 
 export const RepairDetailsStep = () => {
   const navigate = useNavigate();
+  const [openModal, setOpenModal] = useState(false);
 
   const {
     isManualMode,
@@ -19,6 +22,7 @@ export const RepairDetailsStep = () => {
     availableQuickWorkTemplates,
     setCurrentStep,
     isSubmitting,
+    isDirty,
   } = useRepairCreateContext();
 
   const workItems = useFieldArray({
@@ -31,7 +35,15 @@ export const RepairDetailsStep = () => {
     name: 'orderedParts',
   });
 
-  console.log('selectedVehicle', selectedVehicle?.previousRepairs);
+  console.log('isDirty', isDirty);
+
+  const handleCloseForm = () => {
+    if (isDirty) {
+      setOpenModal(true);
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <>
@@ -214,11 +226,11 @@ export const RepairDetailsStep = () => {
       </Card>
 
       <div className={styles.actions}>
-        <Button htmlType="button" size="large" onClick={() => setCurrentStep(0)}>
-          Назад к проверке авто
+        <Button htmlType="button" size="large" onClick={() => handleCloseForm()}>
+          Закрыть
         </Button>
-        <Button htmlType="button" size="large" onClick={() => navigate('/dashboard')}>
-          Отмена
+        <Button htmlType="button" size="large" onClick={() => setCurrentStep(1)}>
+          Назад к редактированию клиента
         </Button>
         <Button
           disabled={!selectedVehicle && !isManualMode}
@@ -227,9 +239,11 @@ export const RepairDetailsStep = () => {
           size="large"
           type="primary"
         >
-          Создать ремонт
+          Сохранить
         </Button>
       </div>
+
+      <ModalRepair open={openModal} setOpen={setOpenModal} />
     </>
   );
 };

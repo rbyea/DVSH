@@ -23,6 +23,7 @@ export interface RepairCreateContextValue {
   vehicleSuggestions: VehicleSuggestion[];
   setIsManualMode: (value: boolean) => void;
   currentStep?: number;
+  isDirty?: boolean;
   handleStepChange: (step: number) => void;
   handleSubmit: UseFormHandleSubmit<RepairCreateFormValues>;
   onSubmit: (values: RepairCreateFormValues) => void;
