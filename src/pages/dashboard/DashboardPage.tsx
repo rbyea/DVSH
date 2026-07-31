@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom';
 import { Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd';
 import type { TableProps } from 'antd';
 
-import { getMockRepairOrders } from '@/entities/repair-order';
-import type { RepairRow, RepairStatus } from './DashboardPageTypes';
-import { statusColors, statusLabels } from './DashbordPageConstants';
+import { getMockRepairOrders, type RepairRow, type RepairStatus } from '@/entities/repair-order';
 
 import styles from './DashboardPage.module.scss';
+import { statusColors, statusLabels } from './DashboardPageConstants';
 
 const columns: TableProps<RepairRow>['columns'] = [
   {
@@ -15,7 +14,7 @@ const columns: TableProps<RepairRow>['columns'] = [
     dataIndex: 'orderNumber',
     key: 'orderNumber',
     render: (_, repair) => (
-      <Space direction="vertical" size={0}>
+      <Space orientation="vertical" size={0}>
         <span className={styles.orderNumber}>{repair.orderNumber}</span>
         <span className={styles.muted}>{repair.car}</span>
       </Space>
@@ -53,11 +52,13 @@ const columns: TableProps<RepairRow>['columns'] = [
   },
 ];
 
-export function DashboardPage() {
+export const DashboardPage = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<RepairStatus | 'all'>('all');
   const [repairs, setRepairs] = useState<RepairRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  console.log('repairs', repairs);
 
   useEffect(() => {
     let isMounted = true;
@@ -159,4 +160,4 @@ export function DashboardPage() {
       </Card>
     </main>
   );
-}
+};

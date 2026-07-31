@@ -1,45 +1,32 @@
-import { searchMockVehicles, type VehicleSuggestion } from '@/entities/vehicle';
-import { Button, Card, Input, Spin, Typography } from 'antd';
+import { searchMockVehicles } from '@/entities/vehicle';
+import { Button, Card, Form, Input, Spin, Typography } from 'antd';
 import clsx from 'clsx';
 import { useEffect } from 'react';
 import styles from './SearchVInNumber.module.scss';
-import type { UseFormSetValue } from 'react-hook-form';
-import type { RepairCreateFormValues } from '@/pages/repair-create/types';
-import SelectedCar from '@/widgets/SelectedCar/SelectedCar';
 import { useRepairCreateContext } from '@/features/repair-order/create';
+import { initialValues } from '@/pages/RepairCreatePage/constants';
+import { Controller } from 'react-hook-form';
+import { SelectedCar } from '@/widgets/SelectedCar';
 
-interface SearchVInNumberProps {
-  setVehicleSearch: (value: string) => void;
-  setVehicleSuggestions: (value: VehicleSuggestion[]) => void;
-  isVehicleSearchLoading: boolean;
-  applyVehicleSuggestion: (value: VehicleSuggestion) => void;
-  setSelectedVehicle: (value: VehicleSuggestion | null) => void;
-  selectedVehicle: VehicleSuggestion | null;
-  setCurrentStep: (value: number) => void;
-  setValue: UseFormSetValue<RepairCreateFormValues>;
-  vehicleSuggestions: VehicleSuggestion[];
-  setIsManualMode: (value: boolean) => void;
-  setIsVehicleSearchLoading: (value: boolean) => void;
-}
-
-const SearchVInNumber = ({
-  setVehicleSuggestions,
-  setSelectedVehicle,
-  selectedVehicle,
-  setCurrentStep,
-  setIsManualMode,
-  setValue,
-  isVehicleSearchLoading,
-  setIsVehicleSearchLoading,
-  applyVehicleSuggestion,
-  vehicleSuggestions,
-}: SearchVInNumberProps) => {
-  const { vehicleSearch, setVehicleSearch } = useRepairCreateContext();
-
-  // console.log("vehicleSearch", vehicleSearch);
+export const SearchVInNumber = () => {
+  const {
+    vehicleSearch,
+    control,
+    setVehicleSuggestions,
+    setSelectedVehicle,
+    selectedVehicle,
+    setCurrentStep,
+    setIsManualMode,
+    setValue,
+    reset,
+    isVehicleSearchLoading,
+    setIsVehicleSearchLoading,
+    applyVehicleSuggestion,
+    vehicleSuggestions,
+  } = useRepairCreateContext();
 
   useEffect(() => {
-    const searchQuery = vehicleSearch.trim();
+    const searchQuery = vehicleSearch?.trim() || '';
 
     if (searchQuery.length < 2) {
       setVehicleSuggestions([]);
@@ -75,22 +62,28 @@ const SearchVInNumber = ({
       <Typography.Title className={styles.sectionTitle} level={3}>
         1. Найдите авто
       </Typography.Title>
-      <p className={styles.sectionHint}>
-        Введите гос номер или VIN. Если машина уже есть в базе, данные подтянутся автоматически.
-      </p>
 
-      <Input
-        placeholder="Например, А123ВС 777 или JTNB..."
-        size="large"
-        value={vehicleSearch}
-        onChange={(event) => {
-          setVehicleSearch(event.target.value);
-          setSelectedVehicle(null);
-          setValue('vehicleId', undefined);
-        }}
-      />
+      <Form.Item label="Введите гос номер или VIN. Если машина уже есть в базе, данные подтянутся автоматически.">
+        <Controller
+          control={control}
+          name="vehicleSearch"
+          render={({ field }) => (
+            <Input
+              {...field}
+              onChange={(event) => {
+                const value = event.target.value;
+                field.onChange(value);
+                setSelectedVehicle(null);
+                setValue('vehicleId', undefined);
+              }}
+              placeholder="Введите гос номер или VIN"
+              size="large"
+            />
+          )}
+        />
+      </Form.Item>
 
-      {vehicleSearch.trim().length >= 2 && !selectedVehicle && (
+      {vehicleSearch && vehicleSearch.trim().length >= 2 && !selectedVehicle && (
         <div className={styles.vehicleResults}>
           {isVehicleSearchLoading ? (
             <div className={styles.vehicleLoading}>
@@ -119,7 +112,7 @@ const SearchVInNumber = ({
         </div>
       )}
 
-      {selectedVehicle && <SelectedCar selectedVehicle={selectedVehicle} />}
+      {selectedVehicle && <SelectedCar />}
 
       {vehicleSuggestions.length === 0 && (
         <Button
@@ -128,7 +121,9 @@ const SearchVInNumber = ({
           onClick={() => {
             setIsManualMode(true);
             setSelectedVehicle(null);
-            setValue('vehicleId', undefined);
+            setValue('vehicleSearch', '');
+            setVehicleSuggestions([]);
+            reset(initialValues);
             setCurrentStep(1);
           }}
         >
@@ -138,5 +133,3 @@ const SearchVInNumber = ({
     </Card>
   );
 };
-
-export default SearchVInNumber;

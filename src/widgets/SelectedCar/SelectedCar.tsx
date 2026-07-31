@@ -1,8 +1,10 @@
-import type { VehicleSuggestion } from '@/entities/vehicle';
 import { Card, Typography } from 'antd';
 import styles from './SelectedCar.module.scss';
+import { useRepairCreateContext } from '@/features/repair-order/create';
 
-const SelectedCar = ({ selectedVehicle }: { selectedVehicle: VehicleSuggestion }) => {
+export const SelectedCar = () => {
+  const { selectedVehicle } = useRepairCreateContext();
+
   return (
     <Card className={styles.section}>
       <Typography.Title className={styles.sectionTitle} level={3}>
@@ -16,14 +18,14 @@ const SelectedCar = ({ selectedVehicle }: { selectedVehicle: VehicleSuggestion }
         </Typography.Paragraph>
 
         <div className={styles.vehicleSummary}>
-          <span>{selectedVehicle.clientName}</span>
-          <span>{selectedVehicle.carModel}</span>
-          <span>{selectedVehicle.licensePlate}</span>
-          <span>{selectedVehicle.vin}</span>
+          <span>{selectedVehicle?.clientName}</span>
+          <span>{selectedVehicle?.carModel}</span>
+          <span>{selectedVehicle?.licensePlate}</span>
+          <span>{selectedVehicle?.vin}</span>
         </div>
 
         <div className={styles.historyList}>
-          {selectedVehicle.previousRepairs.map((repair) => (
+          {selectedVehicle?.previousRepairs.map((repair) => (
             <div className={styles.historyItem} key={repair.orderNumber}>
               <span>{repair.orderNumber}</span>
               <span>{repair.title}</span>
@@ -35,5 +37,3 @@ const SelectedCar = ({ selectedVehicle }: { selectedVehicle: VehicleSuggestion }
     </Card>
   );
 };
-
-export default SelectedCar;

@@ -1,60 +1,26 @@
-import type { VehicleSuggestion } from '@/entities/vehicle';
-import type { RepairCreateFormValues, RepairCreateStatus } from '@/pages/repair-create/types';
-import {
-  AutoComplete,
-  Button,
-  Card,
-  DatePicker,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Typography,
-} from 'antd';
-import {
-  Controller,
-  useFieldArray,
-  type Control,
-  type FieldErrors,
-  type UseFormSetValue,
-} from 'react-hook-form';
+import { Button, Card, DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd';
+import { Controller, useFieldArray } from 'react-hook-form';
 import styles from './RepairDetailsStep.module.scss';
 import { getAntdValidateStatus } from '@/shared/lib/antd';
 import clsx from 'clsx';
+import { useNavigate } from 'react-router-dom';
+import { useRepairCreateContext } from '@/features/repair-order/create';
+import { statusOptions } from '@/pages/RepairCreatePage/constants';
+import { RepairWorksList } from '@/widgets/RepairWorksList';
 
-interface RepairDetailsStepProps {
-  isManualMode: boolean;
-  errors: FieldErrors<RepairCreateFormValues>;
-  control: Control<RepairCreateFormValues>;
-  setSelectedVehicle: (value: VehicleSuggestion | null) => void;
-  setValue: UseFormSetValue<RepairCreateFormValues>;
-  applyVehicleSuggestion: (value: VehicleSuggestion) => void;
-  licensePlateSuggestions: VehicleSuggestion[];
-  vinSuggestions: VehicleSuggestion[];
-  selectedVehicle: VehicleSuggestion | null;
-  availableQuickWorkTemplates: string[];
-  statusOptions: Array<{ label: string; value: RepairCreateStatus }>;
-  setCurrentStep: (value: number) => void;
-  isSubmitting: boolean;
-  navigate: (value: string) => void;
-}
+export const RepairDetailsStep = () => {
+  const navigate = useNavigate();
 
-const RepairDetailsStep = ({
-  isManualMode,
-  errors,
-  control,
-  setSelectedVehicle,
-  setValue,
-  applyVehicleSuggestion,
-  licensePlateSuggestions,
-  vinSuggestions,
-  selectedVehicle,
-  statusOptions,
-  availableQuickWorkTemplates,
-  setCurrentStep,
-  isSubmitting,
-  navigate,
-}: RepairDetailsStepProps) => {
+  const {
+    isManualMode,
+    errors,
+    control,
+    selectedVehicle,
+    availableQuickWorkTemplates,
+    setCurrentStep,
+    isSubmitting,
+  } = useRepairCreateContext();
+
   const workItems = useFieldArray({
     control,
     name: 'workItems',
@@ -64,197 +30,11 @@ const RepairDetailsStep = ({
     control,
     name: 'orderedParts',
   });
+
+  console.log('selectedVehicle', selectedVehicle?.previousRepairs);
+
   return (
     <>
-      {isManualMode && (
-        <>
-          <Card className={styles.section}>
-            <Typography.Title className={styles.sectionTitle} level={3}>
-              Клиент
-            </Typography.Title>
-
-            <Form.Item
-              help={errors.clientName?.message}
-              label="Имя клиента"
-              validateStatus={getAntdValidateStatus(Boolean(errors.clientName))}
-            >
-              <Controller
-                control={control}
-                name="clientName"
-                rules={{ required: 'Введите имя клиента' }}
-                render={({ field }) => (
-                  <Input {...field} placeholder="Например, Иван Петров" size="large" />
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item label="Телефон">
-              <Controller
-                control={control}
-                name="clientPhone"
-                render={({ field }) => (
-                  <Input {...field} placeholder="+7 999 123-45-67" size="large" />
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item
-              help={errors.clientEmail?.message}
-              label="Почта"
-              validateStatus={getAntdValidateStatus(Boolean(errors.clientEmail))}
-            >
-              <Controller
-                control={control}
-                name="clientEmail"
-                rules={{
-                  pattern: {
-                    value: /^\S+@\S+\.\S+$/,
-                    message: 'Введите корректную почту',
-                  },
-                }}
-                render={({ field }) => (
-                  <Input {...field} placeholder="client@example.com" size="large" />
-                )}
-              />
-            </Form.Item>
-          </Card>
-
-          <Card className={styles.section}>
-            <Typography.Title className={styles.sectionTitle} level={3}>
-              Автомобиль
-            </Typography.Title>
-
-            <Form.Item
-              help={errors.carModel?.message}
-              label="Модель машины"
-              validateStatus={getAntdValidateStatus(Boolean(errors.carModel))}
-            >
-              <Controller
-                control={control}
-                name="carModel"
-                rules={{ required: 'Введите модель машины' }}
-                render={({ field }) => (
-                  <Input {...field} placeholder="Например, Toyota Camry" size="large" />
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item
-              help={errors.licensePlate?.message}
-              label="Гос номер"
-              validateStatus={getAntdValidateStatus(Boolean(errors.licensePlate))}
-            >
-              <Controller
-                control={control}
-                name="licensePlate"
-                rules={{ required: 'Введите гос номер' }}
-                render={({ field }) => (
-                  <AutoComplete
-                    options={licensePlateSuggestions.map((vehicle) => ({
-                      label: `${vehicle.licensePlate} · ${vehicle.carModel} · ${vehicle.clientName}`,
-                      value: vehicle.licensePlate,
-                    }))}
-                    placeholder="А123ВС 777"
-                    value={field.value}
-                    onChange={(value) => {
-                      setSelectedVehicle(null);
-                      setValue('vehicleId', undefined);
-                      field.onChange(value);
-                    }}
-                    onSelect={(value) => {
-                      const vehicle = licensePlateSuggestions.find(
-                        (suggestion) => suggestion.licensePlate === value,
-                      );
-
-                      if (vehicle) {
-                        applyVehicleSuggestion(vehicle);
-                      }
-                    }}
-                  >
-                    <Input size="large" />
-                  </AutoComplete>
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item
-              help={errors.vin?.message}
-              label="VIN номер"
-              validateStatus={getAntdValidateStatus(Boolean(errors.vin))}
-            >
-              <Controller
-                control={control}
-                name="vin"
-                rules={{ required: 'Введите VIN номер' }}
-                render={({ field }) => (
-                  <AutoComplete
-                    options={vinSuggestions.map((vehicle) => ({
-                      label: `${vehicle.vin} · ${vehicle.carModel} · ${vehicle.clientName}`,
-                      value: vehicle.vin,
-                    }))}
-                    placeholder="17 символов VIN"
-                    value={field.value}
-                    onChange={(value) => {
-                      setSelectedVehicle(null);
-                      setValue('vehicleId', undefined);
-                      field.onChange(value);
-                    }}
-                    onSelect={(value) => {
-                      const vehicle = vinSuggestions.find((suggestion) => suggestion.vin === value);
-
-                      if (vehicle) {
-                        applyVehicleSuggestion(vehicle);
-                      }
-                    }}
-                  >
-                    <Input size="large" />
-                  </AutoComplete>
-                )}
-              />
-            </Form.Item>
-
-            <Form.Item label="Пробег, км">
-              <Controller
-                control={control}
-                name="mileage"
-                render={({ field }) => (
-                  <InputNumber
-                    className={styles.numberInput}
-                    min={0}
-                    placeholder="85000"
-                    size="large"
-                    value={field.value}
-                    onChange={(value) => field.onChange(value ?? undefined)}
-                  />
-                )}
-              />
-            </Form.Item>
-
-            {selectedVehicle && (
-              <div className={styles.existingVehicle}>
-                <Typography.Text strong>
-                  Машина найдена в базе (можно найти другие машины и выбрать)
-                </Typography.Text>
-                <Typography.Paragraph className={styles.existingVehicleText}>
-                  Новый ремонт будет добавлен к существующей карточке автомобиля, а не создаст
-                  новую.
-                </Typography.Paragraph>
-
-                <div className={styles.historyList}>
-                  {selectedVehicle.previousRepairs.map((repair) => (
-                    <div className={styles.historyItem} key={repair.orderNumber}>
-                      <span>{repair.orderNumber}</span>
-                      <span>{repair.title}</span>
-                      <span>{repair.completedAt}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
-        </>
-      )}
-
       <Card className={styles.section}>
         <Typography.Title className={styles.sectionTitle} level={3}>
           Статус
@@ -304,6 +84,8 @@ const RepairDetailsStep = ({
         <p className={styles.sectionHint}>
           Можно пропустить и заполнить после диагностики. Частые работы добавляются в один клик.
         </p>
+
+        {selectedVehicle && <RepairWorksList />}
 
         <div className={styles.quickTemplates}>
           {availableQuickWorkTemplates.map((template) => (
@@ -451,4 +233,3 @@ const RepairDetailsStep = ({
     </>
   );
 };
-export default RepairDetailsStep;

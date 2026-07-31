@@ -14,6 +14,15 @@ const seedRepairs: RepairRow[] = [
     total: '18 500 ₽',
   },
   {
+    id: '6',
+    orderNumber: 'Р-123123',
+    clientName: 'Егор Новиков',
+    car: 'Opel Astra, Н705УА 193',
+    status: 'new',
+    updatedAt: 'Вчера, 09:20',
+    total: '80000',
+  },
+  {
     id: '2',
     orderNumber: 'Р-1041',
     clientName: 'Анна Смирнова',
@@ -43,6 +52,15 @@ const seedRepairs: RepairRow[] = [
   {
     id: '5',
     orderNumber: 'Р-1038',
+    clientName: 'Мария Кузнецова',
+    car: 'Volkswagen Polo, Н321РА',
+    status: 'new',
+    updatedAt: 'Вчера, 09:20',
+    total: 'Не рассчитано',
+  },
+  {
+    id: '6',
+    orderNumber: 'Р-1032138',
     clientName: 'Мария Кузнецова',
     car: 'Volkswagen Polo, Н321РА',
     status: 'new',

@@ -16,10 +16,12 @@ const mockVehicles: VehicleSuggestion[] = [
       {
         orderNumber: 'Р-1012',
         title: 'Замена масла и фильтров',
+        status: 'completed',
         completedAt: '12.06.2026',
       },
       {
         orderNumber: 'Р-0988',
+        status: 'completed',
         title: 'Диагностика подвески',
         completedAt: '04.04.2026',
       },
@@ -36,6 +38,7 @@ const mockVehicles: VehicleSuggestion[] = [
     previousRepairs: [
       {
         orderNumber: 'Р-1041',
+        status: 'waitingParts',
         title: 'Заказ запчастей',
         completedAt: 'В работе',
       },
@@ -52,8 +55,26 @@ const mockVehicles: VehicleSuggestion[] = [
     previousRepairs: [
       {
         orderNumber: 'Р-1040',
+        status: 'diagnostics',
         title: 'Первичная диагностика',
         completedAt: 'В работе',
+      },
+    ],
+  },
+  {
+    id: '4',
+    clientName: 'Егор Новиков',
+    clientEmail: 'test@vector.example',
+    carModel: 'Opel Astra',
+    licensePlate: 'Н705АУ 193',
+    vin: 'WF0XXXTTGXGR12345',
+    mileage: 182800,
+    previousRepairs: [
+      {
+        orderNumber: 'Р-1012',
+        title: 'Замена масла и фильтров',
+        status: 'completed',
+        completedAt: '12.06.2026',
       },
     ],
   },
