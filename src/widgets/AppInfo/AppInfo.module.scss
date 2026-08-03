@@ -1,23 +1,32 @@
 .header {
-  margin-bottom: 24px;
-  max-width: 960px;
-  margin: 0 auto;
-  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 35px;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .title {
   margin: 0 !important;
-  color: #111827;
-  font-size: 32px;
-  line-height: 1.2;
+  color: var(--dvsh-ink);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .subtitle {
   margin: 0 !important;
-  color: #6b7280;
+  max-width: 640px;
+  color: var(--dvsh-muted);
   font-size: 16px;
+  line-height: 1.45;
 }

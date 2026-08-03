@@ -1,1 +1,1 @@
-export type { RepairRow, RepairStatus } from '@/entities/repair-order';
+export type { RepairListItem, RepairStatus } from '@/entities/repair-order';

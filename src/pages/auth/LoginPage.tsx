@@ -1,55 +1,108 @@
-import { Button, Card, Form, Input, Typography } from 'antd';
+import { Button, Card, Checkbox, Form, Input } from 'antd';
+import { Controller } from 'react-hook-form';
+import { Link } from 'react-router-dom';
+
+import { useLoginForm } from '@/features/auth';
+import { getAntdValidateStatus } from '@/shared/lib/antd';
 
 import styles from './LoginPage.module.scss';
 
-type LoginFormValues = {
-  email: string;
-  password: string;
-};
-
-const { Link, Text, Title } = Typography;
-
 export function LoginPage() {
+  const { control, errors, isLoading, onSubmit } = useLoginForm();
+
   return (
     <main className={styles.page}>
-      <Card className={styles.card}>
-        <div className={styles.header}>
-          <Title className={styles.title} level={4}>
-            Войдите в свою учетную запись
-          </Title>
-          <Text type="secondary">
-            Введите свой адрес электронной почты ниже, чтобы войти в свою учетную запись
-          </Text>
+      <Card className={styles.card} variant="borderless">
+        <div className={styles.brand}>
+          <span className={styles.brandMark}>DV</span>
+          <span className={styles.brandName}>DVSH</span>
         </div>
 
-        <Form<LoginFormValues> layout="vertical" requiredMark={false}>
-          <Form.Item<LoginFormValues>
-            label="Адрес электронной почты"
-            name="email"
-            rules={[{ required: true, message: 'Введите свой адрес электронной почты' }]}
-          >
-            <Input placeholder="m@example.com" type="email" />
-          </Form.Item>
+        <div className={styles.header}>
+          <p className={styles.eyebrow}>Вход в сервис</p>
+          <h1 className={styles.title}>Войдите в учётную запись</h1>
+          <p className={styles.subtitle}>
+            Используйте рабочий email и пароль сотрудника СТО, чтобы открыть ремонты.
+          </p>
+        </div>
 
-          <Form.Item<LoginFormValues>
-            label="Пароль"
-            name="password"
-            rules={[{ required: true, message: 'Введите свой пароль' }]}
-          >
-            <Input.Password />
-          </Form.Item>
+        <form
+          method="post"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onSubmit(event);
+          }}
+        >
+          <Form component={false} layout="vertical" requiredMark={false}>
+            <Form.Item
+              help={errors.email?.message}
+              label="Адрес электронной почты"
+              validateStatus={getAntdValidateStatus(Boolean(errors.email))}
+            >
+              <Controller
+                control={control}
+                name="email"
+                render={({ field }) => (
+                  <Input {...field} placeholder="m@example.com" type="email" size="large" />
+                )}
+              />
+            </Form.Item>
 
-          <Form.Item>
-            <Button block htmlType="submit" type="primary">
-              Войти
-            </Button>
-          </Form.Item>
-        </Form>
+            <Form.Item
+              help={errors.password?.message}
+              label="Пароль"
+              validateStatus={getAntdValidateStatus(Boolean(errors.password))}
+            >
+              <Controller
+                control={control}
+                name="password"
+                render={({ field }) => <Input.Password {...field} size="large" />}
+              />
+            </Form.Item>
+
+            <Form.Item
+              className={styles.consentItem}
+              help={errors.acceptPersonalData?.message}
+              validateStatus={getAntdValidateStatus(Boolean(errors.acceptPersonalData))}
+            >
+              <Controller
+                control={control}
+                name="acceptPersonalData"
+                render={({ field }) => (
+                  <Checkbox
+                    checked={field.value}
+                    onChange={(event) => field.onChange(event.target.checked)}
+                  >
+                    <span className={styles.consentText}>
+                      Согласен с{' '}
+                      <Link className={styles.consentLink} to="/legal/privacy" target="_blank">
+                        Политикой обработки ПДн
+                      </Link>{' '}
+                      и{' '}
+                      <Link className={styles.consentLink} to="/legal/consent" target="_blank">
+                        Согласием
+                      </Link>
+                    </span>
+                  </Checkbox>
+                )}
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button block htmlType="submit" loading={isLoading} type="primary" size="large">
+                Войти
+              </Button>
+            </Form.Item>
+          </Form>
+        </form>
 
         <div className={styles.footer}>
-          <Text type="secondary">
-            Нет учетной записи? <Link>Зарегистрироваться</Link>
-          </Text>
+          <span>Доступ выдаёт администратор станции</span>
+          <div className={styles.legalLinks}>
+            <Link to="/legal/privacy">Политика</Link>
+            <span aria-hidden>·</span>
+            <Link to="/legal/consent">Согласие</Link>
+          </div>
         </div>
       </Card>
     </main>

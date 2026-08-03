@@ -1,0 +1,55 @@
+---
+description: Feature-Sliced Design layers, imports, and public API for DVSH
+alwaysApply: true
+---
+
+# FSD Architecture
+
+Layers (top → bottom): `app` → `pages` → `widgets` → `features` → `entities` → `shared`.
+
+## Import rules
+
+- Import only from lower layers. Never import upward.
+- Cross-import between slices of the same layer is forbidden (no `features/a` → `features/b`).
+- Prefer public API: `@/entities/repair-order`, not deep paths into `api/` / `model/` / `ui/`.
+- Path alias: `@/*` → `src/*`.
+
+## Slice layout
+
+```
+entities/<name>/
+  api/
+  model/
+  ui/          # optional
+  index.ts     # public API only
+
+features/<domain>/<action>/
+  model/
+  ui/          # optional
+  index.ts
+
+widgets/<Name>/
+  <Name>.tsx
+  <Name>.module.scss
+  index.ts
+
+pages/<Name>/
+  <Name>.tsx
+  <Name>.module.scss
+  index.ts
+```
+
+## Placement
+
+- Domain types + API → `entities`
+- User scenarios (create/login/search) → `features`
+- Composed UI blocks → `widgets`
+- Route screens → `pages`
+- App-wide store/router/providers → `app`
+- Reusable infra/UI/config → `shared`
+
+## References
+
+- Entity: `src/entities/repair-order`
+- Feature: `src/features/repair-order/create`
+- Page: `src/pages/RepairCreatePage`

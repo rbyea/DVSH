@@ -1,0 +1,86 @@
+.panel {
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+.form :global(.ant-form-item-label) {
+  padding-bottom: 4px;
+}
+
+.form :global(.ant-form-item-label > label) {
+  height: auto;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.personName {
+  margin: 0 0 14px;
+  color: var(--dvsh-ink);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.contactList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contactRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contactLabel {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.contactValue {
+  color: var(--dvsh-ink);
+  font-size: 16px;
+  word-break: break-word;
+}

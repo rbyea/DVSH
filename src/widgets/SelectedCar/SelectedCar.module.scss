@@ -1,31 +1,46 @@
 .section {
-  border-radius: 16px;
+  border: 1px solid var(--dvsh-success-line) !important;
+  border-radius: var(--dvsh-radius-lg) !important;
+  background: linear-gradient(180deg, var(--dvsh-success-soft), #ffffff 50%), var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
 }
 
-.searchSection {
-  border: 1px solid #91caff;
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .sectionTitle {
   margin: 0 !important;
+  color: var(--dvsh-ink);
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.sectionHint {
-  margin-bottom: 0;
-  color: #6b7280;
-}
-
-.existingVehicleText {
-  margin: 4px 0 12px;
+.hint {
+  margin: 0;
+  color: #166534;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .vehicleSummary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-  color: #111827;
-  font-weight: 500;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vehicleSummary span {
+  border: 1px solid var(--dvsh-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgb(255 255 255 / 85%);
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .historyList {
@@ -33,9 +48,21 @@
   gap: 8px;
 }
 
-.existingVehicle {
-  border: 1px solid #b7eb8f;
-  border-radius: 12px;
-  padding: 16px;
-  background: #f6ffed;
+.historyItem {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 12px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #374151;
+  font-size: 14px;
+  background: #fff;
+}
+
+@media (max-width: 720px) {
+  .vehicleSummary,
+  .historyItem {
+    grid-template-columns: 1fr;
+  }
 }

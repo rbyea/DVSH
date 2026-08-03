@@ -1,32 +1,33 @@
-import { useRepairCreateContext } from '@/features/repair-order/create';
 import { Collapse, Typography } from 'antd';
 import type { CollapseProps } from 'antd/lib/collapse';
 
+import { useRepairCreateContext } from '@/features/repair-order/create';
+
+import styles from './RepairWorksList.module.scss';
+
 export const RepairWorksList = () => {
   const { selectedVehicle } = useRepairCreateContext();
+  const previousRepairs = selectedVehicle?.previous_repairs ?? [];
 
-  const items: CollapseProps['items'] =
-    selectedVehicle?.previousRepairs?.map((repair) => ({
-      key: repair.orderNumber,
-      label: `${repair.orderNumber} · ${repair.title}`,
-      children: (
-        <>
-          <p>
-            <strong>Работа:</strong> {repair.title}
-          </p>
-          <p>
-            <strong>Дата:</strong> {repair.completedAt}
-          </p>
-        </>
-      ),
-    })) ?? [];
+  if (!selectedVehicle || previousRepairs.length === 0) {
+    return null;
+  }
+
+  const items: CollapseProps['items'] = previousRepairs.map((repair) => ({
+    key: repair.id,
+    label: `${repair.order_number} · ${repair.title}`,
+    children: (
+      <div className={styles.itemBody}>
+        <span>Работа: {repair.title}</span>
+        <span>Дата: {repair.completed_at ?? '—'}</span>
+      </div>
+    ),
+  }));
 
   return (
-    <>
-      <Typography.Title level={5}>
-        Список ремонтов для {selectedVehicle?.licensePlate} · {selectedVehicle?.vin}
-      </Typography.Title>
-      <Collapse items={items} defaultActiveKey={['1']} />
-    </>
+    <div className={styles.wrap}>
+      <Typography.Text className={styles.label}>История по этому авто</Typography.Text>
+      <Collapse ghost items={items} size="small" />
+    </div>
   );
 };

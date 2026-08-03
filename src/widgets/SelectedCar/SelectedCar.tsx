@@ -1,39 +1,45 @@
 import { Card, Typography } from 'antd';
-import styles from './SelectedCar.module.scss';
+
 import { useRepairCreateContext } from '@/features/repair-order/create';
+
+import styles from './SelectedCar.module.scss';
 
 export const SelectedCar = () => {
   const { selectedVehicle } = useRepairCreateContext();
 
+  if (!selectedVehicle) {
+    return null;
+  }
+
+  const hasHistory = selectedVehicle.previous_repairs.length > 0;
+
   return (
     <Card className={styles.section}>
-      <Typography.Title className={styles.sectionTitle} level={3}>
-        Выбранное авто (можно найти другие машины и выбрать)
-      </Typography.Title>
+      <div className={styles.head}>
+        <Typography.Title className={styles.sectionTitle} level={3}>
+          Выбранное авто
+        </Typography.Title>
+        <p className={styles.hint}>Заказ-наряд привяжется к этой карточке и истории ремонтов</p>
+      </div>
 
-      <div className={styles.existingVehicle}>
-        <Typography.Text strong>Машина найдена в базе</Typography.Text>
-        <Typography.Paragraph className={styles.existingVehicleText}>
-          Новый ремонт будет добавлен к существующей карточке автомобиля.
-        </Typography.Paragraph>
+      <div className={styles.vehicleSummary}>
+        <span>{selectedVehicle.client_name}</span>
+        <span>{selectedVehicle.car_model}</span>
+        <span>{selectedVehicle.license_plate}</span>
+        <span>{selectedVehicle.vin}</span>
+      </div>
 
-        <div className={styles.vehicleSummary}>
-          <span>{selectedVehicle?.clientName}</span>
-          <span>{selectedVehicle?.carModel}</span>
-          <span>{selectedVehicle?.licensePlate}</span>
-          <span>{selectedVehicle?.vin}</span>
-        </div>
-
+      {hasHistory && (
         <div className={styles.historyList}>
-          {selectedVehicle?.previousRepairs.map((repair) => (
-            <div className={styles.historyItem} key={repair.orderNumber}>
-              <span>{repair.orderNumber}</span>
+          {selectedVehicle.previous_repairs.slice(0, 3).map((repair) => (
+            <div className={styles.historyItem} key={repair.id}>
+              <span>{repair.order_number}</span>
               <span>{repair.title}</span>
-              <span>{repair.completedAt}</span>
+              <span>{repair.completed_at ?? '—'}</span>
             </div>
           ))}
         </div>
-      </div>
+      )}
     </Card>
   );
 };

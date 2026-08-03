@@ -1,0 +1,45 @@
+---
+description: React/TS stack conventions — RTK Query, RHF, Zod, antd, SCSS Modules
+globs: src/**/*.{ts,tsx,scss}
+alwaysApply: false
+---
+
+# Frontend Stack
+
+## TypeScript
+
+- Never use `any`. Prefer explicit types and `unknown` + narrowing.
+- Export types from `model/types.ts` via slice `index.ts`.
+
+## State & API
+
+- RTK Query: extend `baseApi` from `@/shared/api` via `injectEndpoints`.
+- Axios: use `axiosInstance` from `@/shared/api` only when RTK Query is not a fit.
+- Keep mock data in `entities/<name>/api/` until real endpoints exist.
+- Register new API slices in the store only through `baseApi` middleware/reducer.
+
+## Forms (React Hook Form)
+
+- Form ownership lives in the feature (`useForm` in provider/hook), not in widgets/pages.
+- Pass `control`, `errors`, `handleSubmit`, `setValue`, `getValues`, `reset` via feature context/hook.
+- Bind antd inputs with `Controller` — do not use `register` (antd is uncontrolled-unfriendly).
+- Wrap fields in antd `Form.Item`; show RHF errors via `help` + `validateStatus={getAntdValidateStatus(...)}` from `@/shared/lib/antd`.
+- Prefer Zod + `zodResolver` for new/changed forms; keep existing `Controller` `rules` only when touching a field lightly.
+- Use `useWatch` for derived UI; `useFieldArray` for repeatable rows (works, parts).
+- Form value types stay with the owning feature/page; map to entity payload in the feature submit handler.
+- Reference: `RepairCreateProvider` + `RepairDetailsClientStep` (`Controller` + `Form.Item`).
+
+## UI & styles
+
+- UI kit: `antd`. Reuse existing widgets before inventing new layout.
+- Styles: SCSS Modules colocated as `ComponentName.module.scss`.
+- Never use inline styles.
+- Import: `import styles from './ComponentName.module.scss'`.
+
+## React
+
+- Functional components only.
+- Keep components small: one responsibility, preferably under ~100–150 lines.
+- If a component grows (many blocks, conditionals, lists, steps) — decompose into child components / widgets and extract logic into `model/` hooks or context.
+- UI markup stays in the component; data fetching, mapping, and submit flow go to hooks/providers.
+- React Compiler is enabled — do not add `useMemo`/`useCallback` by default.

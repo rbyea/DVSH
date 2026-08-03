@@ -1,0 +1,10 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  border: 1px solid var(--dvsh-line);
+  border-radius: var(--dvsh-radius-lg);
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}

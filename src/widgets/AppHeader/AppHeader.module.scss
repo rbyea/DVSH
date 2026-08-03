@@ -1,16 +1,158 @@
 .header {
-  margin-bottom: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid rgb(229 231 235 / 90%);
+  background: rgb(255 255 255 / 86%);
+  backdrop-filter: blur(12px);
 }
 
-.title {
-  margin: 0;
-  color: #111827;
-  font-size: 32px;
-  line-height: 1.2;
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  min-height: 64px;
 }
 
-.subtitle {
-  margin: 8px 0 0;
-  color: #6b7280;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #2563eb, #0f766e);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.brandName {
+  color: var(--dvsh-ink);
   font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brandHint {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.menu {
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+  border-bottom: none;
+  background: transparent;
+  font-weight: 600;
+}
+
+.userBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 0;
+}
+
+.userName {
+  max-width: 180px;
+  overflow: hidden;
+  color: var(--dvsh-ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userEmail {
+  max-width: 180px;
+  overflow: hidden;
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout {
+  flex-shrink: 0;
+}
+
+.legalBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 0 0 10px;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+}
+
+.legalLink {
+  color: var(--dvsh-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .inner {
+    width: min(100% - 32px, 1180px);
+  }
+
+  .brandHint {
+    display: none;
+  }
+
+  .menu {
+    display: none;
+  }
+
+  .userEmail {
+    display: none;
+  }
+
+  .userName {
+    max-width: 110px;
+  }
+
+  .legalBar {
+    width: min(100% - 32px, 1180px);
+    justify-content: center;
+  }
 }

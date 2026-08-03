@@ -1,0 +1,123 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.count {
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--dvsh-line);
+  border-radius: var(--dvsh-radius-sm);
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.itemActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.itemTitle {
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.qtyControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qtyValue {
+  min-width: 28px;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.addRow {
+  display: grid;
+  grid-template-columns: 1fr 110px auto;
+  gap: 10px;
+}
+
+.qtyInput {
+  width: 100%;
+}
+
+.empty {
+  margin: 0;
+  border: 1px dashed var(--dvsh-line);
+  border-radius: var(--dvsh-radius-sm);
+  padding: 18px;
+  color: var(--dvsh-muted);
+  background: var(--dvsh-soft);
+  text-align: center;
+}
+
+.publicBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--dvsh-line);
+  padding-top: 16px;
+}
+
+.publicLabel {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.publicUrl {
+  color: var(--dvsh-accent);
+  font-size: 14px;
+  word-break: break-all;
+}
+
+@media (max-width: 720px) {
+  .item,
+  .addRow {
+    grid-template-columns: 1fr;
+  }
+}

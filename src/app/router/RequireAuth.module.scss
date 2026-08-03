@@ -1,0 +1,8 @@
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 15% 0%, rgb(37 99 235 / 10%), transparent 55%), var(--dvsh-bg);
+}

@@ -1,12 +1,31 @@
+import { Button, Card, Checkbox, Form, Input, InputNumber, Typography } from 'antd';
+import { Controller, useWatch } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router-dom';
+
 import { useRepairCreateContext } from '@/features/repair-order/create';
 import { getAntdValidateStatus } from '@/shared/lib/antd';
-import { Button, Card, Form, Input, InputNumber, Typography } from 'antd';
-import { Controller } from 'react-hook-form';
+import { formatRuPhoneInput } from '@/shared/lib/phone';
+
 import styles from './RepairDetailsClientStep.module.scss';
-import { useNavigate } from 'react-router-dom';
+
 export const RepairDetailsClientStep = () => {
   const navigate = useNavigate();
-  const { errors, control, setCurrentStep, isSubmitting, isManualMode } = useRepairCreateContext();
+  const {
+    errors,
+    control,
+    setCurrentStep,
+    isManualMode,
+    createClientAndContinue,
+    continueToRepairStep,
+    isCreatingClient,
+    isSavingClientStep,
+  } = useRepairCreateContext();
+
+  const [clientId, vehicleId] = useWatch({
+    control,
+    name: ['clientId', 'vehicleId'],
+  });
+  const hasExistingIds = Boolean(clientId && vehicleId);
 
   return (
     <>
@@ -23,18 +42,30 @@ export const RepairDetailsClientStep = () => {
           <Controller
             control={control}
             name="clientName"
-            rules={{ required: 'Введите имя клиента' }}
             render={({ field }) => (
               <Input {...field} placeholder="Например, Иван Петров" size="large" />
             )}
           />
         </Form.Item>
 
-        <Form.Item label="Телефон">
+        <Form.Item
+          help={errors.clientPhone?.message}
+          label="Телефон"
+          validateStatus={getAntdValidateStatus(Boolean(errors.clientPhone))}
+        >
           <Controller
             control={control}
             name="clientPhone"
-            render={({ field }) => <Input {...field} placeholder="+7 999 123-45-67" size="large" />}
+            render={({ field }) => (
+              <Input
+                inputMode="tel"
+                placeholder="+7 999 123-45-67"
+                size="large"
+                value={field.value}
+                onBlur={field.onBlur}
+                onChange={(event) => field.onChange(formatRuPhoneInput(event.target.value))}
+              />
+            )}
           />
         </Form.Item>
 
@@ -46,12 +77,6 @@ export const RepairDetailsClientStep = () => {
           <Controller
             control={control}
             name="clientEmail"
-            rules={{
-              pattern: {
-                value: /^\S+@\S+\.\S+$/,
-                message: 'Введите корректную почту',
-              },
-            }}
             render={({ field }) => (
               <Input {...field} placeholder="client@example.com" size="large" />
             )}
@@ -72,7 +97,6 @@ export const RepairDetailsClientStep = () => {
           <Controller
             control={control}
             name="carModel"
-            rules={{ required: 'Введите модель машины' }}
             render={({ field }) => (
               <Input {...field} placeholder="Например, Toyota Camry" size="large" />
             )}
@@ -87,7 +111,6 @@ export const RepairDetailsClientStep = () => {
           <Controller
             control={control}
             name="licensePlate"
-            rules={{ required: 'Введите гос номер' }}
             render={({ field }) => <Input {...field} placeholder="А123ВС 777" size="large" />}
           />
         </Form.Item>
@@ -100,12 +123,23 @@ export const RepairDetailsClientStep = () => {
           <Controller
             control={control}
             name="vin"
-            rules={{ required: 'Введите VIN номер' }}
-            render={({ field }) => <Input {...field} placeholder="17 символов VIN" size="large" />}
+            render={({ field }) => (
+              <Input
+                {...field}
+                maxLength={17}
+                placeholder="17 символов VIN"
+                size="large"
+                onChange={(event) => field.onChange(event.target.value.toUpperCase())}
+              />
+            )}
           />
         </Form.Item>
 
-        <Form.Item label="Пробег, км">
+        <Form.Item
+          help={errors.mileage?.message}
+          label="Пробег, км"
+          validateStatus={getAntdValidateStatus(Boolean(errors.mileage))}
+        >
           <Controller
             control={control}
             name="mileage"
@@ -123,22 +157,75 @@ export const RepairDetailsClientStep = () => {
         </Form.Item>
       </Card>
 
+      <Card className={styles.section}>
+        <Typography.Title className={styles.sectionTitle} level={3}>
+          Персональные данные
+        </Typography.Title>
+        <p className={styles.consentHint}>
+          Клиентские данные обрабатывает СТО. Подтвердите, что есть законное основание (согласие /
+          уведомление клиента).
+        </p>
+        <Form.Item
+          help={errors.clientPersonalDataConsent?.message}
+          validateStatus={getAntdValidateStatus(Boolean(errors.clientPersonalDataConsent))}
+        >
+          <Controller
+            control={control}
+            name="clientPersonalDataConsent"
+            render={({ field }) => (
+              <Checkbox
+                checked={field.value}
+                onChange={(event) => field.onChange(event.target.checked)}
+              >
+                <span className={styles.consentText}>
+                  Подтверждаю согласие клиента на обработку ПДн согласно{' '}
+                  <Link className={styles.consentLink} to="/legal/privacy" target="_blank">
+                    Политике
+                  </Link>{' '}
+                  и{' '}
+                  <Link className={styles.consentLink} to="/legal/consent" target="_blank">
+                    Согласию
+                  </Link>
+                </span>
+              </Checkbox>
+            )}
+          />
+        </Form.Item>
+      </Card>
+
       <div className={styles.actions}>
         <Button htmlType="button" size="large" onClick={() => setCurrentStep(0)}>
-          Назад к проверке авто
+          Назад
         </Button>
         <Button htmlType="button" size="large" onClick={() => navigate('/dashboard')}>
           Отмена
         </Button>
-        <Button
-          disabled={!isManualMode}
-          htmlType="submit"
-          loading={isSubmitting}
-          size="large"
-          type="primary"
-        >
-          Создать клиента
-        </Button>
+        {hasExistingIds ? (
+          <Button
+            htmlType="button"
+            loading={isSavingClientStep}
+            size="large"
+            type="primary"
+            onClick={() => {
+              void continueToRepairStep();
+            }}
+          >
+            Сохранить и далее
+          </Button>
+        ) : (
+          <Button
+            disabled={!isManualMode && !hasExistingIds}
+            htmlType="button"
+            loading={isCreatingClient}
+            size="large"
+            type="primary"
+            onClick={() => {
+              void createClientAndContinue();
+            }}
+          >
+            Создать клиента и авто
+          </Button>
+        )}
       </div>
     </>
   );

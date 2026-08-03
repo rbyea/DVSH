@@ -1,160 +1,43 @@
 .section {
-  border-radius: 16px;
+  border: 1px solid var(--dvsh-line) !important;
+  border-radius: var(--dvsh-radius-lg) !important;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
 }
 
-.searchSection {
-  border: 1px solid #91caff;
+.sectionWork {
+  background: linear-gradient(180deg, rgb(240 253 250 / 55%), #ffffff 36%), var(--dvsh-card);
+}
+
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .sectionTitle {
   margin: 0 !important;
+  color: var(--dvsh-ink);
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .sectionHint {
-  margin-bottom: 0;
-  color: #6b7280;
-}
-
-.vehicleResults {
-  display: grid;
-  gap: 8px;
-}
-
-.vehicleLoading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid #d9d9d9;
-  border-radius: 10px;
-  padding: 12px;
-  color: #6b7280;
-  background: #ffffff;
-}
-
-.vehicleResult {
-  display: grid;
-  grid-template-columns: 120px 1fr 1.2fr 1fr;
-  gap: 12px;
-  align-items: center;
-  width: 100%;
-  border: 1px solid #d9d9d9;
-  border-radius: 10px;
-  padding: 12px;
-  color: #374151;
-  text-align: left;
-  background: #ffffff;
-  cursor: pointer;
-}
-
-.vehicleResult:hover {
-  border-color: #1677ff;
-  background: #f0f7ff;
-}
-
-.vehicleResultPlate {
-  color: #111827;
-  font-weight: 600;
-}
-
-.vehicleEmptyResult {
-  border: 1px dashed #d9d9d9;
-  border-radius: 10px;
-  padding: 12px;
-  color: #6b7280;
-  background: #ffffff;
-}
-
-.existingVehicle {
-  border: 1px solid #b7eb8f;
-  border-radius: 12px;
-  padding: 16px;
-  background: #f6ffed;
-}
-
-.existingVehicleText {
-  margin: 4px 0 12px;
-}
-
-.vehicleSummary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-  color: #111827;
-  font-weight: 500;
-}
-
-.historyList {
-  display: grid;
-  gap: 8px;
-}
-
-.vehicleSummary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-  color: #111827;
-  font-weight: 500;
-}
-
-.historyItem {
-  display: grid;
-  grid-template-columns: 90px 1fr auto;
-  gap: 12px;
-  color: #374151;
+  margin: 0;
+  color: var(--dvsh-muted);
   font-size: 14px;
+  line-height: 1.45;
 }
 
-.page {
-  min-height: 100vh;
-  padding: 32px;
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.1fr 0.9fr;
+  gap: 12px;
 }
 
-.form {
-  max-width: 960px;
-  margin: 0 auto;
-  width: 100%;
-  gap: 15px;
-  display: flex;
-  flex-direction: column;
-}
-
-.steps {
-  max-width: 960px;
-  margin: 0 auto 24px;
-}
-
-.form :global(.ant-form-item-row) {
-  flex-direction: column;
-  align-items: stretch;
-  display: block;
-}
-
-.form .sectionWork :global(.ant-form-item-row) {
-  margin-bottom: 0;
-}
-
-.form :global(.ant-form-item) {
-  margin-bottom: 0;
-}
-
-.form :global(.ant-card-body) {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.form :global(.ant-form-item-label) {
-  padding-bottom: 4px;
-  text-align: left;
-}
-
-.form :global(.ant-form-item-label > label) {
-  height: auto;
-}
-
-.form :global(.ant-form-item-control) {
+.fullWidth {
   width: 100%;
 }
 
@@ -164,38 +47,160 @@
   gap: 8px;
 }
 
-.actions {
+.chip {
+  border: 1px solid var(--dvsh-line);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: #fff;
+  color: var(--dvsh-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.list {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  padding: 16px 0;
-  background: linear-gradient(180deg, rgb(245 245 245 / 0%), #f5f5f5 35%);
+  flex-direction: column;
+  gap: 8px;
 }
 
 .listItem {
   display: grid;
-  grid-template-columns: 1fr 120px auto;
-  gap: 12px;
-  align-items: flex-end;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--dvsh-line);
+  border-radius: var(--dvsh-radius-sm);
+  padding: 8px;
+  background: #fff;
+}
+
+.listItemPart {
+  grid-template-columns: 1fr 88px auto;
 }
 
 .numberInput {
   width: 100%;
 }
 
+.addButton {
+  border-style: dashed !important;
+}
+
+.removeButton {
+  flex-shrink: 0;
+  padding-inline: 8px !important;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: var(--dvsh-radius-lg);
+  padding: 14px 18px;
+  background: linear-gradient(180deg, var(--dvsh-accent-soft), #ffffff 70%), var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.summaryMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.summaryTitle {
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.summaryLine {
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.summaryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summaryMeta span {
+  border: 1px solid var(--dvsh-line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgb(255 255 255 / 90%);
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 4px;
+  padding: 14px 0 8px;
+  background: linear-gradient(180deg, rgb(238 241 246 / 0%), var(--dvsh-bg) 36%);
+}
+
+.actionsPrimary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+
 @media (max-width: 720px) {
-  .page {
-    padding: 20px;
+  .detailsGrid {
+    grid-template-columns: 1fr;
   }
 
-  .actions,
   .listItem,
-  .vehicleSummary,
-  .vehicleResult,
-  .historyItem {
-    display: block;
+  .listItemPart {
+    grid-template-columns: 1fr;
+  }
+
+  .removeButton {
+    justify-self: start;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actionsPrimary {
+    margin-left: 0;
+  }
+
+  .actionsPrimary :global(.ant-btn),
+  .actions > :global(.ant-btn) {
+    width: 100%;
   }
 }

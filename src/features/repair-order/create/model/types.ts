@@ -1,4 +1,4 @@
-import type { VehicleSuggestion } from '@/entities/vehicle';
+import type { VehicleSearchResult } from '@/entities/vehicle';
 import type { RepairCreateFormValues } from '@/pages/RepairCreatePage/types';
 import type {
   Control,
@@ -11,28 +11,32 @@ import type {
 
 export interface RepairCreateContextValue {
   vehicleSearch: string | undefined;
-  setVehicleSuggestions: (value: VehicleSuggestion[]) => void;
+  setVehicleSuggestions: (value: VehicleSearchResult[]) => void;
   isVehicleSearchLoading: boolean;
-  applyVehicleSuggestion: (value: VehicleSuggestion) => void;
-  setSelectedVehicle: (value: VehicleSuggestion | null) => void;
-  selectedVehicle: VehicleSuggestion | null;
+  applyVehicleSuggestion: (value: VehicleSearchResult) => Promise<void>;
+  setSelectedVehicle: (value: VehicleSearchResult | null) => void;
+  selectedVehicle: VehicleSearchResult | null;
   setCurrentStep: (value: number) => void;
   getValues: UseFormGetValues<RepairCreateFormValues>;
   setValue: UseFormSetValue<RepairCreateFormValues>;
   reset: UseFormReset<RepairCreateFormValues>;
-  vehicleSuggestions: VehicleSuggestion[];
+  vehicleSuggestions: VehicleSearchResult[];
   setIsManualMode: (value: boolean) => void;
   currentStep?: number;
   isDirty?: boolean;
   handleStepChange: (step: number) => void;
   handleSubmit: UseFormHandleSubmit<RepairCreateFormValues>;
-  onSubmit: (values: RepairCreateFormValues) => void;
+  onSubmit: (values: RepairCreateFormValues) => Promise<void>;
+  createClientAndContinue: () => Promise<void>;
+  continueToRepairStep: () => Promise<void>;
   setIsVehicleSearchLoading: (value: boolean) => void;
   isManualMode: boolean;
   errors: FieldErrors<RepairCreateFormValues>;
   control: Control<RepairCreateFormValues>;
-  licensePlateSuggestions: VehicleSuggestion[];
-  vinSuggestions: VehicleSuggestion[];
+  licensePlateSuggestions: VehicleSearchResult[];
+  vinSuggestions: VehicleSearchResult[];
   availableQuickWorkTemplates: string[];
   isSubmitting: boolean;
+  isCreatingClient: boolean;
+  isSavingClientStep: boolean;
 }

@@ -1,0 +1,99 @@
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import type { FieldPath, FieldValues, UseFormSetError } from 'react-hook-form';
+
+function isFetchBaseQueryError(error: unknown): error is FetchBaseQueryError {
+  return typeof error === 'object' && error !== null && 'status' in error;
+}
+
+function getLaravelErrors(error: unknown): Record<string, string[]> | null {
+  if (!isFetchBaseQueryError(error) || error.status !== 422) {
+    return null;
+  }
+
+  const data = error.data;
+
+  if (typeof data !== 'object' || data === null || !('errors' in data)) {
+    return null;
+  }
+
+  const errors = data.errors;
+
+  if (typeof errors !== 'object' || errors === null) {
+    return null;
+  }
+
+  return errors as Record<string, string[]>;
+}
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+  if (isFetchBaseQueryError(error)) {
+    const data = error.data;
+
+    if (
+      typeof data === 'object' &&
+      data !== null &&
+      'message' in data &&
+      typeof data.message === 'string' &&
+      data.message
+    ) {
+      return data.message;
+    }
+
+    const laravelErrors = getLaravelErrors(error);
+
+    if (laravelErrors) {
+      const firstMessage = Object.values(laravelErrors)[0]?.[0];
+
+      if (firstMessage) {
+        return firstMessage;
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+const apiFieldToFormField: Record<string, string> = {
+  client_name: 'clientName',
+  client_phone: 'clientPhone',
+  client_email: 'clientEmail',
+  car_model: 'carModel',
+  license_plate: 'licensePlate',
+  vin: 'vin',
+  mileage: 'mileage',
+  status: 'status',
+  planned_ready_at: 'plannedReadyAt',
+  comment: 'comment',
+  total: 'total',
+};
+
+export function applyApiFieldErrors<TFieldValues extends FieldValues>(
+  error: unknown,
+  setError: UseFormSetError<TFieldValues>,
+): boolean {
+  const laravelErrors = getLaravelErrors(error);
+
+  if (!laravelErrors) {
+    return false;
+  }
+
+  let applied = false;
+
+  for (const [apiField, messages] of Object.entries(laravelErrors)) {
+    const message = messages[0];
+
+    if (!message) {
+      continue;
+    }
+
+    const formField = (apiFieldToFormField[apiField] ?? apiField) as FieldPath<TFieldValues>;
+    setError(formField, { type: 'server', message });
+    applied = true;
+  }
+
+  return applied;
+}

@@ -580,6 +580,7 @@ Headers: `Authorization: Bearer {access_token}`
   "status": "new",
   "planned_ready_at": "2026-08-01",
   "mileage": 86000,
+  "total": 18500,
   "comment": "Посторонний шум",
   "work_items": [{ "title": "Диагностика" }],
   "ordered_parts": [{ "name": "Тормозные колодки", "quantity": 1 }]
@@ -622,6 +623,7 @@ Headers: `Authorization: Bearer {access_token}`
 - `status` — required, in:new,diagnostics,in_progress,waiting_parts
 - `planned_ready_at` — nullable, date
 - `mileage` — nullable, integer, min:0
+- `total` — nullable, integer, min:0 (ориентировочная сумма заказа в рублях)
 - `comment` — nullable, string
 - `work_items` — array
 - `work_items.*.title` — required_with:work_items, string
@@ -723,6 +725,11 @@ Headers: `Authorization: Bearer {access_token}`
     "planned_ready_at": "2026-08-01",
     "car_model": "Toyota Camry",
     "license_plate": "А123ВС 777",
+    "total": 18500,
+    "total_formatted": "18 500 ₽",
+    "estimate_status": "pending",
+    "estimate_comment": null,
+    "estimate_decided_at": null,
     "work_items": [
       {
         "title": "Диагностика",
@@ -737,6 +744,36 @@ Headers: `Authorization: Bearer {access_token}`
   }
 }
 ```
+
+`estimate_status`: `pending` | `approved` | `declined` | `null`
+
+### `POST /api/v1/public/repairs/{publicToken}/estimate`
+
+Согласование сметы клиентом (без авторизации).
+
+```json
+{
+  "decision": "approved"
+}
+```
+
+или
+
+```json
+{
+  "decision": "declined",
+  "comment": "Пока без замены колодок"
+}
+```
+
+**Validation**
+
+- `decision` — required, in:approved,declined
+- `comment` — required_if:decision,declined; nullable string; max:1000
+- повторное решение после `approved`/`declined` — `409` (или разрешить только если мастер снова
+  выставил `pending`)
+
+**Response `200`** — обновлённый public repair payload.
 
 ### `GET /api/v1/public/repairs/{publicToken}/pdf`
 

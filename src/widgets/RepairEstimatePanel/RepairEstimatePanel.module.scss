@@ -1,0 +1,94 @@
+.panel {
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hint {
+  margin: 4px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.totalField,
+.current {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.input {
+  width: 100%;
+}
+
+.current {
+  justify-content: center;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgb(255 255 255 / 90%);
+}
+
+.currentValue {
+  color: var(--dvsh-ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.note {
+  margin: 12px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .actions :global(.ant-btn) {
+    width: 100%;
+  }
+}
