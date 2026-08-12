@@ -146,6 +146,7 @@ POST /api/v1/public/vehicles/{token}/confirm
   "status_label": "Выдан",
   "client_name": "Иван Петров",
   "mileage": 87200,
+  "comment": "Масло заменено, фильтр в наличии",
   "client_confirm_status": "pending",
   "client_confirm_comment": null,
   "client_confirmed_at": null,

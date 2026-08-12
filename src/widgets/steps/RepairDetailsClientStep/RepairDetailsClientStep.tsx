@@ -166,7 +166,7 @@ export const RepairDetailsClientStep = () => {
                 <Input
                   {...field}
                   className={styles.plateInput}
-                  placeholder="_ ___ __ ___"
+                  placeholder="А123ВС 777"
                   size="large"
                   value={field.value}
                   onChange={(event) =>
@@ -251,11 +251,11 @@ export const RepairDetailsClientStep = () => {
           <Form.Item
             extra={
               minMileage != null
-                ? `Не ниже ${formatMileageKm(minMileage)} — пробег с последнего «Выдан»`
+                ? `На данный момент пробег автомобиля: ${formatMileageKm(minMileage)}`
                 : 'Пробег на момент этих работ'
             }
             help={errors.mileage?.message}
-            label="Пробег на работах, км"
+            label={requiredLabel('Пробег автомобиля')}
             validateStatus={getAntdValidateStatus(Boolean(errors.mileage))}
           >
             <Controller

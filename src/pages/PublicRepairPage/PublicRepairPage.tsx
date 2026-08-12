@@ -386,6 +386,170 @@ export function PublicRepairPage() {
           </div>
         </section>
 
+        {currentRepair && confirmStatus ? (
+          <section
+            className={clsx(
+              styles.panel,
+              styles.confirmPanel,
+              confirmStatus === 'confirmed' && styles.confirmApproved,
+              confirmStatus === 'disputed' && styles.confirmDisputed,
+              needsClientConfirm && styles.confirmPending,
+            )}
+          >
+            <div className={styles.panelHead}>
+              <div>
+                <h2 className={styles.panelTitle}>Подтверждение данных</h2>
+                <p className={styles.panelHint}>
+                  {needsClientConfirm
+                    ? 'Сверьте данные перед подтверждением'
+                    : confirmStatus === 'confirmed'
+                      ? 'Данные заказа подтверждены'
+                      : 'Замечание отправлено в сервис'}
+                </p>
+              </div>
+              <Tag color={clientConfirmStatusColors[confirmStatus]}>
+                {clientConfirmStatusLabels[confirmStatus]}
+              </Tag>
+            </div>
+
+            {needsClientConfirm || confirmStatus === 'confirmed' || confirmStatus === 'disputed' ? (
+              <div className={styles.confirmTables}>
+                <table className={styles.confirmTable}>
+                  <caption className={styles.confirmCaption}>Автомобиль и клиент</caption>
+                  <tbody>
+                    <tr>
+                      <th scope="row">Заказ-наряд</th>
+                      <td>{currentRepair.order_number}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Клиент</th>
+                      <td>{clientName || 'Не указано'}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Автомобиль</th>
+                      <td>
+                        {vehicle.car_model} · {vehicle.license_plate}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">VIN / шасси</th>
+                      <td>{vehicleIdLabel}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Пробег</th>
+                      <td>
+                        {typeof currentRepair.mileage === 'number'
+                          ? formatMileageKm(currentRepair.mileage)
+                          : 'Не указан'}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <table className={styles.confirmTable}>
+                  <caption className={styles.confirmCaption}>Выполненные работы</caption>
+                  <tbody>
+                    {workItems.length > 0 ? (
+                      workItems.map((item, index) => (
+                        <tr key={`confirm-work-${item.title}-${index}`}>
+                          <td className={styles.confirmWorkCell}>
+                            <span className={styles.confirmWorkIndex}>{index + 1}</span>
+                            <span>{item.title}</span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className={styles.confirmEmpty}>Список работ не сохранён</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
+            {needsClientConfirm ? (
+              <>
+                <p className={styles.confirmLead}>
+                  Всё верно — подтвердите. Есть ошибка — опишите её, сервис исправит.
+                </p>
+                <p className={styles.confirmNote}>После подтверждения данные изменить нельзя.</p>
+
+                {!isDisputing ? (
+                  <div className={styles.estimateActions}>
+                    <Button
+                      loading={isSubmitting}
+                      size="large"
+                      type="primary"
+                      onClick={() => {
+                        void handleConfirmDecision('confirmed');
+                      }}
+                    >
+                      Подтвердить
+                    </Button>
+                    <Button
+                      disabled={isSubmitting}
+                      size="large"
+                      onClick={() => setIsDisputing(true)}
+                    >
+                      Есть ошибка
+                    </Button>
+                  </div>
+                ) : (
+                  <div className={styles.declineBox}>
+                    <Input.TextArea
+                      placeholder="Например: неверный VIN или пробег 87200 вместо 87000"
+                      rows={3}
+                      value={disputeComment}
+                      onChange={(event) => setDisputeComment(event.target.value)}
+                    />
+                    <div className={styles.estimateActions}>
+                      <Button
+                        danger
+                        loading={isSubmitting}
+                        size="large"
+                        type="primary"
+                        onClick={() => {
+                          void handleConfirmDecision('disputed');
+                        }}
+                      >
+                        Отправить замечание
+                      </Button>
+                      <Button
+                        disabled={isSubmitting}
+                        size="large"
+                        onClick={() => {
+                          setIsDisputing(false);
+                          setDisputeComment('');
+                        }}
+                      >
+                        Назад
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : null}
+
+            {confirmStatus === 'confirmed' ? (
+              <p className={styles.estimateMessage}>
+                Подтверждено
+                {currentRepair.client_confirmed_at
+                  ? ` · ${formatDateTime(currentRepair.client_confirmed_at)}`
+                  : ''}
+              </p>
+            ) : null}
+
+            {confirmStatus === 'disputed' ? (
+              <p className={styles.estimateMessage}>
+                {currentRepair.client_confirm_comment
+                  ? `Ваше замечание: «${currentRepair.client_confirm_comment}»`
+                  : 'Сервис получил замечание и свяжется с вами.'}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
         <section className={styles.panel}>
           <div className={styles.panelHead}>
             <div>
@@ -453,6 +617,13 @@ export function PublicRepairPage() {
               ) : (
                 <p className={styles.panelEmpty}>Список работ появится после диагностики на СТО</p>
               )}
+
+              {currentRepair.comment?.trim() ? (
+                <div className={styles.masterComment}>
+                  <span className={styles.masterCommentLabel}>Комментарий мастера</span>
+                  <p className={styles.masterCommentText}>{currentRepair.comment.trim()}</p>
+                </div>
+              ) : null}
             </>
           ) : (
             <p className={styles.panelEmpty}>
@@ -584,151 +755,7 @@ export function PublicRepairPage() {
           </section>
         ) : null}
 
-        {currentRepair && confirmStatus ? (
-          <section
-            className={clsx(
-              styles.panel,
-              styles.confirmPanel,
-              confirmStatus === 'confirmed' && styles.confirmApproved,
-              confirmStatus === 'disputed' && styles.confirmDisputed,
-              needsClientConfirm && styles.confirmPending,
-            )}
-          >
-            <div className={styles.panelHead}>
-              <div>
-                <h2 className={styles.panelTitle}>Подтверждение данных</h2>
-                <p className={styles.panelHint}>
-                  {needsClientConfirm
-                    ? 'Проверьте работы, имя, VIN и пробег после выдачи автомобиля'
-                    : confirmStatus === 'confirmed'
-                      ? 'Вы подтвердили данные заказа'
-                      : 'Сервис получил ваше замечание'}
-                </p>
-              </div>
-              <Tag color={clientConfirmStatusColors[confirmStatus]}>
-                {clientConfirmStatusLabels[confirmStatus]}
-              </Tag>
-            </div>
-
-            {needsClientConfirm ? (
-              <>
-                <dl className={styles.confirmSummary}>
-                  <div className={styles.confirmRow}>
-                    <dt>Имя</dt>
-                    <dd>{clientName || 'Не указано'}</dd>
-                  </div>
-                  <div className={styles.confirmRow}>
-                    <dt>Идентификатор</dt>
-                    <dd>{vehicleIdLabel}</dd>
-                  </div>
-                  <div className={styles.confirmRow}>
-                    <dt>Пробег</dt>
-                    <dd>
-                      {typeof currentRepair.mileage === 'number'
-                        ? formatMileageKm(currentRepair.mileage)
-                        : 'Не указан'}
-                    </dd>
-                  </div>
-                  <div className={styles.confirmRow}>
-                    <dt>Работы</dt>
-                    <dd>
-                      {workItems.length > 0 ? (
-                        <ul className={styles.confirmWorks}>
-                          {workItems.map((item, index) => (
-                            <li key={`confirm-${item.title}-${index}`}>{item.title}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        'Список не сохранён'
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-
-                <p className={styles.estimateMessage}>
-                  Если всё верно — подтвердите. После подтверждения данные изменить нельзя. Если
-                  есть ошибка — опишите её, сервис исправит и снова попросит проверить.
-                </p>
-
-                {!isDisputing ? (
-                  <div className={styles.estimateActions}>
-                    <Button
-                      loading={isSubmitting}
-                      size="large"
-                      type="primary"
-                      onClick={() => {
-                        void handleConfirmDecision('confirmed');
-                      }}
-                    >
-                      Подтвердить
-                    </Button>
-                    <Button
-                      disabled={isSubmitting}
-                      size="large"
-                      onClick={() => setIsDisputing(true)}
-                    >
-                      Есть ошибка
-                    </Button>
-                  </div>
-                ) : (
-                  <div className={styles.declineBox}>
-                    <Input.TextArea
-                      placeholder="Например: неверный VIN или пробег 87200 вместо 87000"
-                      rows={3}
-                      value={disputeComment}
-                      onChange={(event) => setDisputeComment(event.target.value)}
-                    />
-                    <div className={styles.estimateActions}>
-                      <Button
-                        danger
-                        loading={isSubmitting}
-                        size="large"
-                        type="primary"
-                        onClick={() => {
-                          void handleConfirmDecision('disputed');
-                        }}
-                      >
-                        Отправить замечание
-                      </Button>
-                      <Button
-                        disabled={isSubmitting}
-                        size="large"
-                        onClick={() => {
-                          setIsDisputing(false);
-                          setDisputeComment('');
-                        }}
-                      >
-                        Назад
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : null}
-
-            {confirmStatus === 'confirmed' ? (
-              <p className={styles.estimateMessage}>
-                Данные подтверждены
-                {currentRepair.client_confirmed_at
-                  ? ` · ${formatDateTime(currentRepair.client_confirmed_at)}`
-                  : ''}
-                . Изменения больше недоступны.
-              </p>
-            ) : null}
-
-            {confirmStatus === 'disputed' ? (
-              <p className={styles.estimateMessage}>
-                Замечание отправлено
-                {currentRepair.client_confirm_comment
-                  ? `: «${currentRepair.client_confirm_comment}»`
-                  : '.'}{' '}
-                Сервис исправит данные и снова попросит подтверждение.
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
-        {mileageTimeline.length > 0 ? (
+        {previousRepairs.length > 0 && mileageTimeline.length > 1 ? (
           <section className={clsx(styles.panel, styles.mileagePanel)}>
             <div className={styles.panelHead}>
               <div>

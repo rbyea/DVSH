@@ -1,5 +1,4 @@
 import type { RepairCreateFormValues } from './types';
-import { formatRuLicensePlateMaskedInput } from '@/shared/lib/vehicle';
 
 export const initialValues: Partial<RepairCreateFormValues> = {
   clientId: '',
@@ -9,7 +8,7 @@ export const initialValues: Partial<RepairCreateFormValues> = {
   clientPhone: '',
   clientEmail: '',
   carModel: '',
-  licensePlate: formatRuLicensePlateMaskedInput(''),
+  licensePlate: '',
   vin: '',
   chassisNumber: '',
   mileage: undefined,

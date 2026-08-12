@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
 import {
@@ -20,7 +20,6 @@ import {
 } from '@/entities/repair-order';
 import { useGetVehicleQuery, type VehicleRepairHistory } from '@/entities/vehicle';
 import { getErrorMessage } from '@/shared/lib/api';
-import { extractPublicToken, getPublicRepairPath } from '@/shared/lib/public-repair';
 import { RepairClientConfirmPanel } from '@/widgets/RepairClientConfirmPanel';
 import { RepairClientPanel } from '@/widgets/RepairClientPanel';
 import { RepairDetailsEditor } from '@/widgets/RepairDetailsEditor';
@@ -88,9 +87,8 @@ function formatMoney(total: number): string {
 export function RepairDetailsPage() {
   const { repairId = '' } = useParams<{ repairId: string }>();
   const location = useLocation();
-  const navigate = useNavigate();
   const justCreated = Boolean((location.state as LocationState | null)?.justCreated);
-  const [showCreatedBanner, setShowCreatedBanner] = useState(justCreated);
+  const [highlightPublicLink, setHighlightPublicLink] = useState(justCreated);
 
   const {
     data: repair,
@@ -108,14 +106,9 @@ export function RepairDetailsPage() {
 
   useEffect(() => {
     if (justCreated) {
-      setShowCreatedBanner(true);
+      setHighlightPublicLink(true);
     }
   }, [justCreated]);
-
-  const handleDismissCreatedBanner = () => {
-    setShowCreatedBanner(false);
-    navigate(location.pathname, { replace: true, state: null });
-  };
 
   if (isLoading) {
     return (
@@ -144,8 +137,6 @@ export function RepairDetailsPage() {
 
   const doneWorks = repair.work_items.filter((item) => Boolean(item.is_done)).length;
   const totalWorks = repair.work_items.length;
-  const publicToken = extractPublicToken(repair.public_token, repair.public_url);
-  const publicPath = publicToken ? getPublicRepairPath(publicToken) : null;
   const isLocked = isRepairLocked(repair);
   const confirmStatus = repair.client_confirm_status ?? null;
   const isEstimatePending = repair.estimate_status === 'pending';
@@ -217,10 +208,10 @@ export function RepairDetailsPage() {
 
   const handleIssueVehicle = () => {
     Modal.confirm({
-      title: 'Автомобиль выдан клиенту?',
+      title: 'Выдать автомобиль клиенту?',
       content:
-        'Заказ-наряд перейдёт в статус «Выдан». Редактирование будет недоступно, пока клиент не подтвердит данные по публичной ссылке (работы, имя, VIN, пробег) или не сообщит об ошибке.',
-      okText: 'Выдан',
+        'После выдачи история ремонта сохранится в карточке клиента. Заказ-наряд перейдёт в статус «Выдан». Редактирование будет недоступно, пока клиент не подтвердит данные по публичной ссылке (работы, имя, VIN, пробег) или не сообщит об ошибке.',
+      okText: 'Выдать автомобиль',
       cancelText: 'Отмена',
       onOk: async () => {
         try {
@@ -247,13 +238,6 @@ export function RepairDetailsPage() {
         <Link to="/dashboard">
           <Button size="large">← К списку</Button>
         </Link>
-        {publicPath ? (
-          <Link to={publicPath} target="_blank" rel="noreferrer">
-            <Button size="large" type="primary">
-              Открыть для клиента
-            </Button>
-          </Link>
-        ) : null}
       </div>
 
       <header className={styles.pageHead}>
@@ -290,17 +274,6 @@ export function RepairDetailsPage() {
           vehicle={repair.vehicle}
         />
       </section>
-
-      <RepairWorksList defaultOpen excludeRepairId={repair.id} repairs={vehicleHistory} />
-
-      {showCreatedBanner ? (
-        <RepairPublicLinkPanel
-          highlight
-          publicToken={repair.public_token}
-          publicUrl={repair.public_url}
-          onDismiss={handleDismissCreatedBanner}
-        />
-      ) : null}
 
       <section className={clsx(styles.hero, statusClassName[repair.status])}>
         <div className={styles.heroTop}>
@@ -365,11 +338,22 @@ export function RepairDetailsPage() {
         {repair.status === 'done' ? (
           <div className={styles.issueActions}>
             <Button loading={isStatusBusy} size="large" type="primary" onClick={handleIssueVehicle}>
-              Автомобиль выдан
+              Выдать автомобиль
             </Button>
+            <p className={styles.issueHint}>
+              После выдачи история ремонта сохранится в карточке клиента
+            </p>
           </div>
         ) : null}
       </section>
+
+      <RepairPublicLinkPanel
+        highlight={highlightPublicLink}
+        publicToken={repair.public_token}
+        publicUrl={repair.public_url}
+      />
+
+      <RepairWorksList defaultOpen excludeRepairId={repair.id} repairs={vehicleHistory} />
 
       <section className={styles.paramsBlock}>
         <RepairDetailsEditor readOnly={isLocked} repair={repair} />
@@ -396,10 +380,6 @@ export function RepairDetailsPage() {
           />
         </article>
       </section>
-
-      {!showCreatedBanner ? (
-        <RepairPublicLinkPanel publicToken={repair.public_token} publicUrl={repair.public_url} />
-      ) : null}
     </div>
   );
 }

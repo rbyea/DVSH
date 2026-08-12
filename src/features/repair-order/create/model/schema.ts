@@ -59,7 +59,19 @@ export const repairCreateFormSchema = z
       .refine((value) => value.length === 0 || isValidChassisNumber(value), {
         message: 'Номер шасси: 5–25 символов (латиница, цифры)',
       }),
-    mileage: z.number().int().min(0, 'Пробег не может быть отрицательным').optional(),
+    mileage: z
+      .union([
+        z
+          .number({
+            error: 'Укажите пробег автомобиля',
+          })
+          .int('Пробег должен быть целым числом')
+          .min(0, 'Пробег не может быть отрицательным'),
+        z.undefined(),
+      ])
+      .refine((value): value is number => typeof value === 'number', {
+        message: 'Укажите пробег автомобиля',
+      }),
     status: z.enum(['new', 'pending_approval', 'in_progress', 'waiting_parts']),
     plannedReadyAt: z
       .union([

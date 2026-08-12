@@ -279,6 +279,7 @@ Whitelist везде (create / update / updateStatus):
       "estimate_status": null,
       "estimate_comment": null,
       "estimate_decided_at": null,
+      "comment": "Масло заменено, фильтр в наличии",
       "work_items": [{ "title": "Замена масла", "is_done": true }],
       "updated_at": "2026-08-12T12:00:00Z"
     },
@@ -300,7 +301,8 @@ Whitelist везде (create / update / updateStatus):
 
 ### Правила
 
-**`current_repair`:** активный ремонт (не `completed`), самый свежий; если нет — `null`.
+**`current_repair`:** активный ремонт (не `completed`), самый свежий; если нет — `null`.  
+В `current_repair` отдавать также **`comment`** (комментарий мастера для клиента), если заполнен.
 
 **`previous_repairs`:** закрытые/выданные (`completed`; политику по старым `done` — на усмотрение),
 без текущего, новые сверху, желательно с `work_items`.

@@ -151,7 +151,7 @@ export function RepairDetailsEditor({ repair, readOnly = false }: RepairDetailsE
               className={styles.field}
               extra={
                 minMileage != null
-                  ? `Не ниже ${formatMileageKm(minMileage)}`
+                  ? `На данный момент пробег автомобиля: ${formatMileageKm(minMileage)}`
                   : 'Пробег на момент этих работ'
               }
               label="Пробег на работах, км"

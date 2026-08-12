@@ -42,12 +42,12 @@ export const SelectedCar = () => {
         <div className={styles.mileageBlock}>
           {minMileage != null ? (
             <p className={styles.mileageFloor}>
-              Минимальный пробег для нового заказа: <strong>{formatMileageKm(minMileage)}</strong>
+              На данный момент пробег автомобиля: <strong>{formatMileageKm(minMileage)}</strong>
             </p>
           ) : null}
-          {mileagePoints.length > 0 ? (
+          {mileagePoints.length > 1 ? (
             <p className={styles.mileageTimeline}>
-              Пробег по визитам: {mileagePoints.map((point) => formatMileageKm(point)).join(' → ')}
+              По визитам: {mileagePoints.map((point) => formatMileageKm(point)).join(' → ')}
             </p>
           ) : null}
         </div>

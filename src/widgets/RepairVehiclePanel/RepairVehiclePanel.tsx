@@ -199,7 +199,7 @@ export function RepairVehiclePanel({
           <Form.Item label="Гос номер">
             <Input
               className={styles.plateInput}
-              placeholder="_ ___ __ ___"
+              placeholder="А123ВС 777"
               size="large"
               value={formState.licensePlate}
               onChange={(event) => {

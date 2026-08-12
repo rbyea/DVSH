@@ -88,21 +88,14 @@ export function formatRuLicensePlateInput(value: string): string {
   return `${body} ${region}`;
 }
 
-/** Visual mask under the input: `А ___ __ ___` with typed chars filled in. */
+/** @deprecated Use formatRuLicensePlateInput — no underscore placeholders. */
 export function formatRuLicensePlateMask(value: string): string {
-  const { seriesLetter, number, series, region } = extractRuLicensePlateParts(value);
-
-  return [
-    seriesLetter || '_',
-    number.padEnd(3, '_'),
-    series.padEnd(2, '_'),
-    region.padEnd(3, '_'),
-  ].join(' ');
+  return formatRuLicensePlateInput(value);
 }
 
-/** Same mask format for the input value itself. */
+/** Input formatter while typing (letters/digits only, no `_` hints). */
 export function formatRuLicensePlateMaskedInput(value: string): string {
-  return formatRuLicensePlateMask(value);
+  return formatRuLicensePlateInput(value);
 }
 
 /** Compact value without spaces/underscores. */

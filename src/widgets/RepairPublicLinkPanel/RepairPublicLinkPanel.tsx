@@ -15,14 +15,12 @@ type RepairPublicLinkPanelProps = {
   publicToken?: string | null;
   publicUrl?: string | null;
   highlight?: boolean;
-  onDismiss?: () => void;
 };
 
 export function RepairPublicLinkPanel({
   publicToken,
   publicUrl,
   highlight = false,
-  onDismiss,
 }: RepairPublicLinkPanelProps) {
   const token = extractPublicToken(publicToken, publicUrl);
   const appUrl = token ? getPublicRepairAppUrl(token) : '';
@@ -63,13 +61,6 @@ export function RepairPublicLinkPanel({
               : 'Клиент увидит статус и список работ без входа'}
           </p>
         </div>
-        {highlight && onDismiss ? (
-          <div className={styles.headerActions}>
-            <Button size="large" type="default" onClick={onDismiss}>
-              Понятно
-            </Button>
-          </div>
-        ) : null}
       </div>
 
       {token ? (

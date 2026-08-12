@@ -206,6 +206,8 @@ export type PublicCurrentRepair = {
   estimate_status?: EstimateStatus | null;
   estimate_comment?: string | null;
   estimate_decided_at?: string | null;
+  /** Master's note for the client (from repair.comment). */
+  comment?: string | null;
   client_confirm_status?: ClientConfirmStatus | null;
   client_confirm_comment?: string | null;
   client_confirmed_at?: string | null;
