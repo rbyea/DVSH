@@ -25,6 +25,37 @@ function getLaravelErrors(error: unknown): Record<string, string[]> | null {
   return errors as Record<string, string[]>;
 }
 
+function humanizeServerMessage(message: string): string | null {
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes('mileage') &&
+    (normalized.includes('меньше') ||
+      normalized.includes('greater than or equal') ||
+      normalized.includes('min'))
+  ) {
+    return 'Пробег не может быть меньше пробега с последнего выданного заказа.';
+  }
+
+  if (
+    normalized.includes('repair_orders_public_token_unique') ||
+    (normalized.includes('duplicate entry') && normalized.includes('public_token')) ||
+    (normalized.includes('sqlstate[23000]') && normalized.includes('public_token'))
+  ) {
+    return 'Не удалось создать ремонт: конфликт публичной ссылки на это авто. Нужно исправление на сервере.';
+  }
+
+  if (
+    normalized.includes('integrity constraint violation') ||
+    normalized.includes('sqlstate[23000]') ||
+    normalized.includes('duplicate entry')
+  ) {
+    return 'Не удалось сохранить: конфликт данных на сервере. Попробуйте ещё раз или обратитесь в поддержку.';
+  }
+
+  return null;
+}
+
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (isFetchBaseQueryError(error)) {
     const data = error.data;
@@ -36,7 +67,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
       typeof data.message === 'string' &&
       data.message
     ) {
-      return data.message;
+      return humanizeServerMessage(data.message) ?? data.message;
     }
 
     const laravelErrors = getLaravelErrors(error);
@@ -45,13 +76,13 @@ export function getErrorMessage(error: unknown, fallback: string): string {
       const firstMessage = Object.values(laravelErrors)[0]?.[0];
 
       if (firstMessage) {
-        return firstMessage;
+        return humanizeServerMessage(firstMessage) ?? firstMessage;
       }
     }
   }
 
   if (error instanceof Error && error.message) {
-    return error.message;
+    return humanizeServerMessage(error.message) ?? error.message;
   }
 
   return fallback;
@@ -64,6 +95,7 @@ const apiFieldToFormField: Record<string, string> = {
   car_model: 'carModel',
   license_plate: 'licensePlate',
   vin: 'vin',
+  chassis_number: 'chassisNumber',
   mileage: 'mileage',
   status: 'status',
   planned_ready_at: 'plannedReadyAt',

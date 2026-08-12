@@ -6,6 +6,7 @@ import type {
   UseFormGetValues,
   UseFormHandleSubmit,
   UseFormReset,
+  UseFormClearErrors,
   UseFormSetValue,
 } from 'react-hook-form';
 
@@ -14,19 +15,22 @@ export interface RepairCreateContextValue {
   setVehicleSuggestions: (value: VehicleSearchResult[]) => void;
   isVehicleSearchLoading: boolean;
   applyVehicleSuggestion: (value: VehicleSearchResult) => Promise<void>;
+  startManualVehicleEntry: () => void;
   setSelectedVehicle: (value: VehicleSearchResult | null) => void;
   selectedVehicle: VehicleSearchResult | null;
   setCurrentStep: (value: number) => void;
   getValues: UseFormGetValues<RepairCreateFormValues>;
   setValue: UseFormSetValue<RepairCreateFormValues>;
+  clearErrors: UseFormClearErrors<RepairCreateFormValues>;
   reset: UseFormReset<RepairCreateFormValues>;
   vehicleSuggestions: VehicleSearchResult[];
   setIsManualMode: (value: boolean) => void;
   currentStep?: number;
   isDirty?: boolean;
-  handleStepChange: (step: number) => void;
+  handleStepChange: (step: number) => void | Promise<void>;
   handleSubmit: UseFormHandleSubmit<RepairCreateFormValues>;
   onSubmit: (values: RepairCreateFormValues) => Promise<void>;
+  onInvalidSubmit: (errors: FieldErrors<RepairCreateFormValues>) => void;
   createClientAndContinue: () => Promise<void>;
   continueToRepairStep: () => Promise<void>;
   setIsVehicleSearchLoading: (value: boolean) => void;

@@ -61,3 +61,29 @@
 .form :global(.ant-form-item-control) {
   width: 100%;
 }
+
+@media (max-width: 720px) {
+  .stepsWrap {
+    padding: 14px 12px;
+  }
+
+  .form :global(.ant-card-body) {
+    padding: 16px 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .stepsWrap {
+    padding: 12px 10px;
+    border-radius: 16px;
+  }
+
+  .form :global(.ant-card-body) {
+    gap: 12px;
+    padding: 14px 12px;
+  }
+
+  .form :global(.ant-steps-item-title) {
+    font-size: 12px !important;
+  }
+}

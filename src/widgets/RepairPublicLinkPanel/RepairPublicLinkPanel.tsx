@@ -2,8 +2,6 @@ import { Button, Input } from 'antd';
 import { Link } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
-import { useRegeneratePublicLinkMutation } from '@/entities/repair-order';
-import { getErrorMessage } from '@/shared/lib/api';
 import { copyTextToClipboard } from '@/shared/lib/clipboard';
 import {
   extractPublicToken,
@@ -14,27 +12,25 @@ import {
 import styles from './RepairPublicLinkPanel.module.scss';
 
 type RepairPublicLinkPanelProps = {
-  repairId: string;
   publicToken?: string | null;
   publicUrl?: string | null;
   highlight?: boolean;
+  onDismiss?: () => void;
 };
 
 export function RepairPublicLinkPanel({
-  repairId,
   publicToken,
   publicUrl,
   highlight = false,
+  onDismiss,
 }: RepairPublicLinkPanelProps) {
-  const [regenerateLink, { isLoading }] = useRegeneratePublicLinkMutation();
-
   const token = extractPublicToken(publicToken, publicUrl);
   const appUrl = token ? getPublicRepairAppUrl(token) : '';
   const appPath = token ? getPublicRepairPath(token) : '';
 
   const handleCopy = async () => {
     if (!appUrl) {
-      toast.warning('Сначала создайте публичную ссылку', {
+      toast.warning('Публичная ссылка ещё не создана', {
         position: 'top-right',
         transition: Bounce,
       });
@@ -53,25 +49,7 @@ export function RepairPublicLinkPanel({
 
     toast.error('Не удалось скопировать ссылку', {
       position: 'top-right',
-      transition: Bounce,
     });
-  };
-
-  const handleRegenerate = async () => {
-    try {
-      const result = await regenerateLink(repairId).unwrap();
-      const nextUrl = getPublicRepairAppUrl(result.public_token);
-      await copyTextToClipboard(nextUrl);
-      toast.success('Ссылка обновлена и скопирована', {
-        position: 'top-right',
-        transition: Bounce,
-      });
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Не удалось обновить ссылку'), {
-        position: 'top-right',
-        transition: Bounce,
-      });
-    }
   };
 
   return (
@@ -85,6 +63,13 @@ export function RepairPublicLinkPanel({
               : 'Клиент увидит статус и список работ без входа'}
           </p>
         </div>
+        {highlight && onDismiss ? (
+          <div className={styles.headerActions}>
+            <Button size="large" type="default" onClick={onDismiss}>
+              Понятно
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {token ? (
@@ -100,12 +85,6 @@ export function RepairPublicLinkPanel({
       ) : (
         <p className={styles.empty}>Публичная ссылка ещё не создана</p>
       )}
-
-      <div className={styles.actions}>
-        <Button loading={isLoading} size="large" onClick={() => void handleRegenerate()}>
-          {token ? 'Обновить ссылку' : 'Создать ссылку'}
-        </Button>
-      </div>
     </section>
   );
 }

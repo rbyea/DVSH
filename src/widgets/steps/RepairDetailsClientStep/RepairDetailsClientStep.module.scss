@@ -14,8 +14,35 @@
   text-transform: uppercase;
 }
 
+.fieldLabel {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.requiredMark {
+  color: #dc2626;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .numberInput {
   width: 100%;
+}
+
+.plateInput {
+  font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace !important;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.idSwitchButton {
+  height: auto !important;
+  margin: -4px 0 12px;
+  padding: 0 !important;
+  color: var(--dvsh-accent) !important;
+  font-weight: 600;
 }
 
 .consentHint {
@@ -41,12 +68,85 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   position: sticky;
   bottom: 0;
   z-index: 1;
   margin-top: 8px;
-  padding: 16px 0;
+  padding: 14px 0 8px;
   background: linear-gradient(180deg, rgb(238 241 246 / 0%), var(--dvsh-bg) 40%);
+}
+
+.actionsPrimary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.actionSecondary {
+  flex-shrink: 0;
+}
+
+.actionPrimary {
+  min-width: 0;
+}
+
+.labelShort {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .actions {
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin: 0 -4px;
+    padding: 10px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .actionsPrimary {
+    flex: 1;
+    min-width: 0;
+    margin-left: 0;
+    flex-wrap: nowrap;
+  }
+
+  .actionSecondary {
+    padding-inline: 10px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  .actionPrimary {
+    flex: 1;
+    min-width: 0;
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  .labelFull {
+    display: none;
+  }
+
+  .labelShort {
+    display: inline;
+  }
+}
+
+@media (max-width: 360px) {
+  .consentHint,
+  .consentText {
+    font-size: 13px;
+  }
+
+  .actionSecondary {
+    padding-inline: 8px !important;
+  }
+
+  .actionCancel {
+    display: none;
+  }
 }

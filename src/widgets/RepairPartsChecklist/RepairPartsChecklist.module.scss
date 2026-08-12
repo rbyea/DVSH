@@ -116,8 +116,40 @@
 }
 
 @media (max-width: 720px) {
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .itemTitle {
+    overflow-wrap: anywhere;
+  }
+
+  .qtyControl,
+  .itemActions {
+    justify-self: start;
+  }
+
   .item,
   .addRow {
     grid-template-columns: 1fr;
+  }
+
+  .addRow :global(.ant-btn) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .item {
+    padding: 10px 12px;
+  }
+
+  .empty {
+    padding: 14px;
   }
 }

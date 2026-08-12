@@ -1,4 +1,5 @@
 import { Steps } from 'antd';
+import { useEffect } from 'react';
 
 import { useRepairCreateContext } from '@/features/repair-order/create';
 import { AppInfo } from '@/widgets/AppInfo';
@@ -10,8 +11,22 @@ import { SearchVInNumber } from '@/widgets/steps/SearchVInNumber';
 import styles from './RepairCreatePage.module.scss';
 
 export const RepairCreatePage = () => {
-  const { currentStep, handleStepChange, handleSubmit, onSubmit, selectedVehicle } =
-    useRepairCreateContext();
+  const {
+    currentStep,
+    handleStepChange,
+    handleSubmit,
+    onSubmit,
+    onInvalidSubmit,
+    selectedVehicle,
+  } = useRepairCreateContext();
+
+  useEffect(() => {
+    if (currentStep !== 2) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   return (
     <div className={styles.page}>
@@ -24,12 +39,14 @@ export const RepairCreatePage = () => {
       <div className={styles.stepsWrap}>
         <Steps
           current={currentStep}
-          onChange={handleStepChange}
+          onChange={(step) => {
+            void handleStepChange(step);
+          }}
           items={[{ title: 'Проверка авто' }, { title: 'Клиент' }, { title: 'Ремонт' }]}
         />
       </div>
 
-      <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+      <form className={styles.form} onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}>
         {currentStep === 0 && <SearchVInNumber />}
 
         {currentStep === 1 && <RepairDetailsClientStep />}

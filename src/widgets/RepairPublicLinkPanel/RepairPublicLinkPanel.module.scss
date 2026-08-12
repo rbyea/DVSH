@@ -22,6 +22,14 @@
   gap: 12px;
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .title {
   margin: 0;
   color: var(--dvsh-ink);
@@ -50,13 +58,38 @@
   font-size: 14px;
 }
 
-.actions {
-  display: flex;
-  justify-content: flex-start;
-}
-
 @media (max-width: 720px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions {
+    justify-content: stretch;
+  }
+
+  .headerActions > :global(.ant-btn) {
+    flex: 1;
+  }
+
   .row {
     grid-template-columns: 1fr;
+  }
+
+  .root,
+  .highlight {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .root,
+  .highlight {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .title {
+    font-size: 13px;
   }
 }

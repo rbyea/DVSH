@@ -9,7 +9,7 @@ export const NotFoundPage = () => {
       <Result
         status="404"
         title="Страница не найдена"
-        subTitle="Такого экрана в DVSH нет. Вернитесь к списку ремонтов."
+        subTitle="Такого экрана в Автовидно нет. Вернитесь к списку ремонтов."
         extra={
           <Link to="/dashboard">
             <Button type="primary" size="large">

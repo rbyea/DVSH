@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, redirect } from 'react-router-dom';
 
 import { RepairCreateProvider } from '@/features/repair-order/create';
 import { LoginPage } from '@/pages/auth';
@@ -14,10 +14,22 @@ import { MainLayout } from '../layouts/MainLayout';
 import { RedirectIfAuthenticated } from './RedirectIfAuthenticated';
 import { RequireAuth } from './RequireAuth';
 
+function redirectLegacyPublicRepair({ params }: { params: { publicToken?: string } }) {
+  return redirect(`/public/vehicles/${params.publicToken ?? ''}`);
+}
+
 export const appRouter = createBrowserRouter([
   {
-    path: '/public/repairs/:publicToken',
+    path: '/public/vehicles/:publicToken',
     Component: PublicRepairPage,
+  },
+  {
+    path: '/public/repairs/:publicToken',
+    loader: redirectLegacyPublicRepair,
+  },
+  {
+    path: '/app/public/repairs/:publicToken',
+    loader: redirectLegacyPublicRepair,
   },
   {
     path: '/legal/privacy',

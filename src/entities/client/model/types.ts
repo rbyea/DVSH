@@ -17,7 +17,8 @@ export type IntakeClientWithVehicleRequest = {
   client_email?: string | null;
   car_model: string;
   license_plate: string;
-  vin: string;
+  vin?: string | null;
+  chassis_number?: string | null;
   mileage?: number | null;
 };
 
@@ -26,7 +27,8 @@ export type IntakeVehicle = {
   client_id: string;
   car_model: string;
   license_plate: string;
-  vin: string;
+  vin?: string | null;
+  chassis_number?: string | null;
   mileage?: number | null;
 };
 

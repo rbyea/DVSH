@@ -1,4 +1,5 @@
-import { Button, InputNumber, Tag } from 'antd';
+import { Button, Collapse, InputNumber, Tag } from 'antd';
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import { Bounce, toast } from 'react-toastify';
 
@@ -17,17 +18,15 @@ import styles from './RepairEstimatePanel.module.scss';
 
 type RepairEstimatePanelProps = {
   repair: RepairDetail;
+  embedded?: boolean;
+  readOnly?: boolean;
 };
 
-function formatMoney(total: number): string {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(total);
-}
-
-export function RepairEstimatePanel({ repair }: RepairEstimatePanelProps) {
+export function RepairEstimatePanel({
+  repair,
+  embedded = false,
+  readOnly = false,
+}: RepairEstimatePanelProps) {
   const [total, setTotal] = useState<number | undefined>(
     repair.total > 0 ? repair.total : undefined,
   );
@@ -41,13 +40,10 @@ export function RepairEstimatePanel({ repair }: RepairEstimatePanelProps) {
   const hasTotal = typeof total === 'number' && total > 0;
   const publicToken = extractPublicToken(repair.public_token, repair.public_url);
   const publicUrl = publicToken ? getPublicRepairAppUrl(publicToken) : '';
-
-  const saveTotal = async (nextTotal: number) => {
-    await updateRepair({
-      repairId: repair.id,
-      body: { total: nextTotal },
-    }).unwrap();
-  };
+  const defaultOpen =
+    estimateStatus === 'pending' ||
+    estimateStatus === 'declined' ||
+    Boolean(repair.estimate_comment);
 
   const handleSaveTotal = async () => {
     if (!hasTotal) {
@@ -59,7 +55,10 @@ export function RepairEstimatePanel({ repair }: RepairEstimatePanelProps) {
     }
 
     try {
-      await saveTotal(total);
+      await updateRepair({
+        repairId: repair.id,
+        body: { total },
+      }).unwrap();
       toast.success('Сумма сметы сохранена', {
         position: 'top-right',
         transition: Bounce,
@@ -87,6 +86,7 @@ export function RepairEstimatePanel({ repair }: RepairEstimatePanelProps) {
         body: {
           total,
           estimate_status: 'pending' satisfies EstimateStatus,
+          status: 'pending_approval',
         },
       }).unwrap();
 
@@ -112,68 +112,87 @@ export function RepairEstimatePanel({ repair }: RepairEstimatePanelProps) {
   };
 
   return (
-    <section className={styles.panel}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Смета для клиента</h2>
-          <p className={styles.hint}>
-            Необязательно. Если хотите согласовать цену до ремонта — укажите сумму и отправьте
-            клиенту по публичной ссылке
-          </p>
-        </div>
-        {estimateStatus ? (
-          <Tag color={estimateStatusColors[estimateStatus]}>
-            {estimateStatusLabels[estimateStatus]}
-          </Tag>
-        ) : (
-          <Tag>Ещё не отправлена</Tag>
-        )}
-      </div>
+    <Collapse
+      className={clsx(styles.collapse, embedded && styles.collapseEmbedded)}
+      defaultActiveKey={defaultOpen ? ['estimate'] : []}
+      ghost={embedded}
+      items={[
+        {
+          key: 'estimate',
+          label: (
+            <div className={styles.header}>
+              <div>
+                <span className={styles.title}>Смета для клиента</span>
+                <p className={styles.hint}>Необязательно · согласование цены по публичной ссылке</p>
+              </div>
+              {estimateStatus ? (
+                <Tag color={estimateStatusColors[estimateStatus]}>
+                  {estimateStatusLabels[estimateStatus]}
+                </Tag>
+              ) : (
+                <Tag>Ещё не отправлена</Tag>
+              )}
+            </div>
+          ),
+          children: (
+            <div className={styles.body}>
+              <p className={styles.intro}>
+                {readOnly
+                  ? 'Смета зафиксирована в закрытом заказ-наряде'
+                  : 'Укажите сумму и при необходимости отправьте клиенту на согласование'}
+              </p>
 
-      <div className={styles.row}>
-        <div className={styles.totalField}>
-          <span className={styles.label}>Сумма сметы</span>
-          <InputNumber
-            addonAfter="₽"
-            className={styles.input}
-            min={0}
-            placeholder="Например, 18500"
-            size="large"
-            step={100}
-            value={total}
-            onChange={(value) => setTotal(typeof value === 'number' ? value : undefined)}
-          />
-        </div>
+              <div className={styles.totalField}>
+                <span className={styles.label}>Сумма сметы</span>
+                <InputNumber
+                  addonAfter="₽"
+                  className={styles.input}
+                  disabled={readOnly}
+                  min={0}
+                  placeholder="Например, 18500"
+                  size="large"
+                  step={100}
+                  value={total}
+                  onChange={(value) => setTotal(typeof value === 'number' ? value : undefined)}
+                />
+              </div>
 
-        <div className={styles.current}>
-          <span className={styles.label}>Сейчас в заказе</span>
-          <span className={styles.currentValue}>
-            {repair.total > 0 ? formatMoney(repair.total) : '0 ₽'}
-          </span>
-        </div>
-      </div>
+              {readOnly ? null : (
+                <div className={styles.actions}>
+                  <Button loading={isLoading} size="large" onClick={() => void handleSaveTotal()}>
+                    Сохранить сумму
+                  </Button>
+                  <Button
+                    loading={isLoading}
+                    size="large"
+                    type="primary"
+                    onClick={() => void handleSendForApproval()}
+                  >
+                    {estimateStatus === 'pending' ? 'Отправить снова' : 'На согласование'}
+                  </Button>
+                </div>
+              )}
 
-      <div className={styles.actions}>
-        <Button loading={isLoading} size="large" onClick={() => void handleSaveTotal()}>
-          Сохранить сумму
-        </Button>
-        <Button
-          loading={isLoading}
-          size="large"
-          type="primary"
-          onClick={() => void handleSendForApproval()}
-        >
-          {estimateStatus === 'pending' ? 'Отправить снова' : 'На согласование'}
-        </Button>
-      </div>
+              {readOnly ? null : (
+                <p className={styles.note}>
+                  {estimateStatus === 'pending'
+                    ? 'Смета у клиента на согласовании. Пока нет ответа — выполнение работ недоступно.'
+                    : hasTotal
+                      ? 'Можно работать и без согласования — кнопка нужна только для подтверждения цены.'
+                      : 'Можно оставить пустым и просто вести ремонт по статусам и работам.'}
+                </p>
+              )}
 
-      <p className={styles.note}>
-        {estimateStatus === 'pending'
-          ? 'Клиент уже может согласовать смету по публичной ссылке ниже.'
-          : hasTotal
-            ? 'Можно работать и без согласования. Кнопка нужна только если хотите подтверждение цены от клиента.'
-            : 'Можно оставить пустым и просто вести ремонт по статусам и работам.'}
-      </p>
-    </section>
+              {estimateStatus === 'declined' && repair.estimate_comment ? (
+                <div className={styles.clientComment}>
+                  <span className={styles.label}>Комментарий клиента</span>
+                  <p className={styles.clientCommentText}>{repair.estimate_comment}</p>
+                </div>
+              ) : null}
+            </div>
+          ),
+        },
+      ]}
+    />
   );
 }

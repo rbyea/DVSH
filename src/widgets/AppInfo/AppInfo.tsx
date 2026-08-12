@@ -6,7 +6,7 @@ type AppInfoProps = {
   eyebrow?: string;
 };
 
-export const AppInfo = ({ title, subtitle, eyebrow = 'DVSH' }: AppInfoProps) => {
+export const AppInfo = ({ title, subtitle, eyebrow = 'Автовидно' }: AppInfoProps) => {
   return (
     <div className={styles.header}>
       <p className={styles.eyebrow}>{eyebrow}</p>

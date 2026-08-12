@@ -1,12 +1,11 @@
-import { Button, Card, DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd';
+import { Button, Card, DatePicker, Form, Input, InputNumber, Typography } from 'antd';
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { useRepairCreateContext } from '@/features/repair-order/create';
-import { statusOptions } from '@/pages/RepairCreatePage/constants';
-import { getAntdValidateStatus } from '@/shared/lib/antd';
+import { disablePastDates } from '@/shared/lib/date';
 import { ModalRepair } from '@/widgets/Modals/ModalRepair/ModalRepair';
 import { RepairWorksList } from '@/widgets/RepairWorksList';
 
@@ -17,14 +16,13 @@ export const RepairDetailsStep = () => {
   const [openModal, setOpenModal] = useState(false);
 
   const {
-    isManualMode,
     errors,
     control,
-    selectedVehicle,
     availableQuickWorkTemplates,
     setCurrentStep,
     isSubmitting,
     isDirty,
+    selectedVehicle,
   } = useRepairCreateContext();
 
   const workItems = useFieldArray({
@@ -38,7 +36,6 @@ export const RepairDetailsStep = () => {
   });
 
   const [
-    status,
     clientName,
     carModel,
     licensePlate,
@@ -46,10 +43,10 @@ export const RepairDetailsStep = () => {
     total,
     watchedWorks,
     watchedParts,
+    vehicleId,
   ] = useWatch({
     control,
     name: [
-      'status',
       'clientName',
       'carModel',
       'licensePlate',
@@ -57,10 +54,10 @@ export const RepairDetailsStep = () => {
       'total',
       'workItems',
       'orderedParts',
+      'vehicleId',
     ],
   });
 
-  const statusLabel = statusOptions.find((option) => option.value === status)?.label ?? 'Новый';
   const worksCount = watchedWorks?.filter((item) => item.title?.trim()).length ?? 0;
   const partsCount = watchedParts?.filter((item) => item.name?.trim()).length ?? 0;
   const carLabel = [carModel, licensePlate].filter(Boolean).join(', ') || 'Авто не указано';
@@ -81,91 +78,50 @@ export const RepairDetailsStep = () => {
     }
   };
 
+  const handleWorkTitleKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const title = watchedWorks?.[index]?.title?.trim() ?? '';
+
+    if (!title) {
+      return;
+    }
+
+    const isLast = index === workItems.fields.length - 1;
+
+    if (isLast) {
+      workItems.append({ title: '' });
+    }
+  };
+
+  const handlePartNameKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const name = watchedParts?.[index]?.name?.trim() ?? '';
+
+    if (!name) {
+      return;
+    }
+
+    const isLast = index === orderedParts.fields.length - 1;
+
+    if (isLast) {
+      orderedParts.append({ name: '', quantity: 1 });
+    }
+  };
+
   return (
     <>
-      <Card className={styles.section}>
-        <div className={styles.sectionHead}>
-          <Typography.Title className={styles.sectionTitle} level={3}>
-            Детали заказа
-          </Typography.Title>
-          <p className={styles.sectionHint}>Статус, срок, сумма и заметка мастера</p>
-        </div>
-
-        <div className={styles.detailsGrid}>
-          <Form.Item
-            help={errors.status?.message}
-            label="Статус"
-            validateStatus={getAntdValidateStatus(Boolean(errors.status))}
-          >
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <Select
-                  options={statusOptions}
-                  size="large"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </Form.Item>
-
-          <Form.Item label="Плановая дата выдачи">
-            <Controller
-              control={control}
-              name="plannedReadyAt"
-              render={({ field }) => (
-                <DatePicker
-                  className={styles.fullWidth}
-                  format="DD.MM.YYYY"
-                  placeholder="Необязательно"
-                  size="large"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </Form.Item>
-
-          <Form.Item label="Сумма">
-            <Controller
-              control={control}
-              name="total"
-              render={({ field }) => (
-                <InputNumber
-                  addonAfter="₽"
-                  className={styles.fullWidth}
-                  min={0}
-                  placeholder="Необязательно"
-                  size="large"
-                  step={100}
-                  value={field.value}
-                  onChange={(value) =>
-                    field.onChange(typeof value === 'number' ? value : undefined)
-                  }
-                />
-              )}
-            />
-          </Form.Item>
-        </div>
-
-        <Form.Item label="Комментарий мастера">
-          <Controller
-            control={control}
-            name="comment"
-            render={({ field }) => (
-              <Input.TextArea
-                {...field}
-                placeholder="Что важно не забыть по этому ремонту"
-                rows={3}
-                size="large"
-              />
-            )}
-          />
-        </Form.Item>
-      </Card>
-
       <Card className={clsx(styles.section, styles.sectionWork)}>
         <div className={styles.sectionHead}>
           <Typography.Title className={styles.sectionTitle} level={3}>
@@ -174,7 +130,7 @@ export const RepairDetailsStep = () => {
           <p className={styles.sectionHint}>Можно пропустить и заполнить после диагностики</p>
         </div>
 
-        <RepairWorksList />
+        <RepairWorksList repairs={selectedVehicle?.previous_repairs ?? []} />
 
         {availableQuickWorkTemplates.length > 0 && (
           <div className={styles.quickTemplates}>
@@ -204,6 +160,7 @@ export const RepairDetailsStep = () => {
                       placeholder="Название работы"
                       size="large"
                       status={errors.workItems?.[index]?.title ? 'error' : undefined}
+                      onKeyDown={(event) => handleWorkTitleKeyDown(event, index)}
                     />
                   )}
                 />
@@ -253,6 +210,7 @@ export const RepairDetailsStep = () => {
                       placeholder="Название запчасти"
                       size="large"
                       status={errors.orderedParts?.[index]?.name ? 'error' : undefined}
+                      onKeyDown={(event) => handlePartNameKeyDown(event, index)}
                     />
                   )}
                 />
@@ -267,6 +225,12 @@ export const RepairDetailsStep = () => {
                       size="large"
                       value={quantityField.value}
                       onChange={(value) => quantityField.onChange(value ?? 1)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }
+                      }}
                     />
                   )}
                 />
@@ -296,6 +260,77 @@ export const RepairDetailsStep = () => {
         </Button>
       </Card>
 
+      <Card className={styles.section}>
+        <div className={styles.sectionHead}>
+          <Typography.Title className={styles.sectionTitle} level={3}>
+            Детали заказа
+          </Typography.Title>
+          <p className={styles.sectionHint}>Срок, сумма и заметка мастера · статус «Новый»</p>
+        </div>
+
+        <div className={styles.detailsGrid}>
+          <Form.Item label="Плановая дата выдачи">
+            <Controller
+              control={control}
+              name="plannedReadyAt"
+              render={({ field }) => (
+                <DatePicker
+                  className={styles.fullWidth}
+                  disabledDate={disablePastDates}
+                  format="DD.MM.YYYY"
+                  placeholder="Необязательно"
+                  size="large"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </Form.Item>
+
+          <Form.Item label="Сумма">
+            <Controller
+              control={control}
+              name="total"
+              render={({ field }) => (
+                <InputNumber
+                  addonAfter="₽"
+                  className={styles.fullWidth}
+                  min={0}
+                  placeholder="Необязательно"
+                  size="large"
+                  step={100}
+                  value={field.value}
+                  onChange={(value) =>
+                    field.onChange(typeof value === 'number' ? value : undefined)
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }
+                  }}
+                />
+              )}
+            />
+          </Form.Item>
+        </div>
+
+        <Form.Item label="Комментарий мастера">
+          <Controller
+            control={control}
+            name="comment"
+            render={({ field }) => (
+              <Input.TextArea
+                {...field}
+                placeholder="Что важно не забыть по этому ремонту"
+                rows={3}
+                size="large"
+              />
+            )}
+          />
+        </Form.Item>
+      </Card>
+
       <div className={styles.summary}>
         <div className={styles.summaryMain}>
           <span className={styles.summaryTitle}>К созданию</span>
@@ -304,7 +339,7 @@ export const RepairDetailsStep = () => {
           </span>
         </div>
         <div className={styles.summaryMeta}>
-          <span>{statusLabel}</span>
+          <span>Новый</span>
           <span>{plannedReadyAt ? plannedReadyAt.format('DD.MM.YYYY') : 'Без даты выдачи'}</span>
           <span>{totalLabel ?? 'Сумма не указана'}</span>
           <span>
@@ -314,21 +349,33 @@ export const RepairDetailsStep = () => {
       </div>
 
       <div className={styles.actions}>
-        <Button htmlType="button" size="large" onClick={handleCloseForm}>
+        <Button
+          className={clsx(styles.actionSecondary, styles.actionClose)}
+          htmlType="button"
+          size="large"
+          onClick={handleCloseForm}
+        >
           Закрыть
         </Button>
         <div className={styles.actionsPrimary}>
-          <Button htmlType="button" size="large" onClick={() => setCurrentStep(1)}>
+          <Button
+            className={styles.actionSecondary}
+            htmlType="button"
+            size="large"
+            onClick={() => setCurrentStep(1)}
+          >
             Назад
           </Button>
           <Button
-            disabled={!selectedVehicle && !isManualMode}
+            className={styles.actionPrimary}
+            disabled={!vehicleId}
             htmlType="submit"
             loading={isSubmitting}
             size="large"
             type="primary"
           >
-            Создать ремонт
+            <span className={styles.labelFull}>Создать ремонт</span>
+            <span className={styles.labelShort}>Создать</span>
           </Button>
         </div>
       </div>

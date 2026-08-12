@@ -1,5 +1,5 @@
 export function getPublicRepairPath(token: string): string {
-  return `/public/repairs/${token}`;
+  return `/public/vehicles/${token}`;
 }
 
 export function getPublicRepairAppUrl(token: string): string {
@@ -22,7 +22,7 @@ export function extractPublicToken(
     return null;
   }
 
-  const match = publicUrl.match(/\/public\/repairs\/([^/?#]+)/);
+  const match = publicUrl.match(/\/public\/(?:vehicles|repairs)\/([^/?#]+)/);
 
   return match?.[1] ?? null;
 }

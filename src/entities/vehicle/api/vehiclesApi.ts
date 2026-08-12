@@ -36,5 +36,9 @@ export const vehiclesApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useLazySearchVehiclesQuery, useLazyGetVehicleQuery, useUpdateVehicleMutation } =
-  vehiclesApi;
+export const {
+  useGetVehicleQuery,
+  useLazyGetVehicleQuery,
+  useLazySearchVehiclesQuery,
+  useUpdateVehicleMutation,
+} = vehiclesApi;

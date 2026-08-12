@@ -15,6 +15,7 @@ type RepairClientPanelProps = {
   client: Client;
   updatedAt: string;
   formatDateTime: (value: string) => string;
+  readOnly?: boolean;
 };
 
 type ClientFormState = {
@@ -36,6 +37,7 @@ export function RepairClientPanel({
   client,
   updatedAt,
   formatDateTime,
+  readOnly = false,
 }: RepairClientPanelProps) {
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
@@ -108,7 +110,7 @@ export function RepairClientPanel({
     <article className={styles.panel}>
       <div className={styles.header}>
         <h2 className={styles.title}>Клиент</h2>
-        {isEditing ? (
+        {readOnly ? null : isEditing ? (
           <div className={styles.actions}>
             <Button disabled={isLoading} size="small" onClick={handleCancel}>
               Отмена
@@ -129,8 +131,8 @@ export function RepairClientPanel({
         )}
       </div>
 
-      {isEditing ? (
-        <div className={styles.form}>
+      {isEditing && !readOnly ? (
+        <Form className={styles.form} layout="vertical" requiredMark={false}>
           <Form.Item label="Имя">
             <Input
               size="large"
@@ -164,7 +166,7 @@ export function RepairClientPanel({
               }}
             />
           </Form.Item>
-        </div>
+        </Form>
       ) : (
         <>
           <p className={styles.personName}>{client.name}</p>

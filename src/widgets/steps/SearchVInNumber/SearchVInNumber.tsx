@@ -2,7 +2,6 @@ import { Button, Card, Form, Input, Spin, Typography } from 'antd';
 import { Controller } from 'react-hook-form';
 
 import { useRepairCreateContext } from '@/features/repair-order/create';
-import { initialValues } from '@/pages/RepairCreatePage/constants';
 import { SelectedCar } from '@/widgets/SelectedCar';
 
 import styles from './SearchVInNumber.module.scss';
@@ -11,15 +10,12 @@ export const SearchVInNumber = () => {
   const {
     vehicleSearch,
     control,
-    setVehicleSuggestions,
     setSelectedVehicle,
     selectedVehicle,
-    setCurrentStep,
-    setIsManualMode,
     setValue,
-    reset,
     isVehicleSearchLoading,
     applyVehicleSuggestion,
+    startManualVehicleEntry,
     vehicleSuggestions,
   } = useRepairCreateContext();
 
@@ -69,7 +65,7 @@ export const SearchVInNumber = () => {
               >
                 <span className={styles.vehicleResultPlate}>{vehicle.license_plate}</span>
                 <span>{vehicle.car_model}</span>
-                <span>{vehicle.vin}</span>
+                <span>{vehicle.vin?.trim() || vehicle.chassis_number?.trim() || '—'}</span>
                 <span>{vehicle.client_name}</span>
               </button>
             ))
@@ -81,21 +77,10 @@ export const SearchVInNumber = () => {
         </div>
       )}
 
-      {selectedVehicle && <SelectedCar />}
+      {selectedVehicle ? <SelectedCar /> : null}
 
-      <Button
-        htmlType="button"
-        size="large"
-        onClick={() => {
-          setIsManualMode(true);
-          setSelectedVehicle(null);
-          setValue('vehicleSearch', '');
-          setVehicleSuggestions([]);
-          reset(initialValues);
-          setCurrentStep(1);
-        }}
-      >
-        Машины нет в базе — заполнить вручную
+      <Button htmlType="button" size="large" onClick={startManualVehicleEntry}>
+        Заполнить вручную
       </Button>
     </Card>
   );

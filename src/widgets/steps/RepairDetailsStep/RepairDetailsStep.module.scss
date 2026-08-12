@@ -33,7 +33,7 @@
 
 .detailsGrid {
   display: grid;
-  grid-template-columns: 1.1fr 1.1fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
@@ -160,7 +160,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   position: sticky;
   bottom: 0;
   z-index: 2;
@@ -172,8 +172,21 @@
 .actionsPrimary {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+}
+
+.actionSecondary {
+  flex-shrink: 0;
+}
+
+.actionPrimary {
+  min-width: 0;
+}
+
+.labelShort {
+  display: none;
 }
 
 @media (max-width: 720px) {
@@ -190,17 +203,70 @@
     justify-self: start;
   }
 
+  .summary {
+    padding: 12px 14px;
+  }
+
+  .summaryMeta span {
+    white-space: normal;
+  }
+
   .actions {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin: 0 -4px;
+    padding: 10px 4px calc(8px + env(safe-area-inset-bottom, 0px));
   }
 
   .actionsPrimary {
+    flex: 1;
+    min-width: 0;
     margin-left: 0;
+    flex-wrap: nowrap;
   }
 
-  .actionsPrimary :global(.ant-btn),
-  .actions > :global(.ant-btn) {
-    width: 100%;
+  .actionSecondary {
+    padding-inline: 10px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  .actionPrimary {
+    flex: 1;
+    min-width: 0;
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  .labelFull {
+    display: none;
+  }
+
+  .labelShort {
+    display: inline;
+  }
+}
+
+@media (max-width: 360px) {
+  .chip {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .listItem,
+  .listItemPart {
+    padding: 8px;
+  }
+
+  .summaryLine {
+    font-size: 14px;
+  }
+
+  .actionSecondary {
+    padding-inline: 8px !important;
+  }
+
+  .actionClose {
+    display: none;
   }
 }

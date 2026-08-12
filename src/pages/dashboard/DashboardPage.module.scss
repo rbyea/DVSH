@@ -157,11 +157,16 @@
 @media (max-width: 900px) {
   .hero {
     flex-direction: column;
-    padding: 22px;
+    padding: 18px;
+  }
+
+  .title {
+    font-size: 28px;
   }
 
   .controls {
     grid-template-columns: 1fr;
+    padding: 14px;
   }
 
   .tableCard {
@@ -170,5 +175,37 @@
 
   .mobileList {
     display: block;
+  }
+
+  .mobileCardTop,
+  .mobileCardBottom {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .page {
+    gap: 14px;
+  }
+
+  .hero {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .controls {
+    padding: 12px;
+  }
+
+  .mobileCard {
+    padding: 12px;
   }
 }

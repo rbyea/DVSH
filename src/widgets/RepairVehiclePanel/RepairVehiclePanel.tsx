@@ -1,4 +1,4 @@
-import { Button, Form, Input, InputNumber } from 'antd';
+﻿import { Button, Form, Input } from 'antd';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Bounce, toast } from 'react-toastify';
@@ -6,58 +6,86 @@ import { Bounce, toast } from 'react-toastify';
 import { repairsApi } from '@/entities/repair-order';
 import { useUpdateVehicleMutation, type VehicleCard } from '@/entities/vehicle';
 import { getErrorMessage } from '@/shared/lib/api';
+import {
+  formatChassisNumberInput,
+  formatRuLicensePlateInput,
+  formatRuLicensePlateMaskedInput,
+  formatVinInput,
+  isValidChassisNumber,
+  isValidRuLicensePlate,
+  isValidVin,
+} from '@/shared/lib/vehicle';
 
 import styles from './RepairVehiclePanel.module.scss';
 
-type VehicleView = Pick<VehicleCard, 'id' | 'car_model' | 'license_plate' | 'vin' | 'mileage'>;
+type VehicleView = Pick<
+  VehicleCard,
+  'id' | 'car_model' | 'license_plate' | 'vin' | 'chassis_number' | 'mileage'
+>;
 
 type RepairVehiclePanelProps = {
   repairId: string;
   vehicle: VehicleView;
   repairMileage?: number | null;
+  readOnly?: boolean;
 };
 
 type VehicleFormState = {
   carModel: string;
   licensePlate: string;
   vin: string;
-  mileage?: number;
+  chassisNumber: string;
 };
 
-function toFormState(vehicle: VehicleView, repairMileage?: number | null): VehicleFormState {
+function toFormState(vehicle: VehicleView): VehicleFormState {
   return {
     carModel: vehicle.car_model,
-    licensePlate: vehicle.license_plate,
-    vin: vehicle.vin,
-    mileage: repairMileage ?? vehicle.mileage ?? undefined,
+    licensePlate: formatRuLicensePlateMaskedInput(vehicle.license_plate),
+    vin: formatVinInput(vehicle.vin ?? ''),
+    chassisNumber: formatChassisNumberInput(vehicle.chassis_number ?? ''),
   };
 }
 
-export function RepairVehiclePanel({ repairId, vehicle, repairMileage }: RepairVehiclePanelProps) {
+export function RepairVehiclePanel({
+  repairId,
+  vehicle,
+  repairMileage,
+  readOnly = false,
+}: RepairVehiclePanelProps) {
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
-  const [formState, setFormState] = useState<VehicleFormState>(() =>
-    toFormState(vehicle, repairMileage),
+  const [formState, setFormState] = useState<VehicleFormState>(() => toFormState(vehicle));
+  const [useChassisNumber, setUseChassisNumber] = useState(
+    () => Boolean(vehicle.chassis_number?.trim()) && !vehicle.vin?.trim(),
   );
   const [updateVehicle, { isLoading }] = useUpdateVehicleMutation();
 
   const displayMileage = repairMileage ?? vehicle.mileage;
+  const displayIdLabel = vehicle.vin?.trim()
+    ? 'VIN'
+    : vehicle.chassis_number?.trim()
+      ? 'Номер шасси'
+      : 'VIN / шасси';
+  const displayIdValue = vehicle.vin?.trim() || vehicle.chassis_number?.trim() || 'Не указан';
 
   useEffect(() => {
     if (!isEditing) {
-      setFormState(toFormState(vehicle, repairMileage));
+      setFormState(toFormState(vehicle));
+      setUseChassisNumber(Boolean(vehicle.chassis_number?.trim()) && !vehicle.vin?.trim());
     }
-  }, [vehicle, repairMileage, isEditing]);
+  }, [vehicle, isEditing]);
 
   const handleCancel = () => {
-    setFormState(toFormState(vehicle, repairMileage));
+    setFormState(toFormState(vehicle));
+    setUseChassisNumber(Boolean(vehicle.chassis_number?.trim()) && !vehicle.vin?.trim());
     setIsEditing(false);
   };
 
   const handleSave = async () => {
     const carModel = formState.carModel.trim();
-    const licensePlate = formState.licensePlate.trim();
-    const vin = formState.vin.trim().toUpperCase();
+    const licensePlate = formatRuLicensePlateInput(formState.licensePlate);
+    const vin = formatVinInput(formState.vin);
+    const chassisNumber = formatChassisNumberInput(formState.chassisNumber);
 
     if (!carModel) {
       toast.warning('Введите модель машины', {
@@ -75,8 +103,32 @@ export function RepairVehiclePanel({ repairId, vehicle, repairMileage }: RepairV
       return;
     }
 
-    if (vin.length !== 17) {
-      toast.warning('VIN должен содержать 17 символов', {
+    if (!isValidRuLicensePlate(licensePlate)) {
+      toast.warning('Введите гос номер в формате А123ВС 777', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+      return;
+    }
+
+    if (vin && !isValidVin(vin)) {
+      toast.warning('VIN должен содержать 17 символов (без I, O, Q)', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+      return;
+    }
+
+    if (chassisNumber && !isValidChassisNumber(chassisNumber)) {
+      toast.warning('Номер шасси: 5–25 символов (латиница, цифры)', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+      return;
+    }
+
+    if (!vin && !chassisNumber) {
+      toast.warning('Укажите VIN или номер шасси', {
         position: 'top-right',
         transition: Bounce,
       });
@@ -89,8 +141,8 @@ export function RepairVehiclePanel({ repairId, vehicle, repairMileage }: RepairV
         body: {
           car_model: carModel,
           license_plate: licensePlate,
-          vin,
-          mileage: formState.mileage ?? null,
+          vin: vin || null,
+          chassis_number: chassisNumber || null,
         },
       }).unwrap();
 
@@ -112,7 +164,7 @@ export function RepairVehiclePanel({ repairId, vehicle, repairMileage }: RepairV
     <article className={styles.panel}>
       <div className={styles.header}>
         <h2 className={styles.title}>Автомобиль</h2>
-        {isEditing ? (
+        {readOnly ? null : isEditing ? (
           <div className={styles.actions}>
             <Button disabled={isLoading} size="small" onClick={handleCancel}>
               Отмена
@@ -133,8 +185,8 @@ export function RepairVehiclePanel({ repairId, vehicle, repairMileage }: RepairV
         )}
       </div>
 
-      {isEditing ? (
-        <div className={styles.form}>
+      {isEditing && !readOnly ? (
+        <Form className={styles.form} layout="vertical" requiredMark={false}>
           <Form.Item label="Модель">
             <Input
               size="large"
@@ -146,44 +198,77 @@ export function RepairVehiclePanel({ repairId, vehicle, repairMileage }: RepairV
           </Form.Item>
           <Form.Item label="Гос номер">
             <Input
+              className={styles.plateInput}
+              placeholder="_ ___ __ ___"
               size="large"
               value={formState.licensePlate}
               onChange={(event) => {
                 setFormState((prev) => ({
                   ...prev,
-                  licensePlate: event.target.value.toUpperCase(),
+                  licensePlate: formatRuLicensePlateMaskedInput(event.target.value),
                 }));
               }}
             />
           </Form.Item>
-          <Form.Item label="VIN">
-            <Input
-              maxLength={17}
-              size="large"
-              value={formState.vin}
-              onChange={(event) => {
-                setFormState((prev) => ({
-                  ...prev,
-                  vin: event.target.value.toUpperCase(),
-                }));
-              }}
-            />
+          <Form.Item label={useChassisNumber ? 'Номер шасси' : 'VIN'}>
+            {!useChassisNumber ? (
+              <>
+                <Input
+                  maxLength={17}
+                  placeholder="17 символов VIN"
+                  showCount={{
+                    formatter: ({ count, maxLength = 17 }) => `${count}/${maxLength}`,
+                  }}
+                  size="large"
+                  value={formState.vin}
+                  onChange={(event) => {
+                    setFormState((prev) => ({
+                      ...prev,
+                      vin: formatVinInput(event.target.value),
+                    }));
+                  }}
+                />
+                <Button
+                  className={styles.idSwitchButton}
+                  htmlType="button"
+                  type="link"
+                  onClick={() => {
+                    setFormState((prev) => ({ ...prev, vin: '' }));
+                    setUseChassisNumber(true);
+                  }}
+                >
+                  Нет VIN? Введите номер шасси
+                </Button>
+              </>
+            ) : (
+              <>
+                <Input
+                  maxLength={25}
+                  placeholder="Номер шасси / рамы"
+                  size="large"
+                  value={formState.chassisNumber}
+                  onChange={(event) => {
+                    setFormState((prev) => ({
+                      ...prev,
+                      chassisNumber: formatChassisNumberInput(event.target.value),
+                    }));
+                  }}
+                />
+                <Button
+                  className={styles.idSwitchButton}
+                  htmlType="button"
+                  type="link"
+                  onClick={() => {
+                    setFormState((prev) => ({ ...prev, chassisNumber: '' }));
+                    setUseChassisNumber(false);
+                  }}
+                >
+                  Указать VIN вместо шасси
+                </Button>
+              </>
+            )}
           </Form.Item>
-          <Form.Item label="Пробег, км">
-            <InputNumber
-              className={styles.fullWidth}
-              min={0}
-              size="large"
-              value={formState.mileage}
-              onChange={(value) => {
-                setFormState((prev) => ({
-                  ...prev,
-                  mileage: typeof value === 'number' ? value : undefined,
-                }));
-              }}
-            />
-          </Form.Item>
-        </div>
+        </Form>
       ) : (
         <>
           <div className={styles.plate}>{vehicle.license_plate}</div>
@@ -193,9 +278,15 @@ export function RepairVehiclePanel({ repairId, vehicle, repairMileage }: RepairV
               <span className={styles.contactValue}>{vehicle.car_model}</span>
             </div>
             <div className={styles.contactRow}>
-              <span className={styles.contactLabel}>VIN</span>
-              <span className={styles.contactValue}>{vehicle.vin}</span>
+              <span className={styles.contactLabel}>{displayIdLabel}</span>
+              <span className={styles.contactValue}>{displayIdValue}</span>
             </div>
+            {vehicle.vin?.trim() && vehicle.chassis_number?.trim() ? (
+              <div className={styles.contactRow}>
+                <span className={styles.contactLabel}>Номер шасси</span>
+                <span className={styles.contactValue}>{vehicle.chassis_number}</span>
+              </div>
+            ) : null}
             <div className={styles.contactRow}>
               <span className={styles.contactLabel}>Пробег</span>
               <span className={styles.contactValue}>

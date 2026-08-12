@@ -36,7 +36,7 @@ export function LegalDocumentPage({ title, updatedAt, sections }: LegalDocumentP
           </Button>
         </div>
 
-        <p className={styles.eyebrow}>DVSH · Правовые документы</p>
+        <p className={styles.eyebrow}>Автовидно · Правовые документы</p>
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.meta}>Редакция от {updatedAt}</p>
         <p className={styles.banner}>

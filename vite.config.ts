@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
 
-const REMOTE_ORIGIN = 'http://5.183.189.45:7777';
+const REMOTE_ORIGIN = 'https://autovidno.tw1.ru';
 
 export default defineConfig({
   resolve: {
@@ -17,7 +17,7 @@ export default defineConfig({
       '/api/v1': {
         target: REMOTE_ORIGIN,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/v1/, '/dvsh.ru/api/v1'),
+        secure: true,
       },
     },
   },

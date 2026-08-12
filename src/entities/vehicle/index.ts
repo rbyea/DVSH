@@ -1,4 +1,5 @@
 export {
+  useGetVehicleQuery,
   useLazyGetVehicleQuery,
   useLazySearchVehiclesQuery,
   useUpdateVehicleMutation,

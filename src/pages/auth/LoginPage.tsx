@@ -14,8 +14,8 @@ export function LoginPage() {
     <main className={styles.page}>
       <Card className={styles.card} variant="borderless">
         <div className={styles.brand}>
-          <span className={styles.brandMark}>DV</span>
-          <span className={styles.brandName}>DVSH</span>
+          <span className={styles.brandMark}>АВ</span>
+          <span className={styles.brandName}>Автовидно</span>
         </div>
 
         <div className={styles.header}>

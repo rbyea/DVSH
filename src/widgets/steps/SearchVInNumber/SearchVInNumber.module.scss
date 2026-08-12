@@ -79,4 +79,18 @@
     display: grid;
     grid-template-columns: 1fr;
   }
+
+  .vehicleResultPlate {
+    justify-self: start;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 360px) {
+  .vehicleLoading,
+  .vehicleEmptyResult,
+  .vehicleResult {
+    padding: 12px;
+  }
 }

@@ -5,17 +5,19 @@ import { Bounce, toast } from 'react-toastify';
 
 import { useUpdateRepairMutation, type RepairDetail } from '@/entities/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
+import { disablePastDates, isPastCalendarDate } from '@/shared/lib/date';
+import { formatMileageKm, resolveMinAllowedMileage } from '@/shared/lib/vehicle';
 
 import styles from './RepairDetailsEditor.module.scss';
 
 type RepairDetailsEditorProps = {
   repair: RepairDetail;
+  readOnly?: boolean;
 };
 
 type EditorState = {
   plannedReadyAt: Dayjs | null;
   mileage?: number;
-  total?: number;
   comment: string;
 };
 
@@ -23,21 +25,8 @@ function toEditorState(repair: RepairDetail): EditorState {
   return {
     plannedReadyAt: repair.planned_ready_at ? dayjs(repair.planned_ready_at) : null,
     mileage: repair.mileage ?? repair.vehicle.mileage ?? undefined,
-    total: repair.total > 0 ? repair.total : undefined,
     comment: repair.comment ?? '',
   };
-}
-
-function formatMoney(total?: number): string {
-  if (typeof total !== 'number') {
-    return 'Не указана';
-  }
-
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 0,
-  }).format(total);
 }
 
 function formatDate(value: Dayjs | null): string {
@@ -48,10 +37,11 @@ function formatDate(value: Dayjs | null): string {
   return value.format('D MMMM YYYY');
 }
 
-export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
+export function RepairDetailsEditor({ repair, readOnly = false }: RepairDetailsEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState<EditorState>(() => toEditorState(repair));
   const [updateRepair, { isLoading }] = useUpdateRepairMutation();
+  const minMileage = resolveMinAllowedMileage(repair.vehicle);
 
   useEffect(() => {
     if (!isEditing) {
@@ -65,13 +55,35 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
   };
 
   const handleSave = async () => {
+    if (isPastCalendarDate(formState.plannedReadyAt)) {
+      toast.warning('Дата выдачи не может быть в прошлом', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+      return;
+    }
+
+    if (
+      typeof formState.mileage === 'number' &&
+      minMileage != null &&
+      formState.mileage < minMileage
+    ) {
+      toast.warning(
+        `Пробег не может быть меньше ${formatMileageKm(minMileage)} после статуса «Выдан»`,
+        {
+          position: 'top-right',
+          transition: Bounce,
+        },
+      );
+      return;
+    }
+
     try {
       await updateRepair({
         repairId: repair.id,
         body: {
           planned_ready_at: formState.plannedReadyAt?.format('YYYY-MM-DD') ?? null,
           mileage: formState.mileage ?? null,
-          total: formState.total ?? null,
           comment: formState.comment.trim() || null,
         },
       }).unwrap();
@@ -90,14 +102,14 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
   };
 
   return (
-    <section className={styles.panel}>
+    <div className={styles.root}>
       <div className={styles.header}>
         <div className={styles.heading}>
           <h2 className={styles.title}>Параметры ремонта</h2>
-          <p className={styles.hint}>Срок выдачи, сумма и заметка мастера</p>
+          <p className={styles.hint}>Срок выдачи, пробег и заметка мастера</p>
         </div>
 
-        {isEditing ? (
+        {readOnly ? null : isEditing ? (
           <div className={styles.actions}>
             <Button disabled={isLoading} size="large" onClick={handleCancel}>
               Отмена
@@ -118,12 +130,13 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
         )}
       </div>
 
-      {isEditing ? (
-        <div className={styles.editBody}>
+      {isEditing && !readOnly ? (
+        <Form className={styles.editBody} layout="vertical" requiredMark={false}>
           <div className={styles.grid}>
             <Form.Item className={styles.field} label="Плановая дата выдачи">
               <DatePicker
                 className={styles.fullWidth}
+                disabledDate={disablePastDates}
                 format="DD.MM.YYYY"
                 placeholder="Необязательно"
                 size="large"
@@ -134,10 +147,18 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
               />
             </Form.Item>
 
-            <Form.Item className={styles.field} label="Пробег, км">
+            <Form.Item
+              className={styles.field}
+              extra={
+                minMileage != null
+                  ? `Не ниже ${formatMileageKm(minMileage)}`
+                  : 'Пробег на момент этих работ'
+              }
+              label="Пробег на работах, км"
+            >
               <InputNumber
                 className={styles.fullWidth}
-                min={0}
+                min={minMileage ?? 0}
                 placeholder="Необязательно"
                 size="large"
                 value={formState.mileage}
@@ -145,24 +166,6 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
                   setFormState((prev) => ({
                     ...prev,
                     mileage: typeof value === 'number' ? value : undefined,
-                  }));
-                }}
-              />
-            </Form.Item>
-
-            <Form.Item className={styles.field} label="Сумма">
-              <InputNumber
-                addonAfter="₽"
-                className={styles.fullWidth}
-                min={0}
-                placeholder="Необязательно"
-                size="large"
-                step={100}
-                value={formState.total}
-                onChange={(value) => {
-                  setFormState((prev) => ({
-                    ...prev,
-                    total: typeof value === 'number' ? value : undefined,
                   }));
                 }}
               />
@@ -180,7 +183,7 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
               }}
             />
           </Form.Item>
-        </div>
+        </Form>
       ) : (
         <div className={styles.viewBody}>
           <div className={styles.meta}>
@@ -189,14 +192,10 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
               <span className={styles.metaValue}>{formatDate(formState.plannedReadyAt)}</span>
             </div>
             <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Сумма</span>
-              <span className={styles.metaValue}>{formatMoney(formState.total)}</span>
-            </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Пробег</span>
+              <span className={styles.metaLabel}>Пробег на работах</span>
               <span className={styles.metaValue}>
                 {typeof formState.mileage === 'number'
-                  ? `${formState.mileage.toLocaleString('ru-RU')} км`
+                  ? formatMileageKm(formState.mileage)
                   : 'Не указан'}
               </span>
             </div>
@@ -210,6 +209,6 @@ export function RepairDetailsEditor({ repair }: RepairDetailsEditorProps) {
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

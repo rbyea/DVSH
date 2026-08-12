@@ -13,9 +13,10 @@ export type RepairCreateFormValues = {
   carModel: string;
   licensePlate: string;
   vin: string;
+  chassisNumber: string;
   mileage?: number;
   status: RepairCreateStatus;
-  plannedReadyAt?: Dayjs;
+  plannedReadyAt?: Dayjs | null;
   total?: number;
   workItems?: Array<{ title?: string }>;
   orderedParts?: Array<{ name?: string; quantity?: number }>;

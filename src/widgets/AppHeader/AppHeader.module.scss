@@ -76,7 +76,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-shrink: 0;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .userMeta {
@@ -88,51 +89,86 @@
 }
 
 .userName {
-  max-width: 180px;
-  overflow: hidden;
   color: var(--dvsh-ink);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .userEmail {
-  max-width: 180px;
-  overflow: hidden;
   color: var(--dvsh-muted);
   font-size: 11px;
   line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .logout {
   flex-shrink: 0;
 }
 
-.legalBar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  width: min(1180px, calc(100% - 48px));
-  margin: 0 auto;
-  padding: 0 0 10px;
-  color: var(--dvsh-muted);
-  font-size: 12px;
+.burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 12px;
+  padding: 0 10px;
+  background: #fff;
+  cursor: pointer;
 }
 
-.legalLink {
+.burgerLine {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--dvsh-ink);
+}
+
+.drawerUser {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--dvsh-line);
+}
+
+.drawerUserName {
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.drawerUserEmail {
   color: var(--dvsh-muted);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.drawerMenu {
+  border-inline-end: none !important;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.drawerLogout {
+  margin-top: 8px;
 }
 
 @media (max-width: 720px) {
   .inner {
-    width: min(100% - 32px, 1180px);
+    width: min(100% - 24px, 1180px);
+    gap: 10px;
+    min-height: 56px;
   }
 
   .brandHint {
@@ -143,16 +179,55 @@
     display: none;
   }
 
-  .userEmail {
+  .logout {
     display: none;
   }
 
-  .userName {
-    max-width: 110px;
+  .burger {
+    display: inline-flex;
   }
 
-  .legalBar {
-    width: min(100% - 32px, 1180px);
-    justify-content: center;
+  .userBlock {
+    flex: 1;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .userMeta {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .inner {
+    width: min(100% - 16px, 1180px);
+    gap: 8px;
+  }
+
+  .brandMark {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .brandName {
+    font-size: 14px;
+  }
+
+  .userName {
+    font-size: 12px;
+  }
+
+  .userEmail {
+    font-size: 10px;
+  }
+
+  .burger {
+    width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    border-radius: 10px;
   }
 }

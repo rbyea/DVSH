@@ -1,12 +1,14 @@
 import { baseApi } from '@/shared/api';
+import { extractPublicToken } from '@/shared/lib/public-repair';
 
 import type {
   ApprovePublicEstimateRequest,
+  ConfirmPublicRepairRequest,
   CreatePartRequest,
   CreateWorkItemRequest,
   GetRepairsParams,
   PublicLinkResponse,
-  PublicRepair,
+  PublicVehicle,
   RepairCreated,
   RepairDetail,
   RepairListResponse,
@@ -22,6 +24,20 @@ import type {
 type ApiDataResponse<T> = {
   data: T;
 };
+
+type TagDescription = { type: 'Repair'; id?: string } | { type: 'PublicRepair'; id?: string };
+
+function publicRepairTagsFromRepair(
+  repair: Pick<RepairDetail, 'public_token' | 'public_url'> | undefined,
+): TagDescription[] {
+  const token = extractPublicToken(repair?.public_token, repair?.public_url);
+
+  if (token) {
+    return [{ type: 'PublicRepair', id: token }];
+  }
+
+  return [{ type: 'PublicRepair' }];
+}
 
 export const repairsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -50,24 +66,56 @@ export const repairsApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiDataResponse<RepairDetail>) => response.data,
       providesTags: (_result, _error, id) => [{ type: 'Repair', id }],
     }),
-    getPublicRepair: build.query<PublicRepair, string>({
-      query: (publicToken) => `/public/repairs/${publicToken}`,
-      transformResponse: (response: ApiDataResponse<PublicRepair>) => response.data,
+    getPublicRepair: build.query<PublicVehicle, string>({
+      query: (publicToken) => `/public/vehicles/${publicToken}`,
+      transformResponse: (response: ApiDataResponse<PublicVehicle>) => response.data,
       providesTags: (_result, _error, publicToken) => [{ type: 'PublicRepair', id: publicToken }],
     }),
     approvePublicEstimate: build.mutation<
-      PublicRepair,
+      PublicVehicle,
       { publicToken: string; body: ApprovePublicEstimateRequest }
     >({
       query: ({ publicToken, body }) => ({
-        url: `/public/repairs/${publicToken}/estimate`,
+        url: `/public/vehicles/${publicToken}/estimate`,
         method: 'POST',
         body,
       }),
-      transformResponse: (response: ApiDataResponse<PublicRepair>) => response.data,
+      transformResponse: (response: ApiDataResponse<PublicVehicle>) => response.data,
+      async onQueryStarted({ publicToken }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(repairsApi.util.updateQueryData('getPublicRepair', publicToken, () => data));
+        } catch {
+          // Keep previous cache on failure.
+        }
+      },
       invalidatesTags: (_result, _error, { publicToken }) => [
         { type: 'PublicRepair', id: publicToken },
-        { type: 'Repair', id: 'LIST' },
+        // Public payload has no repair id — invalidate all staff Repair queries.
+        { type: 'Repair' },
+      ],
+    }),
+    confirmPublicRepair: build.mutation<
+      PublicVehicle,
+      { publicToken: string; body: ConfirmPublicRepairRequest }
+    >({
+      query: ({ publicToken, body }) => ({
+        url: `/public/vehicles/${publicToken}/confirm`,
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<PublicVehicle>) => response.data,
+      async onQueryStarted({ publicToken }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(repairsApi.util.updateQueryData('getPublicRepair', publicToken, () => data));
+        } catch {
+          // Keep previous cache on failure.
+        }
+      },
+      invalidatesTags: (_result, _error, { publicToken }) => [
+        { type: 'PublicRepair', id: publicToken },
+        { type: 'Repair' },
       ],
     }),
     createRepair: build.mutation<RepairCreated, StoreRepairRequest>({
@@ -86,9 +134,10 @@ export const repairsApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiDataResponse<RepairDetail>) => response.data,
-      invalidatesTags: (_result, _error, { repairId }) => [
+      invalidatesTags: (result, _error, { repairId }) => [
         { type: 'Repair', id: repairId },
         { type: 'Repair', id: 'LIST' },
+        ...publicRepairTagsFromRepair(result),
       ],
     }),
     updateRepairStatus: build.mutation<RepairDetail, { repairId: string; status: RepairStatus }>({
@@ -98,9 +147,10 @@ export const repairsApi = baseApi.injectEndpoints({
         body: { status },
       }),
       transformResponse: (response: ApiDataResponse<RepairDetail>) => response.data,
-      invalidatesTags: (_result, _error, { repairId }) => [
+      invalidatesTags: (result, _error, { repairId }) => [
         { type: 'Repair', id: repairId },
         { type: 'Repair', id: 'LIST' },
+        ...publicRepairTagsFromRepair(result),
       ],
     }),
     regeneratePublicLink: build.mutation<PublicLinkResponse, string>({
@@ -109,7 +159,10 @@ export const repairsApi = baseApi.injectEndpoints({
         method: 'POST',
       }),
       transformResponse: (response: ApiDataResponse<PublicLinkResponse>) => response.data,
-      invalidatesTags: (_result, _error, repairId) => [{ type: 'Repair', id: repairId }],
+      invalidatesTags: (_result, _error, repairId) => [
+        { type: 'Repair', id: repairId },
+        { type: 'PublicRepair' },
+      ],
     }),
     addWorkItem: build.mutation<RepairWorkItem, { repairId: string; body: CreateWorkItemRequest }>({
       query: ({ repairId, body }) => ({
@@ -118,7 +171,10 @@ export const repairsApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiDataResponse<RepairWorkItem>) => response.data,
-      invalidatesTags: (_result, _error, { repairId }) => [{ type: 'Repair', id: repairId }],
+      invalidatesTags: (_result, _error, { repairId }) => [
+        { type: 'Repair', id: repairId },
+        { type: 'PublicRepair' },
+      ],
     }),
     updateWorkItem: build.mutation<
       RepairWorkItem,
@@ -133,6 +189,7 @@ export const repairsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { repairId }) => [
         { type: 'Repair', id: repairId },
         { type: 'Repair', id: 'LIST' },
+        { type: 'PublicRepair' },
       ],
     }),
     deleteWorkItem: build.mutation<void, { repairId: string; workItemId: string }>({
@@ -150,6 +207,7 @@ export const repairsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { repairId }) => [
         { type: 'Repair', id: repairId },
         { type: 'Repair', id: 'LIST' },
+        { type: 'PublicRepair' },
       ],
     }),
     addPart: build.mutation<RepairPart, { repairId: string; body: CreatePartRequest }>({
@@ -195,6 +253,7 @@ export const {
   useGetRepairQuery,
   useGetPublicRepairQuery,
   useApprovePublicEstimateMutation,
+  useConfirmPublicRepairMutation,
   useCreateRepairMutation,
   useUpdateRepairMutation,
   useUpdateRepairStatusMutation,

@@ -1,0 +1,83 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: var(--dvsh-radius-lg);
+  padding: 14px 18px;
+  background: linear-gradient(180deg, #fffbeb, #ffffff);
+}
+
+.panel[data-status='pending'] {
+  border-color: #fcd34d;
+  background: linear-gradient(180deg, #fffbeb, #ffffff);
+}
+
+.panel[data-status='disputed'] {
+  border-color: #fca5a5;
+  background: linear-gradient(180deg, #fef2f2, #ffffff);
+}
+
+.panel[data-status='confirmed'] {
+  border-color: #86efac;
+  background: linear-gradient(180deg, #f0fdf4, #ffffff);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.hint {
+  margin: 4px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.comment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgb(254 242 242 / 80%);
+}
+
+.commentLabel {
+  color: #991b1b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.commentText {
+  margin: 0;
+  color: #7f1d1d;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.meta {
+  margin: 0;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

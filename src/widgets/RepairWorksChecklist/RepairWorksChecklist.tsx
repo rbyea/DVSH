@@ -16,13 +16,21 @@ import styles from './RepairWorksChecklist.module.scss';
 type RepairWorksChecklistProps = {
   repairId: string;
   workItems: RepairWorkItem[];
+  readOnly?: boolean;
+  /** True while estimate awaits client approval — cannot mark works done. */
+  executionLocked?: boolean;
 };
 
 function isWorkDone(item: RepairWorkItem): boolean {
   return Boolean(item.is_done);
 }
 
-export function RepairWorksChecklist({ repairId, workItems }: RepairWorksChecklistProps) {
+export function RepairWorksChecklist({
+  repairId,
+  workItems,
+  readOnly = false,
+  executionLocked = false,
+}: RepairWorksChecklistProps) {
   const [title, setTitle] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -33,8 +41,17 @@ export function RepairWorksChecklist({ repairId, workItems }: RepairWorksCheckli
   const [deleteWorkItem] = useDeleteWorkItemMutation();
 
   const doneCount = workItems.filter(isWorkDone).length;
+  const canToggleDone = !readOnly && !executionLocked;
 
   const handleToggle = async (item: RepairWorkItem) => {
+    if (!canToggleDone) {
+      toast.warning('Дождитесь согласования сметы клиентом', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+      return;
+    }
+
     const nextDone = !isWorkDone(item);
     setPendingId(item.id);
 
@@ -165,6 +182,12 @@ export function RepairWorksChecklist({ repairId, workItems }: RepairWorksCheckli
         </span>
       </div>
 
+      {executionLocked && !readOnly ? (
+        <p className={styles.lockNote}>
+          Смета на согласовании у клиента. Отмечать выполнение работ можно после подтверждения.
+        </p>
+      ) : null}
+
       {workItems.length > 0 ? (
         <ul className={styles.list}>
           {workItems.map((item) => {
@@ -176,13 +199,13 @@ export function RepairWorksChecklist({ repairId, workItems }: RepairWorksCheckli
               <li className={clsx(styles.item, done && styles.itemDone)} key={item.id}>
                 <Checkbox
                   checked={done}
-                  disabled={isPending || isEditing}
+                  disabled={!canToggleDone || isPending || isEditing}
                   onChange={() => {
                     void handleToggle(item);
                   }}
                 />
 
-                {isEditing ? (
+                {isEditing && !readOnly ? (
                   <Input
                     autoFocus
                     disabled={isPending}
@@ -198,7 +221,9 @@ export function RepairWorksChecklist({ repairId, workItems }: RepairWorksCheckli
                 )}
 
                 <div className={styles.itemActions}>
-                  {isEditing ? (
+                  {readOnly ? (
+                    <Tag color={done ? 'success' : 'default'}>{done ? 'Готово' : 'Ждёт'}</Tag>
+                  ) : isEditing ? (
                     <>
                       <Button
                         disabled={isPending}
@@ -243,23 +268,27 @@ export function RepairWorksChecklist({ repairId, workItems }: RepairWorksCheckli
           })}
         </ul>
       ) : (
-        <p className={styles.empty}>Список работ пока пуст — добавьте первую ниже</p>
+        <p className={styles.empty}>
+          {readOnly ? 'Работы не указаны' : 'Список работ пока пуст — добавьте первую ниже'}
+        </p>
       )}
 
-      <div className={styles.addRow}>
-        <Input
-          placeholder="Новая работа, например: замена масла"
-          size="large"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          onPressEnter={() => {
-            void handleAdd();
-          }}
-        />
-        <Button loading={isAdding} size="large" type="primary" onClick={() => void handleAdd()}>
-          Добавить
-        </Button>
-      </div>
+      {readOnly ? null : (
+        <div className={styles.addRow}>
+          <Input
+            placeholder="Новая работа, например: замена масла"
+            size="large"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            onPressEnter={() => {
+              void handleAdd();
+            }}
+          />
+          <Button loading={isAdding} size="large" type="primary" onClick={() => void handleAdd()}>
+            Добавить
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

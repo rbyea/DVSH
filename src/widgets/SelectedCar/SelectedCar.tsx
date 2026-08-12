@@ -1,6 +1,7 @@
 import { Card, Typography } from 'antd';
 
 import { useRepairCreateContext } from '@/features/repair-order/create';
+import { formatMileageKm, resolveMinAllowedMileage } from '@/shared/lib/vehicle';
 
 import styles from './SelectedCar.module.scss';
 
@@ -11,7 +12,11 @@ export const SelectedCar = () => {
     return null;
   }
 
-  const hasHistory = selectedVehicle.previous_repairs.length > 0;
+  const minMileage = resolveMinAllowedMileage(selectedVehicle);
+  const mileagePoints = selectedVehicle.previous_repairs
+    .filter((item) => typeof item.mileage === 'number')
+    .map((item) => item.mileage as number)
+    .reverse();
 
   return (
     <Card className={styles.section}>
@@ -19,27 +24,34 @@ export const SelectedCar = () => {
         <Typography.Title className={styles.sectionTitle} level={3}>
           Выбранное авто
         </Typography.Title>
-        <p className={styles.hint}>Заказ-наряд привяжется к этой карточке и истории ремонтов</p>
+        <p className={styles.hint}>Заказ-наряд привяжется к этой карточке</p>
       </div>
 
       <div className={styles.vehicleSummary}>
         <span>{selectedVehicle.client_name}</span>
         <span>{selectedVehicle.car_model}</span>
         <span>{selectedVehicle.license_plate}</span>
-        <span>{selectedVehicle.vin}</span>
+        <span>
+          {selectedVehicle.vin?.trim() ||
+            selectedVehicle.chassis_number?.trim() ||
+            'Идентификатор не указан'}
+        </span>
       </div>
 
-      {hasHistory && (
-        <div className={styles.historyList}>
-          {selectedVehicle.previous_repairs.slice(0, 3).map((repair) => (
-            <div className={styles.historyItem} key={repair.id}>
-              <span>{repair.order_number}</span>
-              <span>{repair.title}</span>
-              <span>{repair.completed_at ?? '—'}</span>
-            </div>
-          ))}
+      {minMileage != null || mileagePoints.length > 0 ? (
+        <div className={styles.mileageBlock}>
+          {minMileage != null ? (
+            <p className={styles.mileageFloor}>
+              Минимальный пробег для нового заказа: <strong>{formatMileageKm(minMileage)}</strong>
+            </p>
+          ) : null}
+          {mileagePoints.length > 0 ? (
+            <p className={styles.mileageTimeline}>
+              Пробег по визитам: {mileagePoints.map((point) => formatMileageKm(point)).join(' → ')}
+            </p>
+          ) : null}
         </div>
-      )}
+      ) : null}
     </Card>
   );
 };

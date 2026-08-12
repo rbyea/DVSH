@@ -15,9 +15,14 @@ import styles from './RepairPartsChecklist.module.scss';
 type RepairPartsChecklistProps = {
   repairId: string;
   parts: RepairPart[];
+  readOnly?: boolean;
 };
 
-export function RepairPartsChecklist({ repairId, parts }: RepairPartsChecklistProps) {
+export function RepairPartsChecklist({
+  repairId,
+  parts,
+  readOnly = false,
+}: RepairPartsChecklistProps) {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState<number>(1);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -172,7 +177,7 @@ export function RepairPartsChecklist({ repairId, parts }: RepairPartsChecklistPr
 
             return (
               <li className={styles.item} key={part.id}>
-                {isEditing ? (
+                {isEditing && !readOnly ? (
                   <Input
                     autoFocus
                     disabled={isPending}
@@ -188,96 +193,108 @@ export function RepairPartsChecklist({ repairId, parts }: RepairPartsChecklistPr
                 )}
 
                 <div className={styles.qtyControl}>
-                  <Button
-                    disabled={isPending || isEditing || part.quantity <= 1}
-                    size="small"
-                    onClick={() => {
-                      void handleChangeQuantity(part, part.quantity - 1);
-                    }}
-                  >
-                    −
-                  </Button>
-                  <span className={styles.qtyValue}>× {part.quantity}</span>
-                  <Button
-                    disabled={isPending || isEditing}
-                    size="small"
-                    onClick={() => {
-                      void handleChangeQuantity(part, part.quantity + 1);
-                    }}
-                  >
-                    +
-                  </Button>
-                </div>
-
-                <div className={styles.itemActions}>
-                  {isEditing ? (
-                    <>
-                      <Button
-                        disabled={isPending}
-                        size="small"
-                        type="primary"
-                        onClick={() => {
-                          void handleSaveName(part);
-                        }}
-                      >
-                        ОК
-                      </Button>
-                      <Button disabled={isPending} size="small" onClick={handleCancelEdit}>
-                        Отмена
-                      </Button>
-                    </>
+                  {readOnly ? (
+                    <span className={styles.qtyValue}>× {part.quantity}</span>
                   ) : (
                     <>
                       <Button
-                        disabled={isPending}
+                        disabled={isPending || isEditing || part.quantity <= 1}
                         size="small"
-                        type="text"
-                        onClick={() => handleStartEdit(part)}
+                        onClick={() => {
+                          void handleChangeQuantity(part, part.quantity - 1);
+                        }}
                       >
-                        Изменить
+                        −
                       </Button>
+                      <span className={styles.qtyValue}>× {part.quantity}</span>
                       <Button
-                        danger
-                        disabled={isPending}
-                        loading={isPending}
+                        disabled={isPending || isEditing}
                         size="small"
-                        type="text"
-                        onClick={() => handleDelete(part)}
+                        onClick={() => {
+                          void handleChangeQuantity(part, part.quantity + 1);
+                        }}
                       >
-                        Удалить
+                        +
                       </Button>
                     </>
                   )}
                 </div>
+
+                {readOnly ? null : (
+                  <div className={styles.itemActions}>
+                    {isEditing ? (
+                      <>
+                        <Button
+                          disabled={isPending}
+                          size="small"
+                          type="primary"
+                          onClick={() => {
+                            void handleSaveName(part);
+                          }}
+                        >
+                          ОК
+                        </Button>
+                        <Button disabled={isPending} size="small" onClick={handleCancelEdit}>
+                          Отмена
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          disabled={isPending}
+                          size="small"
+                          type="text"
+                          onClick={() => handleStartEdit(part)}
+                        >
+                          Изменить
+                        </Button>
+                        <Button
+                          danger
+                          disabled={isPending}
+                          loading={isPending}
+                          size="small"
+                          type="text"
+                          onClick={() => handleDelete(part)}
+                        >
+                          Удалить
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
       ) : (
-        <p className={styles.empty}>Запчасти пока не добавлены</p>
+        <p className={styles.empty}>
+          {readOnly ? 'Запчасти не указаны' : 'Запчасти пока не добавлены'}
+        </p>
       )}
 
-      <div className={styles.addRow}>
-        <Input
-          placeholder="Например: масляный фильтр"
-          size="large"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          onPressEnter={() => {
-            void handleAdd();
-          }}
-        />
-        <InputNumber
-          className={styles.qtyInput}
-          min={1}
-          size="large"
-          value={quantity}
-          onChange={(value) => setQuantity(typeof value === 'number' ? value : 1)}
-        />
-        <Button loading={isAdding} size="large" type="primary" onClick={() => void handleAdd()}>
-          Добавить
-        </Button>
-      </div>
+      {readOnly ? null : (
+        <div className={styles.addRow}>
+          <Input
+            placeholder="Например: масляный фильтр"
+            size="large"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onPressEnter={() => {
+              void handleAdd();
+            }}
+          />
+          <InputNumber
+            className={styles.qtyInput}
+            min={1}
+            size="large"
+            value={quantity}
+            onChange={(value) => setQuantity(typeof value === 'number' ? value : 1)}
+          />
+          <Button loading={isAdding} size="large" type="primary" onClick={() => void handleAdd()}>
+            Добавить
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
