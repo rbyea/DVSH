@@ -39,9 +39,6 @@ export function LegalDocumentPage({ title, updatedAt, sections }: LegalDocumentP
         <p className={styles.eyebrow}>Автовидно · Правовые документы</p>
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.meta}>Редакция от {updatedAt}</p>
-        <p className={styles.banner}>
-          Текст-заглушка для юриста. Перед продакшеном заменить на утверждённую редакцию.
-        </p>
 
         {sections.map((section) => (
           <section className={styles.section} key={section.heading}>

@@ -1,9 +1,11 @@
-import { Button, Card, DatePicker, Form, Input, InputNumber, Typography } from 'antd';
+import { Button, Card, DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd';
 import clsx from 'clsx';
 import { useState, type KeyboardEvent } from 'react';
 import { Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
+import { useGetMastersQuery } from '@/entities/master';
+import { getRepairCostBreakdown } from '@/entities/repair-order';
 import { useRepairCreateContext } from '@/features/repair-order/create';
 import { disablePastDates } from '@/shared/lib/date';
 import { ModalRepair } from '@/widgets/Modals/ModalRepair/ModalRepair';
@@ -24,6 +26,14 @@ export const RepairDetailsStep = () => {
     isDirty,
     selectedVehicle,
   } = useRepairCreateContext();
+
+  const { data: masters = [] } = useGetMastersQuery();
+  const masterOptions = masters
+    .filter((master) => master.is_active)
+    .map((master) => ({
+      value: master.id,
+      label: `${master.full_name} · ${master.specialty}`,
+    }));
 
   const workItems = useFieldArray({
     control,
@@ -58,17 +68,29 @@ export const RepairDetailsStep = () => {
     ],
   });
 
-  const worksCount = watchedWorks?.filter((item) => item.title?.trim()).length ?? 0;
+  const worksCount =
+    watchedWorks?.filter((item) => item.title?.trim() && !item.isExtra).length ?? 0;
+  const extraWorksCount =
+    watchedWorks?.filter((item) => item.title?.trim() && item.isExtra).length ?? 0;
   const partsCount = watchedParts?.filter((item) => item.name?.trim()).length ?? 0;
   const carLabel = [carModel, licensePlate].filter(Boolean).join(', ') || 'Авто не указано';
-  const totalLabel =
-    typeof total === 'number'
-      ? new Intl.NumberFormat('ru-RU', {
-          style: 'currency',
-          currency: 'RUB',
-          maximumFractionDigits: 0,
-        }).format(total)
-      : null;
+  const costBreakdown = getRepairCostBreakdown({
+    workItems: watchedWorks?.map((item) => ({
+      price: item.price,
+      isExtra: item.isExtra,
+    })),
+    orderedParts: watchedParts?.map((part) => ({
+      quantity: part.quantity ?? 1,
+      price: part.price,
+    })),
+  });
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      maximumFractionDigits: 0,
+    }).format(value);
+  const totalLabel = typeof total === 'number' ? formatMoney(total) : null;
 
   const handleCloseForm = () => {
     if (isDirty) {
@@ -78,7 +100,11 @@ export const RepairDetailsStep = () => {
     }
   };
 
-  const handleWorkTitleKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
+  const handleWorkTitleKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    index: number,
+    isExtra: boolean,
+  ) => {
     if (event.key !== 'Enter') {
       return;
     }
@@ -92,12 +118,105 @@ export const RepairDetailsStep = () => {
       return;
     }
 
-    const isLast = index === workItems.fields.length - 1;
+    const sameGroupIndexes = (watchedWorks ?? [])
+      .map((item, itemIndex) => ({ item, itemIndex }))
+      .filter(({ item }) => Boolean(item.isExtra) === isExtra)
+      .map(({ itemIndex }) => itemIndex);
+    const isLastInGroup = sameGroupIndexes[sameGroupIndexes.length - 1] === index;
 
-    if (isLast) {
-      workItems.append({ title: '' });
+    if (isLastInGroup) {
+      workItems.append({
+        title: '',
+        masterId: undefined,
+        price: undefined,
+        hours: undefined,
+        isExtra,
+      });
     }
   };
+
+  const appendWorkItem = (isExtra: boolean, title = '') => {
+    workItems.append({
+      title,
+      masterId: undefined,
+      price: undefined,
+      hours: undefined,
+      isExtra,
+    });
+  };
+
+  const renderWorkRow = (fieldId: string, index: number, isExtra: boolean) => (
+    <div className={styles.listItemWork} key={fieldId}>
+      <Controller
+        control={control}
+        name={`workItems.${index}.title`}
+        render={({ field: workField }) => (
+          <Input
+            {...workField}
+            className={styles.workTitleInput}
+            placeholder={isExtra ? 'Название доп. работы' : 'Название работы'}
+            size="large"
+            status={errors.workItems?.[index]?.title ? 'error' : undefined}
+            onKeyDown={(event) => handleWorkTitleKeyDown(event, index, isExtra)}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name={`workItems.${index}.masterId`}
+        render={({ field: masterField }) => (
+          <Select
+            allowClear
+            className={styles.masterSelect}
+            options={masterOptions}
+            placeholder="Мастер"
+            size="large"
+            value={masterField.value || undefined}
+            onChange={(value) => masterField.onChange(value ?? undefined)}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name={`workItems.${index}.hours`}
+        render={({ field: hoursField }) => (
+          <InputNumber
+            className={styles.workMetricInput}
+            min={0}
+            placeholder="Часы"
+            size="large"
+            step={0.5}
+            value={hoursField.value}
+            onChange={(value) => hoursField.onChange(typeof value === 'number' ? value : undefined)}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name={`workItems.${index}.price`}
+        render={({ field: priceField }) => (
+          <InputNumber
+            className={styles.workMetricInput}
+            min={0}
+            placeholder="Цена, ₽"
+            size="large"
+            step={100}
+            value={priceField.value}
+            onChange={(value) => priceField.onChange(typeof value === 'number' ? value : undefined)}
+          />
+        )}
+      />
+      <Button
+        danger
+        className={styles.removeButton}
+        htmlType="button"
+        type="text"
+        onClick={() => workItems.remove(index)}
+      >
+        Удалить
+      </Button>
+    </div>
+  );
 
   const handlePartNameKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
     if (event.key !== 'Enter') {
@@ -116,7 +235,7 @@ export const RepairDetailsStep = () => {
     const isLast = index === orderedParts.fields.length - 1;
 
     if (isLast) {
-      orderedParts.append({ name: '', quantity: 1 });
+      orderedParts.append({ name: '', quantity: 1, price: undefined });
     }
   };
 
@@ -139,7 +258,7 @@ export const RepairDetailsStep = () => {
                 className={styles.chip}
                 key={template}
                 type="button"
-                onClick={() => workItems.append({ title: template })}
+                onClick={() => appendWorkItem(false, template)}
               >
                 + {template}
               </button>
@@ -147,34 +266,11 @@ export const RepairDetailsStep = () => {
           </div>
         )}
 
-        {workItems.fields.length > 0 && (
+        {workItems.fields.some((_, index) => !watchedWorks?.[index]?.isExtra) && (
           <div className={styles.list}>
-            {workItems.fields.map((field, index) => (
-              <div className={styles.listItem} key={field.id}>
-                <Controller
-                  control={control}
-                  name={`workItems.${index}.title`}
-                  render={({ field: workField }) => (
-                    <Input
-                      {...workField}
-                      placeholder="Название работы"
-                      size="large"
-                      status={errors.workItems?.[index]?.title ? 'error' : undefined}
-                      onKeyDown={(event) => handleWorkTitleKeyDown(event, index)}
-                    />
-                  )}
-                />
-                <Button
-                  danger
-                  className={styles.removeButton}
-                  htmlType="button"
-                  type="text"
-                  onClick={() => workItems.remove(index)}
-                >
-                  Удалить
-                </Button>
-              </div>
-            ))}
+            {workItems.fields.map((field, index) =>
+              watchedWorks?.[index]?.isExtra ? null : renderWorkRow(field.id, index, false),
+            )}
           </div>
         )}
 
@@ -183,9 +279,36 @@ export const RepairDetailsStep = () => {
           htmlType="button"
           size="large"
           type="dashed"
-          onClick={() => workItems.append({ title: '' })}
+          onClick={() => appendWorkItem(false)}
         >
           Добавить работу
+        </Button>
+      </Card>
+
+      <Card className={clsx(styles.section, styles.sectionWork)}>
+        <div className={styles.sectionHead}>
+          <Typography.Title className={styles.sectionTitle} level={3}>
+            Доп. работы
+          </Typography.Title>
+          <p className={styles.sectionHint}>Отдельный блок — сумма считается отдельно в итогах</p>
+        </div>
+
+        {workItems.fields.some((_, index) => Boolean(watchedWorks?.[index]?.isExtra)) && (
+          <div className={styles.list}>
+            {workItems.fields.map((field, index) =>
+              watchedWorks?.[index]?.isExtra ? renderWorkRow(field.id, index, true) : null,
+            )}
+          </div>
+        )}
+
+        <Button
+          className={styles.addButton}
+          htmlType="button"
+          size="large"
+          type="dashed"
+          onClick={() => appendWorkItem(true)}
+        >
+          Добавить доп. работу
         </Button>
       </Card>
 
@@ -222,9 +345,34 @@ export const RepairDetailsStep = () => {
                     <InputNumber
                       className={styles.numberInput}
                       min={1}
+                      placeholder="Кол-во"
                       size="large"
                       value={quantityField.value}
                       onChange={(value) => quantityField.onChange(value ?? 1)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }
+                      }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name={`orderedParts.${index}.price`}
+                  render={({ field: priceField }) => (
+                    <InputNumber
+                      className={styles.numberInput}
+                      min={0}
+                      placeholder="Цена, ₽"
+                      size="large"
+                      step={100}
+                      value={priceField.value}
+                      onChange={(value) =>
+                        priceField.onChange(typeof value === 'number' ? value : undefined)
+                      }
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') {
                           event.preventDefault();
@@ -254,7 +402,7 @@ export const RepairDetailsStep = () => {
           htmlType="button"
           size="large"
           type="dashed"
-          onClick={() => orderedParts.append({ name: '', quantity: 1 })}
+          onClick={() => orderedParts.append({ name: '', quantity: 1, price: undefined })}
         >
           Добавить запчасть
         </Button>
@@ -341,9 +489,14 @@ export const RepairDetailsStep = () => {
         <div className={styles.summaryMeta}>
           <span>Новый</span>
           <span>{plannedReadyAt ? plannedReadyAt.format('DD.MM.YYYY') : 'Без даты выдачи'}</span>
-          <span>{totalLabel ?? 'Сумма не указана'}</span>
           <span>
-            {worksCount} раб. · {partsCount} запч.
+            Работы {formatMoney(costBreakdown.worksTotal)} · доп.{' '}
+            {formatMoney(costBreakdown.extraWorksTotal)} · запчасти{' '}
+            {formatMoney(costBreakdown.partsTotal)}
+          </span>
+          <span>{totalLabel ? `К оплате ${totalLabel}` : 'Сумма не указана'}</span>
+          <span>
+            {worksCount} раб. · {extraWorksCount} доп. · {partsCount} запч.
           </span>
         </div>
       </div>

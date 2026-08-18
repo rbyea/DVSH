@@ -86,6 +86,14 @@
   align-items: flex-end;
   gap: 1px;
   min-width: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.userMeta:hover .userName {
+  color: var(--dvsh-accent);
 }
 
 .userName {

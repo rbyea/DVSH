@@ -14,6 +14,7 @@ import {
   formatVinInput,
   resolveMinAllowedMileage,
 } from '@/shared/lib/vehicle';
+import { ClientVehiclesPanel } from '@/widgets/ClientVehiclesPanel';
 
 import styles from './RepairDetailsClientStep.module.scss';
 
@@ -40,13 +41,14 @@ export const RepairDetailsClientStep = () => {
     isManualMode,
     createClientAndContinue,
     continueToRepairStep,
+    applyVehicleById,
     isCreatingClient,
     isSavingClientStep,
   } = useRepairCreateContext();
 
-  const [clientId, vehicleId, vinValue, chassisValue] = useWatch({
+  const [clientId, vehicleId, vinValue, chassisValue, clientName] = useWatch({
     control,
-    name: ['clientId', 'vehicleId', 'vin', 'chassisNumber'],
+    name: ['clientId', 'vehicleId', 'vin', 'chassisNumber', 'clientName'],
   });
   const hasExistingIds = Boolean(clientId && vehicleId);
 
@@ -313,6 +315,17 @@ export const RepairDetailsClientStep = () => {
           </Form.Item>
         </div>
       </Card>
+
+      {clientId ? (
+        <Card className={styles.section}>
+          <ClientVehiclesPanel
+            clientId={clientId}
+            clientName={clientName}
+            currentVehicleId={vehicleId}
+            onSelectVehicle={(vehicle) => applyVehicleById(String(vehicle.id))}
+          />
+        </Card>
+      ) : null}
 
       <div className={styles.actions}>
         <Button

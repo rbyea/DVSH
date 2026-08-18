@@ -288,6 +288,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
         'licensePlate',
         'vin',
         'chassisNumber',
+        'mileage',
         'clientPersonalDataConsent',
       ]);
       setCurrentStep(2);
@@ -305,6 +306,16 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
         setIsVehicleSearchLoading(false);
       }
     }
+  };
+
+  const applyVehicleById = async (id: string) => {
+    await applyVehicleSuggestion({
+      id,
+      client_name: '',
+      car_model: '',
+      license_plate: '',
+      previous_repairs: [],
+    });
   };
 
   const startManualVehicleEntry = () => {
@@ -467,12 +478,19 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
         comment: values.comment || null,
         work_items: (values.workItems ?? [])
           .filter((workItem) => workItem.title)
-          .map((workItem) => ({ title: workItem.title ?? '' })),
+          .map((workItem) => ({
+            title: workItem.title ?? '',
+            master_id: workItem.masterId?.trim() || null,
+            price: typeof workItem.price === 'number' ? workItem.price : null,
+            hours: typeof workItem.hours === 'number' ? workItem.hours : null,
+            is_extra: Boolean(workItem.isExtra),
+          })),
         ordered_parts: (values.orderedParts ?? [])
           .filter((part) => part.name)
           .map((part) => ({
             name: part.name ?? '',
             quantity: part.quantity ?? 1,
+            price: typeof part.price === 'number' ? part.price : null,
           })),
       }).unwrap();
 
@@ -547,6 +565,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
     isVehicleSearchLoading,
     setIsVehicleSearchLoading,
     applyVehicleSuggestion,
+    applyVehicleById,
     startManualVehicleEntry,
     vehicleSuggestions,
     currentStep,

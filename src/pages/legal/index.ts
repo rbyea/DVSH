@@ -1,2 +1,2 @@
 export { LegalDocumentPage } from './LegalDocumentPage';
-export { PersonalDataConsentPage, PrivacyPolicyPage } from './LegalPages';
+export { OfferPage, PersonalDataConsentPage, PrivacyPolicyPage } from './LegalPages';

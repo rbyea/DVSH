@@ -19,8 +19,14 @@ export type RepairCreateFormValues = {
   status: RepairCreateStatus;
   plannedReadyAt?: Dayjs | null;
   total?: number;
-  workItems?: Array<{ title?: string }>;
-  orderedParts?: Array<{ name?: string; quantity?: number }>;
+  workItems?: Array<{
+    title?: string;
+    masterId?: string;
+    price?: number;
+    hours?: number;
+    isExtra?: boolean;
+  }>;
+  orderedParts?: Array<{ name?: string; quantity?: number; price?: number }>;
   comment?: string;
   clientPersonalDataConsent: boolean;
 };

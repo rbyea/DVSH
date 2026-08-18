@@ -11,6 +11,7 @@ import {
   clientConfirmStatusLabels,
   estimateStatusColors,
   estimateStatusLabels,
+  getRepairCostBreakdown,
   isRepairLocked,
   repairStatusLabels,
   useGetRepairQuery,
@@ -19,7 +20,9 @@ import {
   type RepairStatus,
 } from '@/entities/repair-order';
 import { useGetVehicleQuery, type VehicleRepairHistory } from '@/entities/vehicle';
+import { printRepairWork } from '@/features/repair-order/print';
 import { getErrorMessage } from '@/shared/lib/api';
+import { parseMoney } from '@/shared/lib/money';
 import { RepairClientConfirmPanel } from '@/widgets/RepairClientConfirmPanel';
 import { RepairClientPanel } from '@/widgets/RepairClientPanel';
 import { RepairDetailsEditor } from '@/widgets/RepairDetailsEditor';
@@ -76,12 +79,18 @@ function formatDate(value: string | null | undefined): string {
   return format(date, 'd MMM yyyy', { locale: ru });
 }
 
-function formatMoney(total: number): string {
+function formatMoney(value: number | string | null | undefined): string {
+  const amount = parseMoney(value);
+
+  if (amount == null || amount <= 0) {
+    return '—';
+  }
+
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency: 'RUB',
     maximumFractionDigits: 0,
-  }).format(total);
+  }).format(amount);
 }
 
 export function RepairDetailsPage() {
@@ -89,6 +98,7 @@ export function RepairDetailsPage() {
   const location = useLocation();
   const justCreated = Boolean((location.state as LocationState | null)?.justCreated);
   const [highlightPublicLink, setHighlightPublicLink] = useState(justCreated);
+  const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
 
   const {
     data: repair,
@@ -97,8 +107,11 @@ export function RepairDetailsPage() {
   } = useGetRepairQuery(repairId, {
     skip: !repairId,
   });
-  const { data: vehicleCard } = useGetVehicleQuery(repair?.vehicle.id ?? '', {
-    skip: !repair?.vehicle.id,
+
+  const activeHistoryVehicleId = historyVehicleId ?? repair?.vehicle.id ?? '';
+
+  const { data: vehicleCard } = useGetVehicleQuery(activeHistoryVehicleId, {
+    skip: !activeHistoryVehicleId,
   });
   const [updateStatus, { isLoading: isStatusUpdating }] = useUpdateRepairStatusMutation();
   const [updateWorkItem, { isLoading: isWorkUpdating }] = useUpdateWorkItemMutation();
@@ -109,6 +122,14 @@ export function RepairDetailsPage() {
       setHighlightPublicLink(true);
     }
   }, [justCreated]);
+
+  useEffect(() => {
+    if (!repair?.vehicle.id) {
+      return;
+    }
+
+    setHistoryVehicleId((current) => current ?? repair.vehicle.id);
+  }, [repair?.vehicle.id]);
 
   if (isLoading) {
     return (
@@ -137,9 +158,17 @@ export function RepairDetailsPage() {
 
   const doneWorks = repair.work_items.filter((item) => Boolean(item.is_done)).length;
   const totalWorks = repair.work_items.length;
+  const costBreakdown = getRepairCostBreakdown({
+    workItems: repair.work_items,
+    orderedParts: repair.ordered_parts,
+  });
+  const amountDue =
+    costBreakdown.calculatedTotal > 0 ? costBreakdown.calculatedTotal : parseMoney(repair.total);
   const isLocked = isRepairLocked(repair);
   const confirmStatus = repair.client_confirm_status ?? null;
   const isEstimatePending = repair.estimate_status === 'pending';
+  const historyVehicleIdResolved = historyVehicleId ?? repair.vehicle.id;
+  const isHistoryForCurrentVehicle = String(historyVehicleIdResolved) === String(repair.vehicle.id);
   const vehicleHistory: VehicleRepairHistory[] = (vehicleCard?.repairs ?? []).map((item) => ({
     id: String(item.id),
     order_number: item.order_number,
@@ -151,6 +180,12 @@ export function RepairDetailsPage() {
     total: item.total,
     work_items: item.work_items,
   }));
+  const historyVehicleLabel = vehicleCard
+    ? [vehicleCard.car_model, vehicleCard.license_plate].filter(Boolean).join(' · ')
+    : null;
+  const historyTitle = historyVehicleLabel
+    ? `История · ${historyVehicleLabel}`
+    : 'История по этому авто';
 
   const markAllWorksDone = async () => {
     const incompleteWorks = repair.work_items.filter((item) => !item.is_done);
@@ -232,12 +267,28 @@ export function RepairDetailsPage() {
     });
   };
 
+  const handlePrintWork = () => {
+    const printed = printRepairWork(repair);
+
+    if (!printed) {
+      toast.error('Не удалось открыть печать. Попробуйте ещё раз', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
         <Link to="/dashboard">
           <Button size="large">← К списку</Button>
         </Link>
+        {repair.status === 'done' || repair.status === 'completed' ? (
+          <Button size="large" type="default" onClick={handlePrintWork}>
+            Распечатать выполненную работу
+          </Button>
+        ) : null}
       </div>
 
       <header className={styles.pageHead}>
@@ -262,10 +313,25 @@ export function RepairDetailsPage() {
       <section className={styles.grid}>
         <RepairClientPanel
           client={repair.client}
+          currentVehicleId={repair.vehicle.id}
           formatDateTime={formatDateTime}
+          knownVehicles={[
+            {
+              id: String(repair.vehicle.id),
+              car_model: repair.vehicle.car_model,
+              license_plate: repair.vehicle.license_plate,
+              vin: repair.vehicle.vin,
+              chassis_number: repair.vehicle.chassis_number,
+              mileage: repair.vehicle.mileage,
+            },
+          ]}
           readOnly={isLocked}
           repairId={repair.id}
+          selectedVehicleId={historyVehicleIdResolved}
           updatedAt={repair.updated_at}
+          onSelectVehicle={(vehicle) => {
+            setHistoryVehicleId(String(vehicle.id));
+          }}
         />
         <RepairVehiclePanel
           readOnly={isLocked}
@@ -311,12 +377,14 @@ export function RepairDetailsPage() {
 
         <div className={styles.stats}>
           <div className={styles.stat}>
-            <span className={styles.statLabel}>Сумма</span>
-            <span className={styles.statValue}>{formatMoney(repair.total)}</span>
+            <span className={styles.statLabel}>К оплате</span>
+            <span className={styles.statValue}>{formatMoney(amountDue)}</span>
             <span className={styles.statHint}>
-              {repair.estimate_status
-                ? estimateStatusLabels[repair.estimate_status]
-                : 'см. блок «Смета для клиента»'}
+              {costBreakdown.calculatedTotal > 0
+                ? 'работы, доп. работы и запчасти'
+                : repair.estimate_status
+                  ? estimateStatusLabels[repair.estimate_status]
+                  : 'смета для клиента'}
             </span>
           </div>
           <div className={styles.stat}>
@@ -353,7 +421,14 @@ export function RepairDetailsPage() {
         publicUrl={repair.public_url}
       />
 
-      <RepairWorksList defaultOpen excludeRepairId={repair.id} repairs={vehicleHistory} />
+      <RepairWorksList
+        defaultOpen
+        emptyText="У этого автомобиля пока нет прошлых заказ-нарядов"
+        excludeRepairId={isHistoryForCurrentVehicle ? repair.id : undefined}
+        repairs={vehicleHistory}
+        showWhenEmpty
+        title={historyTitle}
+      />
 
       <section className={styles.paramsBlock}>
         <RepairDetailsEditor readOnly={isLocked} repair={repair} />
@@ -379,6 +454,43 @@ export function RepairDetailsPage() {
             repairId={repair.id}
           />
         </article>
+      </section>
+
+      <section className={styles.panel}>
+        <RepairWorksChecklist
+          executionLocked={isEstimatePending}
+          isExtra
+          readOnly={isLocked}
+          repairId={repair.id}
+          workItems={repair.work_items}
+        />
+      </section>
+
+      <section className={styles.costSummary}>
+        <div className={styles.costSummaryHead}>
+          <h2 className={styles.costSummaryTitle}>Итоги</h2>
+          <p className={styles.costSummaryHint}>
+            Работы, доп. работы и запчасти · к оплате считается автоматически
+          </p>
+        </div>
+        <div className={styles.costGrid}>
+          <div className={styles.costItem}>
+            <span className={styles.costLabel}>Работы</span>
+            <span className={styles.costValue}>{formatMoney(costBreakdown.worksTotal)}</span>
+          </div>
+          <div className={styles.costItem}>
+            <span className={styles.costLabel}>Доп. работы</span>
+            <span className={styles.costValue}>{formatMoney(costBreakdown.extraWorksTotal)}</span>
+          </div>
+          <div className={styles.costItem}>
+            <span className={styles.costLabel}>Запчасти</span>
+            <span className={styles.costValue}>{formatMoney(costBreakdown.partsTotal)}</span>
+          </div>
+          <div className={clsx(styles.costItem, styles.costItemAccent)}>
+            <span className={styles.costLabel}>К оплате</span>
+            <span className={styles.costValue}>{formatMoney(amountDue)}</span>
+          </div>
+        </div>
       </section>
     </div>
   );

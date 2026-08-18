@@ -17,6 +17,9 @@ type RepairWorksListProps = {
   /** Exclude current open repair from history on details page. */
   excludeRepairId?: string;
   defaultOpen?: boolean;
+  title?: string;
+  emptyText?: string;
+  showWhenEmpty?: boolean;
 };
 
 function formatHistoryDate(value: string | null | undefined): string | null {
@@ -78,6 +81,9 @@ export function RepairWorksList({
   repairs,
   excludeRepairId,
   defaultOpen = false,
+  title = 'История по этому авто',
+  emptyText = 'У этого автомобиля пока нет прошлых заказ-нарядов',
+  showWhenEmpty = false,
 }: RepairWorksListProps) {
   const previousRepairs = repairs.filter(
     (repair) => !excludeRepairId || String(repair.id) !== String(excludeRepairId),
@@ -86,7 +92,21 @@ export function RepairWorksList({
   const [showAll, setShowAll] = useState(false);
 
   if (previousRepairs.length === 0) {
-    return null;
+    if (!showWhenEmpty) {
+      return null;
+    }
+
+    return (
+      <section className={styles.panel}>
+        <div className={styles.toggleStatic}>
+          <span className={styles.toggleMain}>
+            <span className={styles.title}>{title}</span>
+            <span className={styles.hint}>{emptyText}</span>
+          </span>
+          <span className={styles.count}>0</span>
+        </div>
+      </section>
+    );
   }
 
   const latest = previousRepairs[0];
@@ -117,7 +137,7 @@ export function RepairWorksList({
     <section className={clsx(styles.panel, isOpen && styles.panelOpen)}>
       <button aria-expanded={isOpen} className={styles.toggle} type="button" onClick={handleToggle}>
         <span className={styles.toggleMain}>
-          <span className={styles.title}>История по этому авто</span>
+          <span className={styles.title}>{title}</span>
           <span className={styles.hint}>
             {isOpen
               ? 'Работы и пробег по прошлым заказ-нарядам'

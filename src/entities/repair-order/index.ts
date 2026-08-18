@@ -27,6 +27,8 @@ export {
   repairStatusColors,
   repairStatusLabels,
 } from './model/status';
+export { getPartLineTotal, getRepairCostBreakdown, isExtraWorkItem } from './model/cost';
+export type { RepairCostBreakdown } from './model/cost';
 export type {
   ApprovePublicEstimateRequest,
   ClientConfirmDecision,
@@ -43,6 +45,7 @@ export type {
   PublicRepair,
   PublicRepairHistoryItem,
   PublicRepairWorkItem,
+  PublicClientVehicleSummary,
   PublicVehicle,
   RepairCreatePayload,
   RepairCreated,

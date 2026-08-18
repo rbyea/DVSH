@@ -31,6 +31,91 @@
   width: 100%;
 }
 
+.vehiclesHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.vehiclesHint {
+  margin: 4px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.vehiclesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.vehicleItem,
+.vehicleItemCurrent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+
+.vehicleItemCurrent {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.vehicleModel {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.vehicleMeta {
+  margin: 2px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+}
+
+.vehicleBadge {
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.addVehicleForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.addVehicleForm :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+.addVehicleActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .plateInput {
   font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace !important;
   font-weight: 600;

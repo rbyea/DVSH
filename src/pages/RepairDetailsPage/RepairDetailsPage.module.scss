@@ -258,6 +258,73 @@
   gap: 16px;
 }
 
+.costSummary {
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 22px;
+  background: linear-gradient(180deg, rgb(240 253 250 / 45%), #ffffff 48%), var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.costSummaryHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.costSummaryTitle {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.costSummaryHint {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.costGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.costItem {
+  border: 1px solid var(--dvsh-line);
+  border-radius: var(--dvsh-radius-md);
+  padding: 14px 16px;
+  background: rgb(255 255 255 / 90%);
+}
+
+.costItemAccent {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.costLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.costValue {
+  color: var(--dvsh-ink);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
 .checklist {
   display: flex;
   flex-direction: column;
@@ -444,14 +511,15 @@
 
 .issueActions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-top: 16px;
 }
 
 .issueHint {
   margin: 0;
+  width: 100%;
   color: var(--dvsh-muted);
   font-size: 13px;
   line-height: 1.45;
@@ -462,6 +530,10 @@
   .grid,
   .split {
     grid-template-columns: 1fr;
+  }
+
+  .costGrid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .toolbar {

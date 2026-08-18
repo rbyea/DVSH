@@ -75,6 +75,7 @@ axiosInstance.interceptors.response.use(
     const requestUrl = originalRequest.url ?? '';
     const isAuthEndpoint =
       requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
       requestUrl.includes('/auth/refresh') ||
       requestUrl.includes('/auth/logout');
 

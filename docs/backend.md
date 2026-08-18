@@ -1,189 +1,34 @@
-# Backend (Laravel) — ТЗ и фиксы для фронта DVSH
+# DVSH — Backend (Laravel) · единое ТЗ
 
-Единый документ для бэкенда. Справочник эндпоинтов: [`rest-api.md`](./rest-api.md).
+Один документ для бэкенда. Фронт: React SPA (Автовидно / DVSH).
 
----
-
-## Приоритет сейчас (блокеры)
-
-1. **Duplicate `public_token`** при `POST /repairs` → нельзя создать 2-й ремонт на авто
-2. **`PublicRepairController::show` + `redirect()`** → публичная карточка 500
-3. **`pending_approval` не в whitelist** → 422 «The selected status is invalid»
-4. **Пробег: серверная проверка минимума после «Выдан»** → см.
-   [`backend-mileage.md`](./backend-mileage.md)
-5. **Подтверждение клиентом после «Выдан»** → см.
-   [`backend-client-confirm.md`](./backend-client-confirm.md)
-6. Остальные фиксы ниже (binding, `total`, история, estimate)
+База API: `/api/v1`  
+Auth: JWT `Authorization: Bearer {token}`  
+Ответы: `{ "data": ... }` · ошибки 401 / 403 / 404 / 422 / 500
 
 ---
 
-# Часть A. Hotfix (чиним сейчас)
+## 0. Приоритет
 
-## A1. Duplicate `public_token` при создании ремонта
-
-### Симптом
-
-```
-SQLSTATE[23000]: Integrity constraint violation: 1062
-Duplicate entry '…' for key 'repair_orders.repair_orders_public_token_unique'
-```
-
-Падает на `INSERT INTO repair_orders` при **втором и далее** ремонте того же авто.
-
-### Причина
-
-Токен должен жить на **vehicle**, но create repair копирует тот же token в
-`repair_orders.public_token`, где остался **UNIQUE**.
-
-Это **не** «сначала закрой текущий ремонт». Закрытие заказа проблему не снимает.
-
-### Что сделать
-
-1. Source of truth — `vehicles.public_token`
-   - нет токена → сгенерировать один раз (первый ремонт / создание авто)
-   - при `POST /repairs` **не писать** тот же token в `repair_orders` (`null` / не трогать колонку)
-
-2. Схема БД (предпочтительно):
-   - убрать `UNIQUE` с `repair_orders.public_token`
-   - колонка на repair — nullable / deprecate
-   - `UNIQUE` оставить на `vehicles.public_token`
-
-3. В ответе staff (`GET/POST/PATCH repairs`) отдавать токен с vehicle:
-
-```json
-{
-  "public_token": "<vehicle.public_token>",
-  "public_url": "/public/vehicles/<token>",
-  "vehicle": {
-    "id": "...",
-    "public_token": "...",
-    "public_url": "..."
-  }
-}
-```
-
-Можно дублировать поля на корне repair для фронта, но **не хранить** тот же unique token во второй
-строке `repair_orders`.
-
-### Проверка
-
-1. Ремонт на авто A → ок
-2. Второй ремонт на то же авто A → **201**, без 500
-3. У обоих один и тот же `public_token` / `public_url`
-4. В БД: один token на vehicle, без unique-конфликта в `repair_orders`
+1. `public_token` на **vehicle** (не unique на repair) — иначе 2-й ремонт на авто падает 1062
+2. Публичка отдаёт **JSON**, не `redirect()`
+3. Статусы: whitelist с `pending_approval` и `completed` (без `diagnostics`)
+4. Пробег: серверный floor после «Выдан»
+5. Подтверждение клиентом после «Выдан»
+6. История авто: полный `work_items[]` + `mileage`
+7. `chassis_number` (если нет VIN)
+8. Несколько авто у клиента
+9. Мастера + `price` / `hours` / `is_extra` + `master_share_percent`
+10. SPA fallback `index.html` (deep links)
+11. **Регистрация + 30 дней trial + блокировка /billing**
 
 ---
 
-## A2. Публичная ссылка → 500 (RedirectResponse)
+## 1. Статусы и enums
 
-### Симптом
+### `repair_orders.status`
 
-```
-PublicRepairController::show(): Return value must be of type
-App\Http\Resources\PublicRepairResource|Illuminate\Http\JsonResponse,
-Illuminate\Http\RedirectResponse returned
-```
-
-Фронт:
-
-```http
-GET /api/v1/public/repairs/{publicToken}
-Accept: application/json
-```
-
-### Причина
-
-В `show()` сделали `return redirect(...)` на vehicles, но return type —
-`PublicRepairResource|JsonResponse`.  
-`RedirectResponse` не входит → TypeError / 500.
-
-Для SPA нужен **JSON**, не HTTP 302.
-
-### Что сделать
-
-Убрать любой `return redirect(...)` из typed `show()`.
-
-Alias → сразу JSON:
-
-```php
-public function show(string $publicToken): PublicRepairResource|JsonResponse
-{
-    $vehicle = Vehicle::query()
-        ->where('public_token', $publicToken)
-        ->first();
-
-    // legacy: старый repair-token → vehicle
-    if (!$vehicle) {
-        $repair = RepairOrder::query()
-            ->where('public_token', $publicToken)
-            ->first();
-        $vehicle = $repair?->vehicle;
-    }
-
-    if (!$vehicle) {
-        return response()->json(['message' => 'Not found'], 404);
-    }
-
-    return new PublicVehicleResource($vehicle);
-    // НЕ: return redirect(...)
-}
-```
-
-- Основной: `GET /api/v1/public/vehicles/{token}` → JSON (контракт в части B)
-- Legacy: `GET /api/v1/public/repairs/{token}` → **тот же JSON** (alias), пока фронт не переключён
-
-**Не делать:** менять только return type на `RedirectResponse` «чтобы ошибка пропала».
-
-### Проверка
-
-```http
-GET /api/v1/public/repairs/{validToken}
-Accept: application/json
-```
-
-```http
-GET /api/v1/public/vehicles/{validToken}
-Accept: application/json
-```
-
-Ожидание: **200 + JSON**, не 302, не 500. Публичная страница на фронте открывается.
-
----
-
-## A3. Статус `pending_approval` — «The selected status is invalid»
-
-### Симптом
-
-```http
-PATCH /api/v1/repairs/{id}/status
-
-{ "status": "pending_approval" }
-```
-
-→ **422** `The selected status is invalid.`
-
-Также с кнопки «На согласование»:
-
-```http
-PATCH /api/v1/repairs/{id}
-
-{
-  "estimate_status": "pending",
-  "status": "pending_approval",
-  "total": 15000
-}
-```
-
-### Причина
-
-В `Rule::in` / enum БД нет `pending_approval` (и часто нет `completed`). Старый список с
-`diagnostics`.
-
-### Что сделать
-
-Whitelist везде (create / update / updateStatus):
-
-| status             | label           |
+| Значение           | UI              |
 | ------------------ | --------------- |
 | `new`              | Новый           |
 | `pending_approval` | На согласовании |
@@ -194,302 +39,594 @@ Whitelist везде (create / update / updateStatus):
 
 **Убрать:** `diagnostics`.
 
-```php
-'status' => [
-    'required',
-    'string',
-    Rule::in([
-        'new',
-        'pending_approval',
-        'in_progress',
-        'waiting_parts',
-        'done',
-        'completed',
-    ]),
-],
+Поток: `new` → (`pending_approval`) → `in_progress` → (`waiting_parts`) → `done` → `completed`.
+
+### `estimate_status`
+
+`null` | `pending` | `approved` | `declined`
+
+- СТО жмёт «На согласование» → `estimate_status=pending` + `status=pending_approval`
+- Клиент решил → `approved|declined` + `status=in_progress`
+- Пока `pending`: нельзя `is_done`, нельзя `done`/`completed` (403/422)
+- Просто сохранить `total` **не** ставит `pending`
+
+### `client_confirm_status` (после «Выдан»)
+
+`null` | `pending` | `confirmed` | `disputed`
+
+При `status → completed`:
+
+- `client_confirm_status = pending`
+- `client_confirm_comment = null`
+- `client_confirmed_at = null`
+- (+ обновить mileage floor)
+
+| Статус      | Редактирование staff              |
+| ----------- | --------------------------------- |
+| `pending`   | запрещено                         |
+| `confirmed` | навсегда запрещено                |
+| `disputed`  | разрешено + можно снова `pending` |
+| `null`      | как обычно                        |
+
+Пока `pending|disputed` — ремонт остаётся в **`current_repair`** на публичке, даже при
+`completed`.  
+После `confirmed` — в `previous_repairs`.
+
+---
+
+## 2. Auth
+
+| Method | Path             | Notes                                                |
+| ------ | ---------------- | ---------------------------------------------------- |
+| POST   | `/auth/register` | регистрация СТО + 30 дней trial                      |
+| POST   | `/auth/login`    | → `access_token`, `user`                             |
+| POST   | `/auth/refresh`  |                                                      |
+| POST   | `/auth/logout`   | 204                                                  |
+| GET    | `/auth/me`       | работает и для expired (чтобы фронт кинул на оплату) |
+
+User: `id`, `name`, `email`, `service_station_id`, `role?`, **`subscription_status`**,
+**`trial_ends_at`**, **`subscription_ends_at`**.
+
+### Регистрация
+
+`POST /auth/register`
+
+```json
+{
+  "name": "Иван Иванов",
+  "email": "sto@example.com",
+  "password": "secret123",
+  "password_confirmation": "secret123",
+  "station_name": "СТО на Ленина"
+}
 ```
 
-Если MySQL `ENUM` — обновить колонку тем же списком.
+Создать `service_station` + user `role=owner`.  
+Триал: `subscription_status=trial`, `trial_ends_at = now + 30 days`.  
+Ответ как у login: `{ access_token, token_type, expires_in, user }`.
 
-Флоу сметы:
+Email unique. 422 при занятом email.
 
-- СТО «На согласование» → `estimate_status = pending` + `status = pending_approval`
-- Клиент approve/decline → `estimate_status = approved|declined` + `status = in_progress`
+### Подписка
 
-### Проверка
+`subscription_status`: `trial` | `active` | `expired` | `blocked`
 
-`PATCH .../status` с `pending_approval` → **200**.  
-`PATCH /repairs/{id}` с обоими полями → **200**.  
-`completed` тоже принимается.
+- После регистрации — `trial` на 30 дней
+- По истечении `trial_ends_at` без оплаты → `expired`
+- Staff API (кроме `/auth/*`) для expired: **403**
+  `{ "message": "Subscription expired", "code": "subscription_expired" }`
+- `/auth/me`, `/auth/logout`, `/auth/refresh` **не** блокировать
+- После оплаты: `active` + `subscription_ends_at`
+- Старые демо-аккаунты без полей — считать `active`
 
----
+Тарифы на фронте: 1 мес 1 200 ₽ · 3 мес 3 300 ₽ · 12 мес 12 000 ₽. Оплата — интернет-эквайринг
+Альфа-Банка (ИП на НПД, чеки в «Мой налог» автоматически). ТЗ: `docs/backend-alfa-acquiring.md`.
 
-## A4. Checklist hotfixes
-
-- [ ] Второй+ ремонт на то же авто без `1062`
-- [ ] Один `public_token` на vehicle для всех ремонтов авто
-- [ ] `GET /public/repairs/{token}` → 200 JSON (без RedirectResponse)
-- [ ] `GET /public/vehicles/{token}` → 200 JSON
-- [ ] `pending_approval` и `completed` в whitelist / enum
-- [ ] Старые публичные ссылки живы (map / alias)
-- [ ] Публичное estimate работает для `current_repair`
-
-Фронт сейчас: toast на duplicate token; публичка ещё бьёт `/public/repairs/...` — legacy должен
-отдавать JSON. Переключение на `/public/vehicles/...` — после стабильного vehicles API.
+Все staff-данные скоупить по `service_station_id`.
 
 ---
 
-# Часть B. Публичная ссылка на автомобиль (продуктовое ТЗ)
+## 3. Станция и мастера
 
-## Цель
+Мастера — **справочник** (ФИО + профессия), **не** учётки для входа.
 
-Одна постоянная публичная ссылка на **автомобиль**, не на каждый заказ-наряд.
+### Модель `masters`
 
-Клиенту один раз отдали ссылку — новые ремонты и история открываются по ней же.
+| Поле                 | Тип                |
+| -------------------- | ------------------ |
+| `id`                 | PK                 |
+| `service_station_id` | FK                 |
+| `full_name`          | string             |
+| `specialty`          | string             |
+| `is_active`          | bool, default true |
+| timestamps           |                    |
 
-## B1. Токен на vehicle
+### `service_stations`
 
-- `public_token` + `public_url` на **vehicle**
-- при создании ремонта токен **не генерируется заново**
-- нет токена → создать один раз
-- все ремонты авто отдают **один и тот же** token/url
+| Поле                   | Тип       | Notes                                        |
+| ---------------------- | --------- | -------------------------------------------- |
+| `name`                 | string    |                                              |
+| `master_share_percent` | int 0–100 | **default 50** — доля мастера от цены работы |
 
-`POST /repairs/{id}/public-link` — убрать или deprecated (перевыпуск в MVP не нужен).
+### Эндпоинты
 
-## B2. Публичный endpoint
+```http
+GET    /api/v1/station
+PATCH  /api/v1/station
+# body: { "name": "...", "master_share_percent": 50 }
 
-**Стало:** `GET /public/vehicles/{publicToken}`  
-**Legacy:** `GET /public/repairs/{token}` — **alias с JSON**, не HTTP redirect (см. A2).
+GET    /api/v1/station/masters
+POST   /api/v1/station/masters
+# { "full_name": "...", "specialty": "Механик" }  — без email/password
 
-### Ответ
+PATCH  /api/v1/station/masters/{id}
+# { "full_name"?, "specialty"?, "is_active"? }
+
+DELETE /api/v1/station/masters/{id}
+```
+
+`is_active=false` — скрыть из селекта новых назначений; в старых работах оставить snapshot `master`.
+
+---
+
+## 4. Клиенты и несколько авто
+
+### `GET /clients/{id}`
 
 ```json
 {
   "data": {
-    "car_model": "Toyota Camry",
-    "license_plate": "А123ВС 777",
-    "vin": "...",
-    "current_repair": {
-      "order_number": "РО-1042",
-      "status": "in_progress",
-      "status_label": "В работе",
-      "planned_ready_at": "2026-08-20",
-      "total": 18500,
-      "total_formatted": "18 500 ₽",
-      "estimate_status": null,
-      "estimate_comment": null,
-      "estimate_decided_at": null,
-      "comment": "Масло заменено, фильтр в наличии",
-      "work_items": [{ "title": "Замена масла", "is_done": true }],
-      "updated_at": "2026-08-12T12:00:00Z"
-    },
-    "previous_repairs": [
+    "id": "1",
+    "name": "Иван",
+    "phone": "+79001234567",
+    "email": null,
+    "vehicles": [
       {
-        "order_number": "РО-1001",
-        "status": "completed",
-        "status_label": "Выдан",
-        "completed_at": "2026-07-01T15:00:00Z",
-        "updated_at": "2026-07-01T15:00:00Z",
-        "total": 12000,
-        "total_formatted": "12 000 ₽",
-        "work_items": [{ "title": "Диагностика", "is_done": true }]
+        "id": "10",
+        "car_model": "Toyota Camry",
+        "license_plate": "А123ВС777",
+        "vin": null,
+        "chassis_number": "CHS123456",
+        "mileage": 120000
       }
     ]
   }
 }
 ```
 
-### Правила
-
-**`current_repair`:** активный ремонт (не `completed`), самый свежий; если нет — `null`.  
-В `current_repair` отдавать также **`comment`** (комментарий мастера для клиента), если заполнен.
-
-**`previous_repairs`:** закрытые/выданные (`completed`; политику по старым `done` — на усмотрение),
-без текущего, новые сверху, желательно с `work_items`.
-
-## B3. Согласование сметы (публичное)
-
-`POST /public/vehicles/{token}/estimate`  
-(или legacy `/public/repairs/{token}/estimate` с resolve → `current_repair`)
+### `POST /clients/{id}/vehicles` — добавить авто существующему клиенту (предпочтительно)
 
 ```json
-{ "decision": "approved", "comment": null }
+{
+  "car_model": "Kia Rio",
+  "license_plate": "В456ОР777",
+  "vin": "JTNB11HK703456789",
+  "chassis_number": null,
+  "mileage": 50000
+}
 ```
 
+Клиент берётся из URL. **Не** создавать нового клиента.
+
+### `POST /vehicles` — тот же эффект, если вложенного роута нет
+
 ```json
-{ "decision": "declined", "comment": "пока без замены колодок" }
+{
+  "client_id": 1,
+  "client_name": "Иван",
+  "car_model": "Kia Rio",
+  "license_plate": "В456ОР777",
+  "vin": "JTNB11HK703456789",
+  "chassis_number": null,
+  "mileage": 50000
+}
 ```
 
 Правила:
 
-- `estimate_status = pending` **только** после явного «На согласование» на СТО
-- при отправке статус ремонта → **`pending_approval`**
-- простое сохранение `total` **не** ставит `pending` и **не** меняет статус
-- если `estimate_status` null — на публичке нет кнопок согласования, только сумма
+- `client_id` (или id в URL) — **required**, `exists:clients,id` этой станции
+- VIN **или** chassis (`required_without`, оба ключа можно слать: одно значение, другое `null`)
+- уникальность VIN/chassis в рамках станции (среди non-null)
+- **Сохранить новую строку** в `vehicles` с этим `client_id` (`$client->vehicles()->create(...)`,
+  hasMany)
+- Если пришёл `client_id` — **не** создавать клиента по `client_name` и **не** `update` единственное
+  авто клиента
+- Ответ `201`:
+  `{ "data": { "id", "client_id", "car_model", "license_plate", "vin", "chassis_number", "mileage" } }`
 
-Пока `pending` / `pending_approval`:
+Остальное:
 
-- нельзя `is_done` у работ → `403` / `422`
-- нельзя статус `done` / `completed`
-- названия работ править можно
+- `GET/POST /clients`, `PUT /clients/{id}`
+- `GET /clients?search=&page=&per_page=`
 
-После решения клиента:
+### Intake (новый клиент + авто)
 
-| Решение     | `estimate_status` | Статус ремонта  |
-| ----------- | ----------------- | --------------- |
-| Согласовано | `approved`        | → `in_progress` |
-| Отклонено   | `declined`        | → `in_progress` |
+`POST /intake/clients-with-vehicle` (или эквивалент):
 
-После `approved` / `declined` — отметить работы снова можно.
-
-## B4. Справочник статусов
-
-| status             | label           |
-| ------------------ | --------------- |
-| `new`              | Новый           |
-| `pending_approval` | На согласовании |
-| `in_progress`      | В работе        |
-| `waiting_parts`    | Ждём запчасти   |
-| `done`             | Готово          |
-| `completed`        | Выдан           |
-
-Убрать: `diagnostics`.
-
-Флоу: `new` → (`pending_approval`) → `in_progress` → `waiting_parts?` → `done` → `completed`
-
-## B5. Статус `completed` («Выдан»)
-
-1. **`done`** — авто готово, ещё можно править
-2. **«Автомобиль выдан»** → **`completed`** + `client_confirm_status = pending`
-
-После `completed` — см. полное ТЗ [`backend-client-confirm.md`](./backend-client-confirm.md):
-
-- staff **не правит**, пока `pending` / `confirmed`
-- клиент подтверждает или пишет ошибку (`POST .../confirm`)
-- при `disputed` staff снова может править и отправить на подтверждение
-- пока `pending|disputed` заказ остаётся в **`current_repair`**
-- после `confirmed` — навсегда только чтение, заказ в `previous_repairs`
-
-## B6. Миграция данных
-
-1. Для каждого `vehicle` без токена — сгенерировать `public_token`
-2. Старые repair-токены → канонический vehicle-токен или map `old → vehicle`
-3. Уже выданные ссылки не должны умирать
-
-## B7. Не делать сейчас
-
-- regenerate public link
-- отдельная ссылка на каждый ремонт
-- SMS / шаринг
-
-## B8. Acceptance (vehicle-link)
-
-- [ ] Один `public_url` на все ремонты авто
-- [ ] Новый ремонт не меняет ссылку
-- [ ] Публичка: `current_repair` + `previous_repairs`
-- [ ] Смета на согласование только при `estimate_status = pending`
-- [ ] Отправка сметы → `pending_approval`
-- [ ] Нет `diagnostics`
-- [ ] После approve/decline → `in_progress`
-- [ ] Пока pending — нельзя `is_done` / `done` / `completed`
-- [ ] `completed` закрывает заказ на API
-- [ ] `previous_repairs[].work_items` сохраняются
-- [ ] Старые ссылки открываются
-
-Фронт готов подстраиваться под `/public/vehicles/{token}`, vehicle token в staff, `completed`,
-`current_repair` / `previous_repairs`.
+`client_name`, `client_phone`, `client_email?`, `car_model`, `license_plate`, `vin?`,
+`chassis_number?`, `mileage?`  
+→ `{ client, vehicle }`
 
 ---
 
-# Часть C. Прочие фиксы Laravel
+## 5. Автомобили
 
-## C1. Route binding work-items / parts (500)
+### Поля `vehicles`
 
-`PATCH/DELETE .../work-items/{workItem}` и `.../parts/{part}` падают:
+| Поле                         | Notes                                              |
+| ---------------------------- | -------------------------------------------------- |
+| `car_model`, `license_plate` | required                                           |
+| `vin`                        | nullable, 17 символов; unique среди non-null       |
+| `chassis_number`             | nullable, 5–25 (A-Z,0-9,-); `required_without:vin` |
+| `mileage`                    | nullable int ≥ 0                                   |
+| `last_completed_mileage`     | floor после «Выдан»                                |
+| `public_token`               | **SoT**, unique                                    |
+| `public_url`                 | `/public/vehicles/{token}`                         |
 
-`Attempt to read property "id" on string` в `AppServiceProvider` (custom `Route::bind`).
+Пустая строка VIN/chassis → `null`.
 
-Нужно: `{workItem}` / `{part}` → модель, скоуп к `{repair}` и `service_station_id`.
+### Поиск
 
-Проверка: toggle `is_done`, rename, quantity, delete → `200` / `204`.
+`GET /vehicles/search?q=` — по номеру, VIN, **chassis** (≥ 2 символов).
 
-## C2. Сохранение `total`
+В ответе: клиент, авто, `mileage`, `last_completed_mileage`, `previous_repairs[]` с полным
+`work_items[]` + `mileage`.
 
-Фронт шлёт `total` в `POST/PATCH /repairs`. Часто в БД остаётся `0`.
+### `GET /vehicles/{id}`
 
-- `$fillable` + валидация `nullable|integer|min:0`
-- сохранять и отдавать (+ желательно `total_formatted`)
+Авто + `client` + `repairs[]`:
 
-## C3. История авто в search / show
+```json
+{
+  "id": "...",
+  "order_number": "…",
+  "status": "completed",
+  "updated_at": "...",
+  "total": 18500,
+  "mileage": 120500,
+  "work_items": [
+    { "title": "Замена масла", "is_done": true, "price": 3500, "hours": 1.5, "is_extra": false }
+  ]
+}
+```
 
-Фронт: `previous_repairs` из search или `repairs` из `GET /vehicles/{id}`  
-(блок на 3-м шаге создания и на `/repairs/{id}`).
-
-Хотя бы один источник стабильно заполнен.
-
-**Важно:** в каждом элементе истории нужны:
-
-- полный **`work_items[]`** (не одна строка `title`);
-- **`mileage`** этого заказ-наряда (пробег на работах).
-
-Иначе UI кажется «урезанным». Подробно:
-[`backend-vehicle-history-works.md`](./backend-vehicle-history-works.md).
-
-## C4. Create vs update при найденном авто
-
-Найденное авто:
-
-- **не** `POST /intake/clients-with-vehicle`
-- `PUT /clients/{id}` + `PATCH /vehicles/{id}`
-- `POST /repairs` с `vehicle_id` (**не** создавать нового client/vehicle)
-
-Intake — только когда авто/клиента ещё нет.
-
-## C5. Согласование сметы — поля и endpoints
-
-Поля `repair_orders`:
-
-- `estimate_status`: `pending|approved|declined` nullable
-- `estimate_comment` nullable
-- `estimate_decided_at` nullable
-
-Публично (legacy пока ок):
-
-- `GET /public/repairs/{token}` — `total`, `total_formatted`, `estimate_*`
-- `POST /public/repairs/{token}/estimate` — `decision` + optional `comment`
-
-Staff: `PATCH /repairs/{id}` принимает `estimate_status: "pending"`; `GET` отдаёт `estimate_*`.
-
-## C6. Уже используется фронтом (проверить)
-
-| Метод                            | Назначение                                      |
-| -------------------------------- | ----------------------------------------------- |
-| `GET /public/repairs/{token}`    | Публичная страница (JSON alias)                 |
-| `PATCH /repairs/{repair}`        | Дата, comment, mileage, total, estimate, status |
-| `PATCH /repairs/{repair}/status` | Быстрая смена статуса                           |
-| `GET /auth/me`                   | Имя мастера                                     |
-
-`POST /repairs/{id}/public-link` — deprecated после vehicle-token.
-
-## C7. Желательно
-
-- Нормализация телефона E.164 / `+7...`
-- Стабильные `422` с `errors: { field: ["..."] }`
-- OpenAPI: `total`, `estimate_*`, новые статусы
+После `completed` / `confirmed` **не чистить** `work_items`.
 
 ---
 
-## Итоговый порядок работ для бэкендера
+## 6. Пробег (серверный floor)
 
-1. A1 — duplicate `public_token`
-2. A2 — `show()` без redirect, JSON alias
-3. A3 — whitelist статусов (`pending_approval`, `completed`)
-4. **Пробег: обязательная серверная валидация минимума** —
-   [`backend-mileage.md`](./backend-mileage.md)
-5. **Подтверждение клиентом после «Выдан»** —
-   [`backend-client-confirm.md`](./backend-client-confirm.md)
-6. C1 — route binding work-items/parts
-7. C2 — persist `total`
-8. B / C5 — vehicle public payload + estimate flow (+ `mileage` в public history)
-9. C3–C4 — история авто, update vs create
-10. Сообщить фронту, когда можно окончательно перейти на `/public/vehicles/...`
+1. При `status → completed`: сохранить `repair.mileage`;  
+   `vehicles.last_completed_mileage = max(floor, repair.mileage)` (если mileage не null).
+2. Floor считать **только** из `completed` (не `done`).
+3. На `POST/PATCH /repairs` и при смене mileage на vehicle:  
+   если floor известен и mileage задан → `mileage >= last_completed_mileage`, иначе **422**:
+
+```json
+{
+  "errors": {
+    "mileage": ["Пробег не может быть меньше 120500 км (последний выданный заказ)"]
+  }
+}
+```
+
+Отдавать фронту: `vehicle.last_completed_mileage` в карточке ремонта / поиске; `mileage` в публичке
+и истории.
+
+---
+
+## 7. Ремонты (заказ-наряды)
+
+### Список
+
+`GET /repairs?search=&status=&page=&per_page=`
+
+`search` ищет по: номеру заказа, машине, **ФИО клиента**, **ФИО мастера** на работах.
+
+### Создание
+
+`POST /repairs`
+
+```json
+{
+  "vehicle_id": 10,
+  "client_id": 1,
+  "status": "new",
+  "planned_ready_at": "2026-08-20",
+  "mileage": 120500,
+  "total": 18500,
+  "comment": "Заметка мастера",
+  "work_items": [
+    {
+      "title": "Диагностика",
+      "master_id": 10,
+      "price": 2000,
+      "hours": 1,
+      "is_extra": false
+    },
+    {
+      "title": "Полировка",
+      "master_id": null,
+      "price": 5000,
+      "hours": 2,
+      "is_extra": true
+    }
+  ],
+  "ordered_parts": [{ "name": "Фильтр", "quantity": 1, "price": 850 }]
+}
+```
+
+- `order_number` генерирует сервер
+- `public_token` **не** писать в `repair_orders` (берётся с vehicle)
+- `total` — nullable int ≥ 0, **persist** (fillable)
+
+### Карточка / обновление
+
+- `GET /repairs/{id}`
+- `PATCH /repairs/{id}` — status, planned_ready_at, comment, mileage, total, estimate_status,
+  client_confirm_status
+- `PATCH /repairs/{id}/status` — `{ "status": "..." }`
+
+В ответе staff всегда:
+
+```json
+{
+  "public_token": "<vehicle.public_token>",
+  "public_url": "/public/vehicles/<token>",
+  "vehicle": { "id": "...", "public_token": "...", "last_completed_mileage": 120000 }
+}
+```
+
+### Work items
+
+`POST|PATCH|DELETE /repairs/{id}/work-items[/{workItem}]`
+
+Поля:
+
+| Поле        | Тип                                   |
+| ----------- | ------------------------------------- |
+| `title`     | string                                |
+| `is_done`   | bool                                  |
+| `price`     | nullable number, ₽                    |
+| `hours`     | nullable decimal                      |
+| `is_extra`  | bool, default false (доп. работы)     |
+| `master_id` | nullable FK                           |
+| `master`    | `{ id, full_name, specialty }` на GET |
+
+Route binding: work item должен принадлежать repair + станции (иначе 404, не 500).
+
+### Parts
+
+`POST|PATCH|DELETE /repairs/{id}/parts[/{part}]`
+
+| Поле       | Тип                                  |
+| ---------- | ------------------------------------ |
+| `name`     | string                               |
+| `quantity` | int ≥ 1                              |
+| `price`    | nullable number — цена за единицу, ₽ |
+
+---
+
+## 8. Публичная карточка (клиент без логина)
+
+### Эндпоинты
+
+| Method | Path                                | Notes                          |
+| ------ | ----------------------------------- | ------------------------------ |
+| GET    | `/public/vehicles/{token}`          | **канон**                      |
+| GET    | `/public/repairs/{token}`           | legacy alias → **тот же JSON** |
+| POST   | `/public/vehicles/{token}/estimate` | согласование сметы             |
+| POST   | `/public/vehicles/{token}/confirm`  | подтверждение после выдачи     |
+
+`POST /repairs/{id}/public-link` — **deprecate** (токен на vehicle, не регенерировать на каждый
+ремонт).
+
+### Ответ `GET /public/vehicles/{token}`
+
+```json
+{
+  "data": {
+    "car_model": "Toyota Camry",
+    "license_plate": "А123ВС777",
+    "vin": null,
+    "chassis_number": "CHS123",
+    "client_name": "Иван",
+    "client_vehicles": [
+      {
+        "public_token": "aaa",
+        "car_model": "Toyota Camry",
+        "license_plate": "А123ВС777",
+        "vin": null,
+        "chassis_number": "CHS123"
+      },
+      {
+        "public_token": "bbb",
+        "car_model": "Kia Rio",
+        "license_plate": "В456ОР777",
+        "vin": "...",
+        "chassis_number": null
+      }
+    ],
+    "current_repair": {
+      "order_number": "…",
+      "status": "in_progress",
+      "status_label": "В работе",
+      "planned_ready_at": "2026-08-20",
+      "total": 18500,
+      "total_formatted": "18 500 ₽",
+      "mileage": 120500,
+      "comment": "Заметка мастера",
+      "estimate_status": null,
+      "estimate_comment": null,
+      "estimate_decided_at": null,
+      "client_confirm_status": null,
+      "client_confirm_comment": null,
+      "client_confirmed_at": null,
+      "client_name": "Иван",
+      "work_items": [{ "title": "Замена масла", "is_done": true, "price": 3500, "hours": 1.5 }],
+      "updated_at": "…"
+    },
+    "previous_repairs": [
+      {
+        "order_number": "…",
+        "status": "completed",
+        "completed_at": "…",
+        "total": 10000,
+        "mileage": 118000,
+        "work_items": [{ "title": "Диагностика", "is_done": true }],
+        "client_confirm_status": "confirmed"
+      }
+    ]
+  }
+}
+```
+
+Правила:
+
+- Один `public_token` на авто навсегда
+- `current_repair` = активный / или `completed` пока confirm `pending|disputed`
+- `previous_repairs` = закрытые после confirm (и старые completed)
+- `comment` = `repair_orders.comment`
+- Минимум PII (телефон СТО не обязателен)
+
+### Estimate
+
+```http
+POST /public/vehicles/{token}/estimate
+{ "decision": "approved" | "declined", "comment": "..." }
+```
+
+`comment` обязателен при `declined`. Только если `estimate_status=pending`.
+
+### Confirm (после выдачи)
+
+```http
+POST /public/vehicles/{token}/confirm
+{ "decision": "confirmed", "comment": null }
+{ "decision": "disputed", "comment": "Неверный VIN" }
+```
+
+Только если `status=completed` и `client_confirm_status=pending`.  
+Ответ = тот же JSON, что GET.
+
+Staff снова отправить на подтверждение:
+
+```http
+PATCH /repairs/{id}
+{ "client_confirm_status": "pending" }
+```
+
+---
+
+## 9. Hotfixes (обязательно)
+
+### 9.1 Duplicate `public_token`
+
+**Симптом:** `1062 Duplicate entry … repair_orders_public_token_unique` на 2-м ремонте.
+
+**Фикс:** SoT = `vehicles.public_token`. При `POST /repairs` не писать token в repair. Убрать UNIQUE
+с `repair_orders.public_token`. Старые ссылки: resolve repair-token → vehicle.
+
+### 9.2 Public 500 / redirect
+
+`PublicRepairController::show` не должен делать `redirect()`. Всегда JSON 200 (Accept:
+application/json).
+
+### 9.3 Binding work-items / parts
+
+`{workItem}` / `{part}` — модели в скоупе repair + station → 404, не 500.
+
+### 9.4 `total`
+
+Fillable + validation `nullable|integer|min:0`. Отдавать `total` и желательно `total_formatted`.
+
+---
+
+## 10. Go-live (опционально)
+
+Очистка демо-данных, оставить/создать:
+
+| Email           | Password   |
+| --------------- | ---------- |
+| `master@sto.ru` | `password` |
+| `sto@sto.ru`    | `password` |
+
+Предпочтительно **две** станции (demo / партнёр).  
+Удалить: work_items, parts, repairs, vehicles, clients.  
+Пароли сменить перед продом.
+
+---
+
+## 11. SPA на том же домене
+
+Deep links (`/login`, `/dashboard`, `/repairs/:id`, `/public/vehicles/:token`) должны отдавать
+`index.html`, не 404.
+
+- nginx: `try_files $uri /index.html;`
+- или Laravel `web.php` catch-all → `public/index.html`
+- API `/api/v1/*` не трогать
+- `/assets/*` — статикой
+
+Скопировать Vite `dist/*` в Laravel `public/` (не затереть `index.php`).
+
+---
+
+## 12. Acceptance (короткий чеклист)
+
+### Hotfixes
+
+- [ ] 2-й ремонт на то же авто → 201, без 1062
+- [ ] один `public_token` на vehicle
+- [ ] GET public → 200 JSON
+- [ ] `pending_approval` и `completed` в whitelist
+
+### Публичка / смета / выдача
+
+- [ ] estimate только при `pending`; после решения → `in_progress`
+- [ ] пока смета pending — нельзя закрывать работы / выдавать
+- [ ] `completed` → `client_confirm_status=pending`, staff lock
+- [ ] disputed → edit + resend pending
+- [ ] confirmed → история, immutable
+- [ ] `current_repair.comment` с мастера
+
+### Авто / клиент
+
+- [ ] VIN или chassis
+- [ ] поиск по chassis
+- [ ] floor mileage после completed, 422 ниже floor
+- [ ] история: полный `work_items[]` + `mileage`
+- [ ] `GET /clients/{id}` → `vehicles[]`
+- [ ] `POST /vehicles` с `client_id`
+- [ ] public `client_vehicles[]` с токенами
+
+### Мастера / деньги
+
+- [ ] CRUD `/station/masters` без email/password
+- [ ] `GET/PATCH /station` + `master_share_percent` (default 50)
+- [ ] work_items: `master_id`, nested `master`, `price`, `hours`, `is_extra`
+- [ ] parts: `price`
+- [ ] search ремонтов по ФИО клиента и мастера
+
+### Деплой
+
+- [ ] SPA deep links 200
+- [ ] API жив
+
+---
+
+## 13. Модели (сводка полей)
+
+| Таблица             | Ключевые поля                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `users`             | name, email, password, service_station_id                                                       |
+| `service_stations`  | name, **master_share_percent**                                                                  |
+| `masters`           | station_id, full_name, specialty, is_active                                                     |
+| `clients`           | station_id, name, phone, email                                                                  |
+| `vehicles`          | client_id, plate, model, vin?, chassis?, mileage?, **last_completed_mileage**, **public_token** |
+| `repair_orders`     | vehicle_id, status, planned_ready_at, comment, mileage, total, estimate__, client_confirm__     |
+| `repair_work_items` | title, is_done, **master_id**, **price**, **hours**, **is_extra**                               |
+| `repair_parts`      | name, quantity, **price**                                                                       |
+
+---
+
+_Документ для бэкенда DVSH. При расхождении со старым `rest-api.md` — этот файл главный._

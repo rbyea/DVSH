@@ -267,7 +267,7 @@
 
 .workItem {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
@@ -308,6 +308,13 @@
 .workTitle {
   min-width: 0;
   word-break: break-word;
+}
+
+.workPrice {
+  color: var(--dvsh-ink);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .workStatus {
@@ -456,6 +463,15 @@
   gap: 10px;
 }
 
+.confirmWorkPrice {
+  width: 110px;
+  color: var(--dvsh-ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .confirmWorkIndex {
   display: inline-flex;
   flex-shrink: 0;
@@ -526,6 +542,76 @@
 .historyPanel {
   background: linear-gradient(180deg, #f8fafc 0%, #ffffff 40%);
   border-style: solid;
+}
+
+.vehiclesPanel {
+  gap: 12px;
+}
+
+.vehiclesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vehicleItem,
+.vehicleItemCurrent,
+.vehicleItemButton {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  text-align: left;
+}
+
+.vehicleItemCurrent {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.vehicleItemButton {
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.vehicleItemButton:hover,
+.vehicleItemButton:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  outline: none;
+}
+
+.vehicleMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vehicleModel {
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.vehicleMeta {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .historyList {
@@ -768,9 +854,14 @@
   }
 
   .workItem {
-    grid-template-columns: 24px minmax(0, 1fr);
+    grid-template-columns: 24px minmax(0, 1fr) auto;
     gap: 8px;
     padding: 10px 12px;
+  }
+
+  .workPrice {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   .workStatus {

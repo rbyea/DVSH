@@ -2,16 +2,19 @@ import { createElement } from 'react';
 import { createBrowserRouter, Navigate, redirect } from 'react-router-dom';
 
 import { RepairCreateProvider } from '@/features/repair-order/create';
-import { LoginPage } from '@/pages/auth';
+import { LoginPage, RegisterPage } from '@/pages/auth';
+import { BillingPage } from '@/pages/BillingPage';
 import { DashboardPage } from '@/pages/Dashboard';
-import { PersonalDataConsentPage, PrivacyPolicyPage } from '@/pages/legal';
+import { OfferPage, PersonalDataConsentPage, PrivacyPolicyPage } from '@/pages/legal';
 import { NotFoundPage } from '@/pages/NotFound';
 import { PublicRepairPage } from '@/pages/PublicRepairPage';
+import { StationProfilePage } from '@/pages/StationProfilePage';
 import { RepairCreatePage } from '@/pages/RepairCreatePage';
 import { RepairDetailsPage } from '@/pages/RepairDetailsPage';
 
 import { MainLayout } from '../layouts/MainLayout';
 import { RedirectIfAuthenticated } from './RedirectIfAuthenticated';
+import { RequireActiveSubscription } from './RequireActiveSubscription';
 import { RequireAuth } from './RequireAuth';
 
 function redirectLegacyPublicRepair({ params }: { params: { publicToken?: string } }) {
@@ -40,11 +43,19 @@ export const appRouter = createBrowserRouter([
     Component: PersonalDataConsentPage,
   },
   {
+    path: '/legal/offer',
+    Component: OfferPage,
+  },
+  {
     element: <RedirectIfAuthenticated />,
     children: [
       {
         path: '/login',
         Component: LoginPage,
+      },
+      {
+        path: '/register',
+        Component: RegisterPage,
       },
     ],
   },
@@ -52,32 +63,45 @@ export const appRouter = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       {
-        path: '/',
-        Component: MainLayout,
+        path: '/billing',
+        Component: BillingPage,
+      },
+      {
+        element: <RequireActiveSubscription />,
         children: [
           {
-            path: '/dashboard',
-            Component: DashboardPage,
-          },
-          {
-            path: '/repairs/new',
-            element: (
-              <RepairCreateProvider>
-                <RepairCreatePage />
-              </RepairCreateProvider>
-            ),
-          },
-          {
-            path: '/repairs/:repairId',
-            Component: RepairDetailsPage,
-          },
-          {
-            index: true,
-            element: createElement(Navigate, { to: '/dashboard', replace: true }),
-          },
-          {
-            path: '*',
-            Component: NotFoundPage,
+            path: '/',
+            Component: MainLayout,
+            children: [
+              {
+                path: '/dashboard',
+                Component: DashboardPage,
+              },
+              {
+                path: '/station',
+                Component: StationProfilePage,
+              },
+              {
+                path: '/repairs/new',
+                element: (
+                  <RepairCreateProvider>
+                    <RepairCreatePage />
+                  </RepairCreateProvider>
+                ),
+              },
+              {
+                path: '/repairs/:repairId',
+                Component: RepairDetailsPage,
+              },
+              {
+                index: true,
+                element: createElement(Navigate, { to: '/dashboard', replace: true }),
+              },
+              {
+                path: '*',
+                Component: NotFoundPage,
+              },
+            ],
           },
         ],
       },

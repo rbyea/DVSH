@@ -47,17 +47,27 @@
 }
 
 .item {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: center;
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-sm);
-  padding: 12px 14px;
+  padding: 14px;
   background: #fff;
   transition:
     border-color 0.15s ease,
     background 0.15s ease;
+}
+
+.itemTop {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px 12px;
+  align-items: center;
+}
+
+.itemMain {
+  min-width: 0;
 }
 
 .itemDone {
@@ -66,9 +76,11 @@
 }
 
 .itemTitle {
+  display: block;
   color: var(--dvsh-ink);
   font-size: 15px;
   font-weight: 600;
+  line-height: 1.35;
 }
 
 .itemDone .itemTitle {
@@ -77,16 +89,77 @@
   text-decoration-thickness: 1px;
 }
 
-.itemActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.masterSelect,
+.addMasterSelect {
+  width: 100%;
+  min-width: 0;
 }
 
-.addRow {
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metaEdit,
+.addMeta {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1.6fr) 96px 120px;
   gap: 10px;
+  align-items: end;
+}
+
+.metaEdit {
+  padding-left: 30px;
+}
+
+.metaRead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding-left: 30px;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.metricInput,
+.addMetricInput {
+  width: 100%;
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.addBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px dashed var(--dvsh-line);
+  padding-top: 14px;
+}
+
+.addMeta {
+  grid-template-columns: minmax(0, 1.6fr) 96px 120px auto;
+}
+
+.addAction {
+  display: flex;
+  align-items: flex-end;
 }
 
 .empty {
@@ -104,25 +177,33 @@
     flex-wrap: wrap;
   }
 
-  .item {
+  .itemTop {
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 10px;
   }
 
   .itemActions {
     grid-column: 2;
-    justify-self: start;
+    justify-content: flex-start;
   }
 
   .itemTitle {
     overflow-wrap: anywhere;
   }
 
-  .addRow {
+  .metaRead {
+    padding-left: 0;
+  }
+
+  .metaEdit {
+    padding-left: 0;
+  }
+
+  .metaEdit,
+  .addMeta {
     grid-template-columns: 1fr;
   }
 
-  .addRow :global(.ant-btn) {
+  .addAction :global(.ant-btn) {
     width: 100%;
   }
 }

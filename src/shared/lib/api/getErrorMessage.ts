@@ -56,8 +56,50 @@ function humanizeServerMessage(message: string): string | null {
   return null;
 }
 
+function resolveFieldLabel(field: string | undefined): string | undefined {
+  if (!field) {
+    return undefined;
+  }
+
+  const key = field.split('.').pop() ?? field;
+
+  return apiFieldLabels[key] ?? apiFieldLabels[field];
+}
+
+function formatValidationMessage(field: string | undefined, message: string): string {
+  const label = resolveFieldLabel(field);
+  const normalized = message.toLowerCase();
+  const isRequired =
+    normalized.includes('required') ||
+    normalized.includes('обязательн') ||
+    normalized.includes('must be present');
+
+  if (isRequired && label) {
+    return `${label} обязательно для заполнения`;
+  }
+
+  const humanized = humanizeServerMessage(message) ?? message;
+
+  if (label && !humanized.toLowerCase().includes(label.toLowerCase())) {
+    return `${label}: ${humanized}`;
+  }
+
+  return humanized;
+}
+
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (isFetchBaseQueryError(error)) {
+    const laravelErrors = getLaravelErrors(error);
+
+    if (laravelErrors) {
+      const firstEntry = Object.entries(laravelErrors)[0];
+      const firstMessage = firstEntry?.[1]?.[0];
+
+      if (firstMessage) {
+        return formatValidationMessage(firstEntry?.[0], firstMessage);
+      }
+    }
+
     const data = error.data;
 
     if (
@@ -67,26 +109,26 @@ export function getErrorMessage(error: unknown, fallback: string): string {
       typeof data.message === 'string' &&
       data.message
     ) {
-      return humanizeServerMessage(data.message) ?? data.message;
-    }
-
-    const laravelErrors = getLaravelErrors(error);
-
-    if (laravelErrors) {
-      const firstMessage = Object.values(laravelErrors)[0]?.[0];
-
-      if (firstMessage) {
-        return humanizeServerMessage(firstMessage) ?? firstMessage;
-      }
+      return formatValidationMessage(undefined, data.message);
     }
   }
 
   if (error instanceof Error && error.message) {
-    return humanizeServerMessage(error.message) ?? error.message;
+    return formatValidationMessage(undefined, error.message);
   }
 
   return fallback;
 }
+
+const apiFieldLabels: Record<string, string> = {
+  client_id: 'Клиент',
+  client_name: 'Имя клиента',
+  car_model: 'Модель',
+  license_plate: 'Гос номер',
+  vin: 'VIN',
+  chassis_number: 'Номер шасси',
+  mileage: 'Пробег',
+};
 
 const apiFieldToFormField: Record<string, string> = {
   client_name: 'clientName',
@@ -101,6 +143,8 @@ const apiFieldToFormField: Record<string, string> = {
   planned_ready_at: 'plannedReadyAt',
   comment: 'comment',
   total: 'total',
+  station_name: 'stationName',
+  password_confirmation: 'passwordConfirmation',
 };
 
 export function applyApiFieldErrors<TFieldValues extends FieldValues>(

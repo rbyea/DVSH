@@ -1,0 +1,152 @@
+.page {
+  min-height: 100vh;
+  padding: 32px 20px 48px;
+  background:
+    radial-gradient(900px 420px at 15% 0%, rgb(37 99 235 / 12%), transparent 55%),
+    radial-gradient(700px 360px at 100% 10%, rgb(15 118 110 / 10%), transparent 50%), var(--dvsh-bg);
+}
+
+.inner {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #0f766e);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.brandName {
+  color: var(--dvsh-ink);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.title {
+  margin: 0 0 10px;
+  color: var(--dvsh-ink);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.subtitle {
+  margin: 0 0 28px;
+  max-width: 640px;
+  color: var(--dvsh-muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 168px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 20px 18px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--dvsh-shadow);
+}
+
+.planRecommended {
+  border-color: #99f6e4;
+  background: linear-gradient(180deg, #f0fdfa, #fff 48%);
+}
+
+.planSelected {
+  border-color: var(--dvsh-ink);
+  box-shadow: 0 0 0 1px var(--dvsh-ink);
+}
+
+.planBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planTitle {
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planPrice {
+  color: var(--dvsh-ink);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.planHint {
+  color: var(--dvsh-muted);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.backLink {
+  color: var(--dvsh-accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 800px) {
+  .plans {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+}

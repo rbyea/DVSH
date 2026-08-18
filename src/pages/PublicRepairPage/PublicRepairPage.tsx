@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
 import {
@@ -11,6 +11,7 @@ import {
   clientConfirmStatusLabels,
   estimateStatusColors,
   estimateStatusLabels,
+  getRepairCostBreakdown,
   repairStatusColors,
   repairStatusLabels,
   useApprovePublicEstimateMutation,
@@ -23,6 +24,7 @@ import {
   type RepairStatus,
 } from '@/entities/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
+import { parseMoney } from '@/shared/lib/money';
 import { acceptPublicPdnNotice, hasAcceptedPublicPdnNotice } from '@/shared/lib/legal';
 import { formatMileageDelta, formatMileageKm } from '@/shared/lib/vehicle';
 
@@ -79,19 +81,32 @@ function formatMoney(total: number): string {
   }).format(total);
 }
 
-function getTotalLabel(repair: Pick<PublicCurrentRepair, 'total' | 'total_formatted'>): string {
-  const totalValue = typeof repair.total === 'number' ? repair.total : null;
+function resolveAmountDue(repair: PublicCurrentRepair): number | null {
+  const breakdown = getRepairCostBreakdown({
+    workItems: repair.work_items,
+    orderedParts: repair.ordered_parts,
+  });
 
-  return (
-    repair.total_formatted ||
-    (typeof totalValue === 'number' && totalValue > 0
-      ? formatMoney(totalValue)
-      : 'Сумма уточняется')
-  );
+  if (breakdown.calculatedTotal > 0) {
+    return breakdown.calculatedTotal;
+  }
+
+  return parseMoney(repair.total);
+}
+
+function getTotalLabel(repair: PublicCurrentRepair): string {
+  const amountDue = resolveAmountDue(repair);
+
+  if (amountDue != null && amountDue > 0) {
+    return formatMoney(amountDue);
+  }
+
+  return repair.total_formatted?.trim() || 'Сумма уточняется';
 }
 
 export function PublicRepairPage() {
   const { publicToken = '' } = useParams<{ publicToken: string }>();
+  const navigate = useNavigate();
   const [declineComment, setDeclineComment] = useState('');
   const [isDeclining, setIsDeclining] = useState(false);
   const [disputeComment, setDisputeComment] = useState('');
@@ -116,6 +131,11 @@ export function PublicRepairPage() {
   const [approveEstimate, { isLoading: isSubmittingEstimate }] = useApprovePublicEstimateMutation();
   const [confirmRepair, { isLoading: isSubmittingConfirm }] = useConfirmPublicRepairMutation();
   const isSubmitting = isSubmittingEstimate || isSubmittingConfirm;
+
+  useEffect(() => {
+    setNoticeAccepted(publicToken ? hasAcceptedPublicPdnNotice(publicToken) : false);
+    previousFingerprintRef.current = null;
+  }, [publicToken]);
 
   useEffect(() => {
     if (!vehicle) {
@@ -220,6 +240,8 @@ export function PublicRepairPage() {
 
   const currentRepair = vehicle.current_repair;
   const previousRepairs = vehicle.previous_repairs ?? [];
+  const clientVehicles = vehicle.client_vehicles ?? [];
+  const clientVehiclesCount = clientVehicles.length;
   const shellStatusClass = currentRepair
     ? statusClassName[currentRepair.status]
     : statusClassName.completed;
@@ -228,15 +250,18 @@ export function PublicRepairPage() {
   const doneCount = workItems.filter((item) => item.is_done).length;
   const totalCount = workItems.length;
   const progressPercent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
-  const totalValue = typeof currentRepair?.total === 'number' ? currentRepair.total : null;
+  const amountDue = currentRepair ? resolveAmountDue(currentRepair) : null;
   const totalLabel = currentRepair ? getTotalLabel(currentRepair) : 'Сумма уточняется';
+  const hasTotal = (amountDue != null && amountDue > 0) || Boolean(currentRepair?.total_formatted);
   const estimateStatus = currentRepair?.estimate_status ?? null;
-  const needsEstimateDecision =
-    estimateStatus === 'pending' && typeof totalValue === 'number' && totalValue > 0;
-  const hasTotal = typeof totalValue === 'number' && totalValue > 0;
+  const needsEstimateDecision = estimateStatus === 'pending' && hasTotal;
   const updatedAt = currentRepair?.updated_at ?? previousRepairs[0]?.updated_at;
   const confirmStatus = currentRepair?.client_confirm_status ?? null;
   const needsClientConfirm = currentRepair?.status === 'completed' && confirmStatus === 'pending';
+  const showConfirmPanel =
+    Boolean(currentRepair) && (confirmStatus === 'pending' || confirmStatus === 'disputed');
+  const showCurrentRepair =
+    Boolean(currentRepair) && !showConfirmPanel && confirmStatus !== 'confirmed';
   const clientName = currentRepair?.client_name?.trim() || vehicle.client_name?.trim() || null;
   const vehicleIdLabel = vehicle.vin?.trim()
     ? `VIN ${vehicle.vin.trim()}`
@@ -378,7 +403,7 @@ export function PublicRepairPage() {
                 {estimateStatusLabels[estimateStatus]}
               </Tag>
             ) : null}
-            {confirmStatus ? (
+            {showConfirmPanel && confirmStatus ? (
               <Tag color={clientConfirmStatusColors[confirmStatus]}>
                 {clientConfirmStatusLabels[confirmStatus]}
               </Tag>
@@ -386,12 +411,70 @@ export function PublicRepairPage() {
           </div>
         </section>
 
-        {currentRepair && confirmStatus ? (
+        {clientVehiclesCount > 0 ? (
+          <section className={clsx(styles.panel, styles.vehiclesPanel)}>
+            <div className={styles.panelHead}>
+              <div>
+                <h2 className={styles.panelTitle}>Автомобили клиента</h2>
+                <p className={styles.panelHint}>
+                  {clientName
+                    ? `${clientName} · нажмите авто, чтобы открыть его ремонты`
+                    : 'Нажмите авто, чтобы открыть его ремонты'}
+                </p>
+              </div>
+              <span className={styles.progressBadge}>{clientVehiclesCount}</span>
+            </div>
+
+            <ul className={styles.vehiclesList}>
+              {clientVehicles.map((item) => {
+                const isCurrent = item.public_token === publicToken;
+                const idLabel = item.vin?.trim()
+                  ? `VIN ${item.vin}`
+                  : item.chassis_number?.trim()
+                    ? `Шасси ${item.chassis_number}`
+                    : null;
+
+                return (
+                  <li key={item.public_token}>
+                    {isCurrent ? (
+                      <div className={clsx(styles.vehicleItem, styles.vehicleItemCurrent)}>
+                        <div className={styles.vehicleMain}>
+                          <span className={styles.vehicleModel}>{item.car_model}</span>
+                          <span className={styles.vehicleMeta}>
+                            {item.license_plate}
+                            {idLabel ? ` · ${idLabel}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        className={styles.vehicleItemButton}
+                        type="button"
+                        onClick={() => {
+                          navigate(`/public/vehicles/${item.public_token}`);
+                        }}
+                      >
+                        <span className={styles.vehicleMain}>
+                          <span className={styles.vehicleModel}>{item.car_model}</span>
+                          <span className={styles.vehicleMeta}>
+                            {item.license_plate}
+                            {idLabel ? ` · ${idLabel}` : ''}
+                          </span>
+                        </span>
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
+
+        {showConfirmPanel && currentRepair && confirmStatus ? (
           <section
             className={clsx(
               styles.panel,
               styles.confirmPanel,
-              confirmStatus === 'confirmed' && styles.confirmApproved,
               confirmStatus === 'disputed' && styles.confirmDisputed,
               needsClientConfirm && styles.confirmPending,
             )}
@@ -402,9 +485,7 @@ export function PublicRepairPage() {
                 <p className={styles.panelHint}>
                   {needsClientConfirm
                     ? 'Сверьте данные перед подтверждением'
-                    : confirmStatus === 'confirmed'
-                      ? 'Данные заказа подтверждены'
-                      : 'Замечание отправлено в сервис'}
+                    : 'Замечание отправлено в сервис'}
                 </p>
               </div>
               <Tag color={clientConfirmStatusColors[confirmStatus]}>
@@ -412,7 +493,7 @@ export function PublicRepairPage() {
               </Tag>
             </div>
 
-            {needsClientConfirm || confirmStatus === 'confirmed' || confirmStatus === 'disputed' ? (
+            {needsClientConfirm || confirmStatus === 'disputed' ? (
               <div className={styles.confirmTables}>
                 <table className={styles.confirmTable}>
                   <caption className={styles.confirmCaption}>Автомобиль и клиент</caption>
@@ -443,6 +524,10 @@ export function PublicRepairPage() {
                           : 'Не указан'}
                       </td>
                     </tr>
+                    <tr>
+                      <th scope="row">К оплате</th>
+                      <td>{totalLabel}</td>
+                    </tr>
                   </tbody>
                 </table>
 
@@ -450,17 +535,26 @@ export function PublicRepairPage() {
                   <caption className={styles.confirmCaption}>Выполненные работы</caption>
                   <tbody>
                     {workItems.length > 0 ? (
-                      workItems.map((item, index) => (
-                        <tr key={`confirm-work-${item.title}-${index}`}>
-                          <td className={styles.confirmWorkCell}>
-                            <span className={styles.confirmWorkIndex}>{index + 1}</span>
-                            <span>{item.title}</span>
-                          </td>
-                        </tr>
-                      ))
+                      workItems.map((item, index) => {
+                        const workPrice = parseMoney(item.price);
+
+                        return (
+                          <tr key={`confirm-work-${item.title}-${index}`}>
+                            <td className={styles.confirmWorkCell}>
+                              <span className={styles.confirmWorkIndex}>{index + 1}</span>
+                              <span>{item.title}</span>
+                            </td>
+                            <td className={styles.confirmWorkPrice}>
+                              {workPrice != null ? formatMoney(workPrice) : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td className={styles.confirmEmpty}>Список работ не сохранён</td>
+                        <td className={styles.confirmEmpty} colSpan={2}>
+                          Список работ не сохранён
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -531,15 +625,6 @@ export function PublicRepairPage() {
               </>
             ) : null}
 
-            {confirmStatus === 'confirmed' ? (
-              <p className={styles.estimateMessage}>
-                Подтверждено
-                {currentRepair.client_confirmed_at
-                  ? ` · ${formatDateTime(currentRepair.client_confirmed_at)}`
-                  : ''}
-              </p>
-            ) : null}
-
             {confirmStatus === 'disputed' ? (
               <p className={styles.estimateMessage}>
                 {currentRepair.client_confirm_comment
@@ -550,89 +635,100 @@ export function PublicRepairPage() {
           </section>
         ) : null}
 
-        <section className={styles.panel}>
-          <div className={styles.panelHead}>
-            <div>
-              <h2 className={styles.panelTitle}>Текущий ремонт</h2>
-              <p className={styles.panelHint}>
-                {currentRepair
-                  ? 'Работы по этому заказ-наряду'
-                  : 'Сейчас нет открытого заказ-наряда'}
-              </p>
-            </div>
-            {currentRepair ? (
-              <span className={styles.progressBadge}>
-                {totalCount > 0 ? `${doneCount} из ${totalCount}` : 'Ожидает список'}
-              </span>
-            ) : null}
-          </div>
-
-          {currentRepair ? (
-            <>
-              <div className={styles.progressTrack} aria-hidden>
-                <div
-                  className={styles.progressFill}
-                  data-step={String(Math.round(progressPercent / 5))}
-                />
+        {showCurrentRepair ? (
+          <section className={styles.panel}>
+            <div className={styles.panelHead}>
+              <div>
+                <h2 className={styles.panelTitle}>Текущий ремонт</h2>
+                <p className={styles.panelHint}>
+                  {currentRepair
+                    ? 'Работы по этому заказ-наряду'
+                    : 'Сейчас нет открытого заказ-наряда'}
+                </p>
               </div>
-
-              <div className={styles.facts}>
-                <div className={styles.fact}>
-                  <span className={styles.factLabel}>Сумма</span>
-                  <span className={styles.factValue}>{totalLabel}</span>
-                </div>
-                <div className={styles.fact}>
-                  <span className={styles.factLabel}>Выдача</span>
-                  <span className={styles.factValue}>
-                    {formatDate(currentRepair.planned_ready_at)}
-                  </span>
-                </div>
-                <div className={styles.fact}>
-                  <span className={styles.factLabel}>Пробег на работах</span>
-                  <span className={styles.factValue}>
-                    {typeof currentRepair.mileage === 'number'
-                      ? formatMileageKm(currentRepair.mileage)
-                      : 'Не указан'}
-                  </span>
-                </div>
-              </div>
-
-              {workItems.length > 0 ? (
-                <ul className={styles.worksList}>
-                  {workItems.map((item, index) => (
-                    <li
-                      className={clsx(styles.workItem, item.is_done && styles.workItemDone)}
-                      key={`current-${item.title}-${index}`}
-                    >
-                      <span className={styles.workCheck} aria-hidden>
-                        {item.is_done ? '✓' : ''}
-                      </span>
-                      <span className={styles.workTitle}>{item.title}</span>
-                      <span className={styles.workStatus}>
-                        {item.is_done ? 'Готово' : 'В работе'}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={styles.panelEmpty}>Список работ появится после диагностики на СТО</p>
-              )}
-
-              {currentRepair.comment?.trim() ? (
-                <div className={styles.masterComment}>
-                  <span className={styles.masterCommentLabel}>Комментарий мастера</span>
-                  <p className={styles.masterCommentText}>{currentRepair.comment.trim()}</p>
-                </div>
+              {currentRepair ? (
+                <span className={styles.progressBadge}>
+                  {totalCount > 0 ? `${doneCount} из ${totalCount}` : 'Ожидает список'}
+                </span>
               ) : null}
-            </>
-          ) : (
-            <p className={styles.panelEmpty}>
-              Активных работ нет. Ниже — история предыдущих визитов по этому автомобилю.
-            </p>
-          )}
-        </section>
+            </div>
 
-        {currentRepair && (estimateStatus || hasTotal) ? (
+            {currentRepair ? (
+              <>
+                <div className={styles.progressTrack} aria-hidden>
+                  <div
+                    className={styles.progressFill}
+                    data-step={String(Math.round(progressPercent / 5))}
+                  />
+                </div>
+
+                <div className={styles.facts}>
+                  <div className={styles.fact}>
+                    <span className={styles.factLabel}>К оплате</span>
+                    <span className={styles.factValue}>{totalLabel}</span>
+                  </div>
+                  <div className={styles.fact}>
+                    <span className={styles.factLabel}>Выдача</span>
+                    <span className={styles.factValue}>
+                      {formatDate(currentRepair.planned_ready_at)}
+                    </span>
+                  </div>
+                  <div className={styles.fact}>
+                    <span className={styles.factLabel}>Пробег на работах</span>
+                    <span className={styles.factValue}>
+                      {typeof currentRepair.mileage === 'number'
+                        ? formatMileageKm(currentRepair.mileage)
+                        : 'Не указан'}
+                    </span>
+                  </div>
+                </div>
+
+                {workItems.length > 0 ? (
+                  <ul className={styles.worksList}>
+                    {workItems.map((item, index) => {
+                      const workPrice = parseMoney(item.price);
+
+                      return (
+                        <li
+                          className={clsx(styles.workItem, item.is_done && styles.workItemDone)}
+                          key={`current-${item.title}-${index}`}
+                        >
+                          <span className={styles.workCheck} aria-hidden>
+                            {item.is_done ? '✓' : ''}
+                          </span>
+                          <span className={styles.workTitle}>{item.title}</span>
+                          <span className={styles.workPrice}>
+                            {workPrice != null ? formatMoney(workPrice) : ''}
+                          </span>
+                          <span className={styles.workStatus}>
+                            {item.is_done ? 'Готово' : 'В работе'}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className={styles.panelEmpty}>
+                    Список работ появится после диагностики на СТО
+                  </p>
+                )}
+
+                {currentRepair.comment?.trim() ? (
+                  <div className={styles.masterComment}>
+                    <span className={styles.masterCommentLabel}>Комментарий мастера</span>
+                    <p className={styles.masterCommentText}>{currentRepair.comment.trim()}</p>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className={styles.panelEmpty}>
+                Активных работ нет. Ниже — история предыдущих визитов по этому автомобилю.
+              </p>
+            )}
+          </section>
+        ) : null}
+
+        {showCurrentRepair && currentRepair && (estimateStatus || hasTotal) ? (
           <section
             className={clsx(
               styles.panel,
@@ -799,11 +895,13 @@ export function PublicRepairPage() {
                 const rawWorks = pastRepair.work_items ?? [];
                 const doneWorks = rawWorks.filter((item) => item.is_done === true);
                 const pastWorks = doneWorks.length > 0 ? doneWorks : rawWorks;
+                const pastAmount =
+                  getRepairCostBreakdown({ workItems: rawWorks }).calculatedTotal ||
+                  parseMoney(pastRepair.total);
                 const pastTotal =
+                  (pastAmount != null && pastAmount > 0 ? formatMoney(pastAmount) : null) ||
                   pastRepair.total_formatted ||
-                  (typeof pastRepair.total === 'number' && pastRepair.total > 0
-                    ? formatMoney(pastRepair.total)
-                    : null);
+                  null;
                 const pastDate = pastRepair.completed_at || pastRepair.updated_at;
 
                 return (

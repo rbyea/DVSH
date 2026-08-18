@@ -15,6 +15,7 @@ export interface RepairCreateContextValue {
   setVehicleSuggestions: (value: VehicleSearchResult[]) => void;
   isVehicleSearchLoading: boolean;
   applyVehicleSuggestion: (value: VehicleSearchResult) => Promise<void>;
+  applyVehicleById: (vehicleId: string) => Promise<void>;
   startManualVehicleEntry: () => void;
   setSelectedVehicle: (value: VehicleSearchResult | null) => void;
   selectedVehicle: VehicleSearchResult | null;

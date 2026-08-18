@@ -1,18 +1,29 @@
 import { Button, Form, Input } from 'antd';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Bounce, toast } from 'react-toastify';
 
-import { useUpdateClientMutation, type Client } from '@/entities/client';
+import {
+  mergeVehicleLists,
+  useGetClientQuery,
+  useUpdateClientMutation,
+  type Client,
+  type ClientVehicleSummary,
+} from '@/entities/client';
 import { repairsApi } from '@/entities/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
 import { formatRuPhoneInput, isValidRuPhone } from '@/shared/lib/phone';
+import { ClientVehiclesPanel } from '@/widgets/ClientVehiclesPanel';
 
 import styles from './RepairClientPanel.module.scss';
 
 type RepairClientPanelProps = {
   repairId: string;
   client: Client;
+  currentVehicleId?: string;
+  selectedVehicleId?: string;
+  knownVehicles?: ClientVehicleSummary[];
+  onSelectVehicle?: (vehicle: ClientVehicleSummary) => void;
   updatedAt: string;
   formatDateTime: (value: string) => string;
   readOnly?: boolean;
@@ -32,23 +43,39 @@ function toFormState(client: Client): ClientFormState {
   };
 }
 
+function formatVehiclesCount(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return `${count} автомобиль`;
+  }
+
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `${count} автомобиля`;
+  }
+
+  return `${count} автомобилей`;
+}
+
 export function RepairClientPanel({
   repairId,
   client,
+  currentVehicleId,
+  selectedVehicleId,
+  knownVehicles,
+  onSelectVehicle,
   updatedAt,
   formatDateTime,
   readOnly = false,
 }: RepairClientPanelProps) {
-  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState<ClientFormState>(() => toFormState(client));
   const [updateClient, { isLoading }] = useUpdateClientMutation();
+  const { data: clientCard } = useGetClientQuery(String(client.id), { skip: !client.id });
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (!isEditing) {
-      setFormState(toFormState(client));
-    }
-  }, [client, isEditing]);
+  const vehiclesCount = mergeVehicleLists(knownVehicles, clientCard?.vehicles).length;
 
   const handleCancel = () => {
     setFormState(toFormState(client));
@@ -66,16 +93,8 @@ export function RepairClientPanel({
       return;
     }
 
-    if (!isValidRuPhone(formState.phone)) {
-      toast.warning('Введите телефон в формате +7 999 123-45-67', {
-        position: 'top-right',
-        transition: Bounce,
-      });
-      return;
-    }
-
-    if (formState.email.trim() && !/^\S+@\S+\.\S+$/.test(formState.email.trim())) {
-      toast.warning('Введите корректную почту', {
+    if (formState.phone.trim() && !isValidRuPhone(formState.phone)) {
+      toast.warning('Введите телефон в формате +7…', {
         position: 'top-right',
         transition: Bounce,
       });
@@ -109,7 +128,14 @@ export function RepairClientPanel({
   return (
     <article className={styles.panel}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Клиент</h2>
+        <div className={styles.headerMain}>
+          <h2 className={styles.title}>Клиент</h2>
+          {vehiclesCount > 0 ? (
+            <span className={styles.vehiclesCount}>{formatVehiclesCount(vehiclesCount)}</span>
+          ) : clientCard ? (
+            <span className={styles.vehiclesCount}>{formatVehiclesCount(0)}</span>
+          ) : null}
+        </div>
         {readOnly ? null : isEditing ? (
           <div className={styles.actions}>
             <Button disabled={isLoading} size="small" onClick={handleCancel}>
@@ -186,6 +212,21 @@ export function RepairClientPanel({
           </div>
         </>
       )}
+
+      <div className={styles.vehiclesBlock}>
+        <ClientVehiclesPanel
+          clientId={String(client.id)}
+          clientName={client.name}
+          currentBadge="В этом заказе"
+          currentVehicleId={currentVehicleId}
+          hint="Нажмите на авто, чтобы посмотреть его ремонты"
+          knownVehicles={knownVehicles}
+          readOnly={readOnly}
+          selectedVehicleId={selectedVehicleId}
+          showNewOrderLink
+          onSelectVehicle={onSelectVehicle}
+        />
+      </div>
     </article>
   );
 }

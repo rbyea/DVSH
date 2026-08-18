@@ -88,6 +88,11 @@
   font-size: 13px;
 }
 
+.footer a {
+  color: var(--dvsh-accent);
+  font-weight: 600;
+}
+
 .consentItem {
   margin-bottom: 8px !important;
 }
@@ -115,6 +120,14 @@
   color: var(--dvsh-muted);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.requisites {
+  margin: 8px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 @media (max-width: 640px) {

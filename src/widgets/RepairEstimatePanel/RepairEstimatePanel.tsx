@@ -28,12 +28,12 @@ export function RepairEstimatePanel({
   readOnly = false,
 }: RepairEstimatePanelProps) {
   const [total, setTotal] = useState<number | undefined>(
-    repair.total > 0 ? repair.total : undefined,
+    typeof repair.total === 'number' && repair.total > 0 ? repair.total : undefined,
   );
   const [updateRepair, { isLoading }] = useUpdateRepairMutation();
 
   useEffect(() => {
-    setTotal(repair.total > 0 ? repair.total : undefined);
+    setTotal(typeof repair.total === 'number' && repair.total > 0 ? repair.total : undefined);
   }, [repair.total]);
 
   const estimateStatus = repair.estimate_status ?? null;

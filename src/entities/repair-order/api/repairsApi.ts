@@ -1,6 +1,7 @@
 import { baseApi } from '@/shared/api';
 import { extractPublicToken } from '@/shared/lib/public-repair';
 
+import { normalizeRepairDetail } from '../model/normalize';
 import type {
   ApprovePublicEstimateRequest,
   ConfirmPublicRepairRequest,
@@ -63,7 +64,8 @@ export const repairsApi = baseApi.injectEndpoints({
     }),
     getRepair: build.query<RepairDetail, string>({
       query: (id) => `/repairs/${id}`,
-      transformResponse: (response: ApiDataResponse<RepairDetail>) => response.data,
+      transformResponse: (response: ApiDataResponse<RepairDetail>) =>
+        normalizeRepairDetail(response.data),
       providesTags: (_result, _error, id) => [{ type: 'Repair', id }],
     }),
     getPublicRepair: build.query<PublicVehicle, string>({
@@ -133,7 +135,8 @@ export const repairsApi = baseApi.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      transformResponse: (response: ApiDataResponse<RepairDetail>) => response.data,
+      transformResponse: (response: ApiDataResponse<RepairDetail>) =>
+        normalizeRepairDetail(response.data),
       invalidatesTags: (result, _error, { repairId }) => [
         { type: 'Repair', id: repairId },
         { type: 'Repair', id: 'LIST' },
@@ -146,7 +149,8 @@ export const repairsApi = baseApi.injectEndpoints({
         method: 'PATCH',
         body: { status },
       }),
-      transformResponse: (response: ApiDataResponse<RepairDetail>) => response.data,
+      transformResponse: (response: ApiDataResponse<RepairDetail>) =>
+        normalizeRepairDetail(response.data),
       invalidatesTags: (result, _error, { repairId }) => [
         { type: 'Repair', id: repairId },
         { type: 'Repair', id: 'LIST' },

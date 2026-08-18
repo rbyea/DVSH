@@ -86,8 +86,32 @@
   background: #fff;
 }
 
+.listItemWork {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(140px, 1fr) 88px 110px auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--dvsh-line);
+  border-radius: var(--dvsh-radius-sm);
+  padding: 8px;
+  background: #fff;
+}
+
 .listItemPart {
-  grid-template-columns: 1fr 88px auto;
+  grid-template-columns: 1fr 88px 110px auto;
+}
+
+.workTitleInput {
+  min-width: 0;
+}
+
+.masterSelect {
+  width: 100%;
+  min-width: 0;
+}
+
+.workMetricInput {
+  width: 100%;
 }
 
 .numberInput {
@@ -195,6 +219,7 @@
   }
 
   .listItem,
+  .listItemWork,
   .listItemPart {
     grid-template-columns: 1fr;
   }

@@ -143,7 +143,7 @@ export const DashboardPage = () => {
       <section className={styles.controls} aria-label="Фильтры ремонтов">
         <Input
           allowClear
-          placeholder="Найти по номеру, клиенту или машине"
+          placeholder="Поиск по ФИО, номеру, машине или мастеру"
           size="large"
           value={search}
           onChange={(event) => setSearch(event.target.value)}

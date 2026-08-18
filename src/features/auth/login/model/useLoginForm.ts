@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
 import { useAppDispatch } from '@/app/store';
-import { setSession, useLoginMutation } from '@/entities/session';
+import { setSession, useLoginMutation, getPostAuthPath } from '@/entities/session';
 import { setAccessToken } from '@/shared/lib/auth';
 import { hasStoredEmployeePdnConsent, storeEmployeePdnConsent } from '@/shared/lib/legal';
 
@@ -30,6 +30,10 @@ function getLoginErrorMessage(error: unknown): string {
 
     if (error.status === 401) {
       return 'Неверный email или пароль';
+    }
+
+    if (error.status === 403) {
+      return 'Подписка закончилась. Войдите и оплатите доступ';
     }
 
     if (error.status === 422) {
@@ -68,7 +72,7 @@ export function useLoginForm() {
       setAccessToken(data.access_token);
       dispatch(setSession(data.user));
       storeEmployeePdnConsent();
-      navigate('/dashboard', { replace: true });
+      navigate(getPostAuthPath(data.user), { replace: true });
     } catch (error) {
       toast.error(getLoginErrorMessage(error), {
         position: 'top-right',

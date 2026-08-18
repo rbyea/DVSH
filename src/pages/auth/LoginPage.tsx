@@ -77,10 +77,14 @@ export function LoginPage() {
                       Согласен с{' '}
                       <Link className={styles.consentLink} to="/legal/privacy" target="_blank">
                         Политикой обработки ПДн
-                      </Link>{' '}
-                      и{' '}
+                      </Link>
+                      ,{' '}
                       <Link className={styles.consentLink} to="/legal/consent" target="_blank">
                         Согласием
+                      </Link>{' '}
+                      и{' '}
+                      <Link className={styles.consentLink} to="/legal/offer" target="_blank">
+                        Офертой
                       </Link>
                     </span>
                   </Checkbox>
@@ -97,12 +101,19 @@ export function LoginPage() {
         </form>
 
         <div className={styles.footer}>
-          <span>Доступ выдаёт администратор станции</span>
+          <span>
+            Нет аккаунта? <Link to="/register">Зарегистрировать СТО</Link>
+          </span>
           <div className={styles.legalLinks}>
             <Link to="/legal/privacy">Политика</Link>
             <span aria-hidden>·</span>
             <Link to="/legal/consent">Согласие</Link>
+            <span aria-hidden>·</span>
+            <Link to="/legal/offer">Оферта</Link>
           </div>
+          <p className={styles.requisites}>
+            ИП Новиков Егор Сергеевич · ИНН 650202270142 · ОГРНИП 325237500256209
+          </p>
         </div>
       </Card>
     </main>

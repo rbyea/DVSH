@@ -1,5 +1,6 @@
 import { Steps } from 'antd';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useRepairCreateContext } from '@/features/repair-order/create';
 import { AppInfo } from '@/widgets/AppInfo';
@@ -11,6 +12,10 @@ import { SearchVInNumber } from '@/widgets/steps/SearchVInNumber';
 import styles from './RepairCreatePage.module.scss';
 
 export const RepairCreatePage = () => {
+  const [searchParams] = useSearchParams();
+  const vehicleIdFromUrl = searchParams.get('vehicleId');
+  const appliedVehicleRef = useRef<string | null>(null);
+
   const {
     currentStep,
     handleStepChange,
@@ -18,7 +23,17 @@ export const RepairCreatePage = () => {
     onSubmit,
     onInvalidSubmit,
     selectedVehicle,
+    applyVehicleById,
   } = useRepairCreateContext();
+
+  useEffect(() => {
+    if (!vehicleIdFromUrl || appliedVehicleRef.current === vehicleIdFromUrl) {
+      return;
+    }
+
+    appliedVehicleRef.current = vehicleIdFromUrl;
+    void applyVehicleById(vehicleIdFromUrl);
+  }, [applyVehicleById, vehicleIdFromUrl]);
 
   useEffect(() => {
     if (currentStep !== 2) {
@@ -53,7 +68,7 @@ export const RepairCreatePage = () => {
 
         {currentStep === 2 && (
           <>
-            {selectedVehicle && <SelectedCar />}
+            {selectedVehicle ? <SelectedCar /> : null}
             <RepairDetailsStep />
           </>
         )}

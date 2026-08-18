@@ -1,4 +1,8 @@
-import { personalDataConsentContent, privacyPolicyContent } from '@/shared/config/legalContent';
+import {
+  offerContent,
+  personalDataConsentContent,
+  privacyPolicyContent,
+} from '@/shared/config/legalContent';
 
 import { LegalDocumentPage } from './LegalDocumentPage';
 
@@ -18,6 +22,16 @@ export function PersonalDataConsentPage() {
       sections={personalDataConsentContent.sections}
       title={personalDataConsentContent.title}
       updatedAt={personalDataConsentContent.updatedAt}
+    />
+  );
+}
+
+export function OfferPage() {
+  return (
+    <LegalDocumentPage
+      sections={offerContent.sections}
+      title={offerContent.title}
+      updatedAt={offerContent.updatedAt}
     />
   );
 }

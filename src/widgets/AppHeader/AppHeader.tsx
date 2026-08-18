@@ -17,11 +17,16 @@ const items: MenuProps['items'] = [
     label: 'Новый ремонт',
     key: 'new-repair',
   },
+  {
+    label: 'Профиль СТО',
+    key: 'station',
+  },
 ];
 
 const routesByKey: Record<string, string> = {
   dashboard: '/dashboard',
   'new-repair': '/repairs/new',
+  station: '/station',
 };
 
 function getSelectedKey(pathname: string): string {
@@ -31,6 +36,10 @@ function getSelectedKey(pathname: string): string {
 
   if (pathname === '/repairs/new') {
     return 'new-repair';
+  }
+
+  if (pathname === '/station') {
+    return 'station';
   }
 
   return 'dashboard';
@@ -75,10 +84,10 @@ export const AppHeader = () => {
 
         <div className={styles.userBlock}>
           {user ? (
-            <div className={styles.userMeta}>
+            <button className={styles.userMeta} type="button" onClick={() => navigate('/station')}>
               <span className={styles.userName}>{user.name}</span>
               <span className={styles.userEmail}>{user.email}</span>
-            </div>
+            </button>
           ) : null}
           <Button
             className={styles.logout}

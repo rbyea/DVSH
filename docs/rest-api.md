@@ -479,7 +479,7 @@ Headers: `Authorization: Bearer {access_token}`
 
 | Param      | Type   | Description                                                  |
 | ---------- | ------ | ------------------------------------------------------------ |
-| `search`   | string | Номер ремонта / клиент / машина                              |
+| `search`   | string | ФИО клиента / ФИО мастера / номер ремонта / машина           |
 | `status`   | string | `new`, `diagnostics`, `in_progress`, `waiting_parts`, `done` |
 | `page`     | int    | Страница                                                     |
 | `per_page` | int    | По умолчанию 15                                              |
@@ -627,9 +627,11 @@ Headers: `Authorization: Bearer {access_token}`
 - `comment` — nullable, string
 - `work_items` — array
 - `work_items.*.title` — required_with:work_items, string
+- `work_items.*.is_extra` — boolean, default false (доп. работа)
 - `ordered_parts` — array
 - `ordered_parts.*.name` — required_with:ordered_parts, string
 - `ordered_parts.*.quantity` — integer, min:1
+- `ordered_parts.*.price` — nullable, number, min:0 (цена за единицу, ₽)
 
 **Response `201`**
 
@@ -676,7 +678,8 @@ Headers: `Authorization: Bearer {access_token}`
 
 ```json
 {
-  "title": "Замена масла"
+  "title": "Замена масла",
+  "is_extra": false
 }
 ```
 
@@ -685,7 +688,8 @@ Headers: `Authorization: Bearer {access_token}`
 ```json
 {
   "title": "Замена масла + фильтр",
-  "is_done": true
+  "is_done": true,
+  "is_extra": true
 }
 ```
 
@@ -696,9 +700,12 @@ Headers: `Authorization: Bearer {access_token}`
 ```json
 {
   "name": "Масляный фильтр",
-  "quantity": 1
+  "quantity": 1,
+  "price": 850
 }
 ```
+
+`price` — цена за единицу (₽), nullable.
 
 ### `PATCH /api/v1/repairs/{repair}/parts/{part}`
 

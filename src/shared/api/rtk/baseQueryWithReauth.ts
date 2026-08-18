@@ -36,7 +36,10 @@ function getRequestUrl(args: string | FetchArgs): string {
 
 function shouldSkipReauth(url: string): boolean {
   return (
-    url.includes('/auth/login') || url.includes('/auth/refresh') || url.includes('/auth/logout')
+    url.includes('/auth/login') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/logout')
   );
 }
 

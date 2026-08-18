@@ -4,12 +4,22 @@ import type {
   ApiDataResponse,
   LoginRequest,
   LoginResponseData,
+  RegisterRequest,
   TokenPayload,
   User,
 } from '../model/types';
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    register: build.mutation<LoginResponseData, RegisterRequest>({
+      query: (body) => ({
+        url: '/auth/register',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<LoginResponseData>) => response.data,
+      invalidatesTags: ['Session'],
+    }),
     login: build.mutation<LoginResponseData, LoginRequest>({
       query: (body) => ({
         url: '/auth/login',
@@ -48,4 +58,10 @@ export const authApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useLoginMutation, useLogoutMutation, useMeQuery, useRefreshMutation } = authApi;
+export const {
+  useLoginMutation,
+  useLogoutMutation,
+  useMeQuery,
+  useRefreshMutation,
+  useRegisterMutation,
+} = authApi;

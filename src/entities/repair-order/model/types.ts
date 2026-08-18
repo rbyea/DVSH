@@ -57,7 +57,7 @@ export type RepairCreatePayload = {
   plannedReadyAt?: string;
   total?: number;
   workItems: Array<{ title: string }>;
-  orderedParts: Array<{ name: string; quantity: number }>;
+  orderedParts: Array<{ name: string; quantity: number; price?: number }>;
   comment?: string;
 };
 
@@ -69,8 +69,15 @@ export type StoreRepairRequest = {
   mileage?: number | null;
   total?: number | null;
   comment?: string | null;
-  work_items?: Array<{ title: string }>;
-  ordered_parts?: Array<{ name: string; quantity: number }>;
+  work_items?: Array<{
+    title: string;
+    master_id?: string | number | null;
+    price?: number | null;
+    hours?: number | null;
+    /** Дополнительная работа (считается отдельно от основных) */
+    is_extra?: boolean;
+  }>;
+  ordered_parts?: Array<{ name: string; quantity: number; price?: number | null }>;
 };
 
 export type RepairCreated = {
@@ -85,31 +92,55 @@ export type RepairWorkItem = {
   id: string;
   title: string;
   is_done: boolean | null;
+  /** Дополнительная работа — отдельный блок и отдельная сумма в итогах */
+  is_extra?: boolean | null;
+  /** Цена позиции, ₽ */
+  price?: number | null;
+  /** Часы работы мастера */
+  hours?: number | null;
+  master_id?: string | null;
+  master?: {
+    id: string;
+    full_name: string;
+    specialty: string;
+  } | null;
 };
 
 export type CreateWorkItemRequest = {
   title: string;
+  master_id?: string | number | null;
+  price?: number | null;
+  hours?: number | null;
+  is_extra?: boolean;
 };
 
 export type UpdateWorkItemRequest = {
   title?: string;
   is_done?: boolean;
+  master_id?: string | number | null;
+  price?: number | null;
+  hours?: number | null;
+  is_extra?: boolean;
 };
 
 export type RepairPart = {
   id: string;
   name: string;
   quantity: number;
+  /** Цена за единицу, ₽ */
+  price?: number | null;
 };
 
 export type CreatePartRequest = {
   name: string;
   quantity?: number;
+  price?: number | null;
 };
 
 export type UpdatePartRequest = {
   name?: string;
   quantity?: number;
+  price?: number | null;
 };
 
 export type RepairDetailClient = {
@@ -146,7 +177,7 @@ export type RepairDetail = {
   planned_ready_at?: string | null;
   comment?: string | null;
   mileage?: number | null;
-  total: number;
+  total?: number | null;
   estimate_status?: EstimateStatus | null;
   estimate_comment?: string | null;
   estimate_decided_at?: string | null;
@@ -178,6 +209,9 @@ export type UpdateRepairRequest = {
 export type PublicRepairWorkItem = {
   title: string;
   is_done: boolean;
+  price?: number | null;
+  hours?: number | null;
+  is_extra?: boolean | null;
 };
 
 /** Past closed/completed repairs on the same vehicle (public client card). */
@@ -214,6 +248,7 @@ export type PublicCurrentRepair = {
   /** Client display name for handover verification. */
   client_name?: string | null;
   work_items: PublicRepairWorkItem[];
+  ordered_parts?: Array<{ name: string; quantity: number; price?: number | null }>;
   updated_at: string;
 };
 
@@ -221,6 +256,14 @@ export type PublicCurrentRepair = {
  * Public client card is keyed by vehicle token.
  * `current_repair` may be completed while client confirmation is pending/disputed.
  */
+export type PublicClientVehicleSummary = {
+  public_token: string;
+  car_model: string;
+  license_plate: string;
+  vin?: string | null;
+  chassis_number?: string | null;
+};
+
 export type PublicVehicle = {
   car_model: string;
   license_plate: string;
@@ -230,6 +273,11 @@ export type PublicVehicle = {
   client_name?: string | null;
   current_repair: PublicCurrentRepair | null;
   previous_repairs: PublicRepairHistoryItem[];
+  /**
+   * All vehicles of the same client (incl. current), for switching on the public card.
+   * Each item has its own public_token → `/public/vehicles/{token}`.
+   */
+  client_vehicles?: PublicClientVehicleSummary[];
 };
 
 /** @deprecated Use PublicVehicle + current_repair. Kept for gradual migration. */

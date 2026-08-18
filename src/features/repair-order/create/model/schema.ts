@@ -89,6 +89,10 @@ export const repairCreateFormSchema = z
       .array(
         z.object({
           title: z.string().optional(),
+          masterId: z.string().optional(),
+          price: z.number().min(0, 'Цена не может быть отрицательной').optional(),
+          hours: z.number().min(0, 'Часы не могут быть отрицательными').optional(),
+          isExtra: z.boolean().optional(),
         }),
       )
       .optional(),
@@ -97,6 +101,7 @@ export const repairCreateFormSchema = z
         z.object({
           name: z.string().optional(),
           quantity: z.number().int().min(1).optional(),
+          price: z.number().min(0, 'Цена не может быть отрицательной').optional(),
         }),
       )
       .optional(),
