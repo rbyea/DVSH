@@ -1,0 +1,417 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.statusCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 22px;
+  padding: 24px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.statusCard_ok {
+  border-color: color-mix(in srgb, #14b8a6 40%, var(--dvsh-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #14b8a6 12%, var(--dvsh-card)),
+    var(--dvsh-card) 42%
+  );
+}
+
+.statusCard_warn {
+  border-color: color-mix(in srgb, #f59e0b 40%, var(--dvsh-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f59e0b 14%, var(--dvsh-card)),
+    var(--dvsh-card) 42%
+  );
+}
+
+.statusCard_danger {
+  border-color: color-mix(in srgb, #ef4444 40%, var(--dvsh-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #ef4444 12%, var(--dvsh-card)),
+    var(--dvsh-card) 42%
+  );
+}
+
+.statusTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: var(--dvsh-soft);
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.statusCard_ok .statusBadge {
+  background: color-mix(in srgb, #14b8a6 18%, var(--dvsh-card));
+  color: color-mix(in srgb, #0f766e 55%, var(--dvsh-ink));
+}
+
+.statusCard_warn .statusBadge {
+  background: color-mix(in srgb, #f59e0b 18%, var(--dvsh-card));
+  color: color-mix(in srgb, #d97706 55%, var(--dvsh-ink));
+}
+
+.statusCard_danger .statusBadge {
+  background: color-mix(in srgb, #ef4444 18%, var(--dvsh-card));
+  color: color-mix(in srgb, #ef4444 55%, var(--dvsh-ink));
+}
+
+.statusDays {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.statusDaysValue {
+  color: var(--dvsh-ink);
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.statusDaysLabel {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statusTitle {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.statusHint {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--dvsh-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.statusPriceRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+
+.statusPrice {
+  color: var(--dvsh-ink);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.statusPriceNote {
+  color: var(--dvsh-muted);
+  font-size: 13px;
+}
+
+.statusProgress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--dvsh-soft);
+  overflow: hidden;
+}
+
+.statusProgress::after {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #0f766e;
+  content: '';
+}
+
+.statusCard_warn .statusProgress::after {
+  background: #d97706;
+}
+
+.statusCard_danger .statusProgress::after {
+  background: #dc2626;
+}
+
+.statusProgress_0::after {
+  width: 0;
+}
+
+.statusProgress_10::after {
+  width: 10%;
+}
+
+.statusProgress_20::after {
+  width: 20%;
+}
+
+.statusProgress_30::after {
+  width: 30%;
+}
+
+.statusProgress_40::after {
+  width: 40%;
+}
+
+.statusProgress_50::after {
+  width: 50%;
+}
+
+.statusProgress_60::after {
+  width: 60%;
+}
+
+.statusProgress_70::after {
+  width: 70%;
+}
+
+.statusProgress_80::after {
+  width: 80%;
+}
+
+.statusProgress_90::after {
+  width: 90%;
+}
+
+.statusProgress_100::after {
+  width: 100%;
+}
+
+.plansCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.plansHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plansTitle {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.plansHint {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 148px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 16px;
+  padding: 18px 16px;
+  background: var(--dvsh-card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.planRecommended {
+  border-color: color-mix(in srgb, #14b8a6 40%, var(--dvsh-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #14b8a6 12%, var(--dvsh-card)),
+    var(--dvsh-card) 48%
+  );
+}
+
+.planSelected {
+  border-color: var(--dvsh-ink);
+  box-shadow: 0 0 0 1px var(--dvsh-ink);
+}
+
+.planBadge,
+.planCurrent {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planBadge {
+  background: #0f766e;
+  color: #fff;
+}
+
+.planCurrent {
+  background: var(--dvsh-accent-soft);
+  color: var(--dvsh-accent);
+}
+
+.planRecommended .planCurrent {
+  top: 36px;
+}
+
+.planTitle {
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planPrice {
+  color: var(--dvsh-ink);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.planHint {
+  color: var(--dvsh-muted);
+  font-size: 14px;
+}
+
+.planSaving {
+  margin-top: 4px;
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.includes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px solid var(--dvsh-line);
+  padding-top: 16px;
+}
+
+.includesTitle {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.includesGroups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 20px;
+}
+
+.includesGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.includesGroupTitle {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.includesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.includesItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.includesItem::before {
+  flex-shrink: 0;
+  width: 7px;
+  height: 12px;
+  margin-top: 2px;
+  border-right: 2px solid #0f766e;
+  border-bottom: 2px solid #0f766e;
+  transform: rotate(45deg);
+  content: '';
+}
+
+.includesNote {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 800px) {
+  .statusCard,
+  .plansCard {
+    padding: 16px;
+  }
+
+  .statusDaysValue {
+    font-size: 28px;
+  }
+
+  .plans {
+    grid-template-columns: 1fr;
+  }
+
+  .plan {
+    min-height: 0;
+  }
+
+  .includesGroups {
+    grid-template-columns: 1fr;
+  }
+}

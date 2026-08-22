@@ -50,7 +50,6 @@ export const RepairDetailsStep = () => {
     carModel,
     licensePlate,
     plannedReadyAt,
-    total,
     watchedWorks,
     watchedParts,
     vehicleId,
@@ -61,7 +60,6 @@ export const RepairDetailsStep = () => {
       'carModel',
       'licensePlate',
       'plannedReadyAt',
-      'total',
       'workItems',
       'orderedParts',
       'vehicleId',
@@ -90,7 +88,9 @@ export const RepairDetailsStep = () => {
       currency: 'RUB',
       maximumFractionDigits: 0,
     }).format(value);
-  const totalLabel = typeof total === 'number' ? formatMoney(total) : null;
+  const totalLabel = formatMoney(
+    costBreakdown.worksTotal + costBreakdown.extraWorksTotal + costBreakdown.partsTotal,
+  );
 
   const handleCloseForm = () => {
     if (isDirty) {
@@ -413,7 +413,7 @@ export const RepairDetailsStep = () => {
           <Typography.Title className={styles.sectionTitle} level={3}>
             Детали заказа
           </Typography.Title>
-          <p className={styles.sectionHint}>Срок, сумма и заметка мастера · статус «Новый»</p>
+          <p className={styles.sectionHint}>Срок и заметка мастера · статус «Новый»</p>
         </div>
 
         <div className={styles.detailsGrid}>
@@ -430,33 +430,6 @@ export const RepairDetailsStep = () => {
                   size="large"
                   value={field.value}
                   onChange={field.onChange}
-                />
-              )}
-            />
-          </Form.Item>
-
-          <Form.Item label="Сумма">
-            <Controller
-              control={control}
-              name="total"
-              render={({ field }) => (
-                <InputNumber
-                  addonAfter="₽"
-                  className={styles.fullWidth}
-                  min={0}
-                  placeholder="Необязательно"
-                  size="large"
-                  step={100}
-                  value={field.value}
-                  onChange={(value) =>
-                    field.onChange(typeof value === 'number' ? value : undefined)
-                  }
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      event.stopPropagation();
-                    }
-                  }}
                 />
               )}
             />
@@ -494,7 +467,7 @@ export const RepairDetailsStep = () => {
             {formatMoney(costBreakdown.extraWorksTotal)} · запчасти{' '}
             {formatMoney(costBreakdown.partsTotal)}
           </span>
-          <span>{totalLabel ? `К оплате ${totalLabel}` : 'Сумма не указана'}</span>
+          <span>К оплате {totalLabel} (посчитано автоматически)</span>
           <span>
             {worksCount} раб. · {extraWorksCount} доп. · {partsCount} запч.
           </span>

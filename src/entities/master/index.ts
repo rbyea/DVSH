@@ -15,7 +15,14 @@ export {
   normalizeMasterSharePercent,
   writeLocalMasterSharePercent,
 } from './model/worksStats';
-export type { CompletedWorkRow, MasterWorksStat, StationWorksStats } from './model/worksStats';
+export type {
+  CompletedWorkRow,
+  MasterWorksStat,
+  StationWorksStats,
+  WorkTitleStat,
+} from './model/worksStats';
+export { mergeStationProfile, writeLocalStationContacts } from './model/stationProfile';
+export type { StationContacts } from './model/stationProfile';
 export type {
   CreateMasterRequest,
   Master,

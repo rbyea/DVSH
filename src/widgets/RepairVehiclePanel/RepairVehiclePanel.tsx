@@ -1,26 +1,34 @@
-﻿import { Button, Form, Input } from 'antd';
+﻿import { Button, Form, Input, InputNumber } from 'antd';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Bounce, toast } from 'react-toastify';
 
-import { repairsApi } from '@/entities/repair-order';
+import { repairsApi, useUpdateRepairMutation } from '@/entities/repair-order';
 import { useUpdateVehicleMutation, type VehicleCard } from '@/entities/vehicle';
 import { getErrorMessage } from '@/shared/lib/api';
 import {
   formatChassisNumberInput,
+  formatMileageKm,
   formatRuLicensePlateInput,
   formatRuLicensePlateMaskedInput,
   formatVinInput,
   isValidChassisNumber,
   isValidRuLicensePlate,
   isValidVin,
+  resolveMinAllowedMileage,
 } from '@/shared/lib/vehicle';
 
 import styles from './RepairVehiclePanel.module.scss';
 
 type VehicleView = Pick<
   VehicleCard,
-  'id' | 'car_model' | 'license_plate' | 'vin' | 'chassis_number' | 'mileage'
+  | 'id'
+  | 'car_model'
+  | 'license_plate'
+  | 'vin'
+  | 'chassis_number'
+  | 'mileage'
+  | 'last_completed_mileage'
 >;
 
 type RepairVehiclePanelProps = {
@@ -35,14 +43,16 @@ type VehicleFormState = {
   licensePlate: string;
   vin: string;
   chassisNumber: string;
+  mileage?: number;
 };
 
-function toFormState(vehicle: VehicleView): VehicleFormState {
+function toFormState(vehicle: VehicleView, repairMileage?: number | null): VehicleFormState {
   return {
     carModel: vehicle.car_model,
     licensePlate: formatRuLicensePlateMaskedInput(vehicle.license_plate),
     vin: formatVinInput(vehicle.vin ?? ''),
     chassisNumber: formatChassisNumberInput(vehicle.chassis_number ?? ''),
+    mileage: repairMileage ?? vehicle.mileage ?? undefined,
   };
 }
 
@@ -54,13 +64,18 @@ export function RepairVehiclePanel({
 }: RepairVehiclePanelProps) {
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
-  const [formState, setFormState] = useState<VehicleFormState>(() => toFormState(vehicle));
+  const [formState, setFormState] = useState<VehicleFormState>(() =>
+    toFormState(vehicle, repairMileage),
+  );
   const [useChassisNumber, setUseChassisNumber] = useState(
     () => Boolean(vehicle.chassis_number?.trim()) && !vehicle.vin?.trim(),
   );
-  const [updateVehicle, { isLoading }] = useUpdateVehicleMutation();
-
+  const [updateVehicle, { isLoading: isVehicleSaving }] = useUpdateVehicleMutation();
+  const [updateRepair, { isLoading: isRepairSaving }] = useUpdateRepairMutation();
+  const isLoading = isVehicleSaving || isRepairSaving;
+  const minMileage = resolveMinAllowedMileage(vehicle);
   const displayMileage = repairMileage ?? vehicle.mileage;
+
   const displayIdLabel = vehicle.vin?.trim()
     ? 'VIN'
     : vehicle.chassis_number?.trim()
@@ -70,13 +85,13 @@ export function RepairVehiclePanel({
 
   useEffect(() => {
     if (!isEditing) {
-      setFormState(toFormState(vehicle));
+      setFormState(toFormState(vehicle, repairMileage));
       setUseChassisNumber(Boolean(vehicle.chassis_number?.trim()) && !vehicle.vin?.trim());
     }
-  }, [vehicle, isEditing]);
+  }, [vehicle, repairMileage, isEditing]);
 
   const handleCancel = () => {
-    setFormState(toFormState(vehicle));
+    setFormState(toFormState(vehicle, repairMileage));
     setUseChassisNumber(Boolean(vehicle.chassis_number?.trim()) && !vehicle.vin?.trim());
     setIsEditing(false);
   };
@@ -135,16 +150,40 @@ export function RepairVehiclePanel({
       return;
     }
 
-    try {
-      await updateVehicle({
-        id: vehicle.id,
-        body: {
-          car_model: carModel,
-          license_plate: licensePlate,
-          vin: vin || null,
-          chassis_number: chassisNumber || null,
+    if (
+      typeof formState.mileage === 'number' &&
+      minMileage != null &&
+      formState.mileage < minMileage
+    ) {
+      toast.warning(
+        `Пробег не может быть меньше ${formatMileageKm(minMileage)} после статуса «Выдан»`,
+        {
+          position: 'top-right',
+          transition: Bounce,
         },
-      }).unwrap();
+      );
+      return;
+    }
+
+    try {
+      await Promise.all([
+        updateVehicle({
+          id: vehicle.id,
+          body: {
+            car_model: carModel,
+            license_plate: licensePlate,
+            vin: vin || null,
+            chassis_number: chassisNumber || null,
+            mileage: formState.mileage ?? null,
+          },
+        }).unwrap(),
+        updateRepair({
+          repairId,
+          body: {
+            mileage: formState.mileage ?? null,
+          },
+        }).unwrap(),
+      ]);
 
       dispatch(repairsApi.util.invalidateTags([{ type: 'Repair', id: repairId }]));
       setIsEditing(false);
@@ -268,6 +307,28 @@ export function RepairVehiclePanel({
               </>
             )}
           </Form.Item>
+          <Form.Item
+            extra={
+              minMileage != null
+                ? `На данный момент пробег автомобиля: ${formatMileageKm(minMileage)}`
+                : 'Пробег на момент этих работ'
+            }
+            label="Пробег, км"
+          >
+            <InputNumber
+              className={styles.fullWidth}
+              min={minMileage ?? 0}
+              placeholder="Например, 87200"
+              size="large"
+              value={formState.mileage}
+              onChange={(value) => {
+                setFormState((prev) => ({
+                  ...prev,
+                  mileage: typeof value === 'number' ? value : undefined,
+                }));
+              }}
+            />
+          </Form.Item>
         </Form>
       ) : (
         <>
@@ -290,9 +351,7 @@ export function RepairVehiclePanel({
             <div className={styles.contactRow}>
               <span className={styles.contactLabel}>Пробег</span>
               <span className={styles.contactValue}>
-                {displayMileage != null
-                  ? `${displayMileage.toLocaleString('ru-RU')} км`
-                  : 'Не указан'}
+                {displayMileage != null ? formatMileageKm(displayMileage) : 'Не указан'}
               </span>
             </div>
           </div>

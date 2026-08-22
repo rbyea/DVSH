@@ -128,6 +128,11 @@ const apiFieldLabels: Record<string, string> = {
   vin: 'VIN',
   chassis_number: 'Номер шасси',
   mileage: 'Пробег',
+  name: 'Название СТО',
+  phone: 'Телефон СТО',
+  city: 'Город',
+  address: 'Адрес',
+  working_hours: 'График работы',
 };
 
 const apiFieldToFormField: Record<string, string> = {
@@ -145,6 +150,7 @@ const apiFieldToFormField: Record<string, string> = {
   total: 'total',
   station_name: 'stationName',
   password_confirmation: 'passwordConfirmation',
+  working_hours: 'workingHours',
 };
 
 export function applyApiFieldErrors<TFieldValues extends FieldValues>(

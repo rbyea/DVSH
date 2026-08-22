@@ -16,8 +16,9 @@
 
   color: var(--dvsh-ink);
   background-color: var(--dvsh-bg);
+  color-scheme: light;
   font-family:
-    'DM Sans',
+    Manrope,
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
@@ -27,6 +28,21 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html[data-theme='dark'] {
+  --dvsh-ink: #e8edf4;
+  --dvsh-muted: #94a3b8;
+  --dvsh-line: #2a3340;
+  --dvsh-soft: #1b222c;
+  --dvsh-card: #12171e;
+  --dvsh-bg: #0b0f14;
+  --dvsh-accent: #60a5fa;
+  --dvsh-accent-soft: #15233a;
+  --dvsh-success-soft: #052e1a;
+  --dvsh-success-line: #14532d;
+  --dvsh-shadow: 0 10px 30px rgb(0 0 0 / 35%);
+  color-scheme: dark;
 }
 
 * {
@@ -41,6 +57,12 @@ body {
   background:
     radial-gradient(1200px 500px at 10% -10%, rgb(37 99 235 / 8%), transparent 55%),
     radial-gradient(900px 420px at 100% 0%, rgb(15 118 110 / 7%), transparent 50%), var(--dvsh-bg);
+}
+
+html[data-theme='dark'] body {
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgb(37 99 235 / 14%), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgb(15 118 110 / 10%), transparent 50%), var(--dvsh-bg);
 }
 
 button,
@@ -117,4 +139,28 @@ a {
   top: 0;
   opacity: 0;
   pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .ant-modal-root .ant-modal-wrap {
+    padding: 8px !important;
+  }
+
+  .ant-modal-root .ant-modal {
+    max-width: calc(100vw - 16px);
+    margin: 0 auto;
+    padding-bottom: 0;
+  }
+
+  .ant-modal-root .ant-modal-container {
+    padding: 10px 12px !important;
+  }
+
+  .ant-modal-root .ant-modal-header {
+    margin-bottom: 8px;
+  }
+
+  .ant-modal-root .ant-modal-confirm-btns {
+    margin-top: 12px;
+  }
 }

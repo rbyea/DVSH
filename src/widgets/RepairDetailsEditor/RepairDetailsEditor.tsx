@@ -1,4 +1,4 @@
-import { Button, DatePicker, Form, Input, InputNumber } from 'antd';
+import { Button, DatePicker, Form, Input } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useEffect, useState } from 'react';
 import { Bounce, toast } from 'react-toastify';
@@ -6,7 +6,6 @@ import { Bounce, toast } from 'react-toastify';
 import { useUpdateRepairMutation, type RepairDetail } from '@/entities/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
 import { disablePastDates, isPastCalendarDate } from '@/shared/lib/date';
-import { formatMileageKm, resolveMinAllowedMileage } from '@/shared/lib/vehicle';
 
 import styles from './RepairDetailsEditor.module.scss';
 
@@ -17,14 +16,12 @@ type RepairDetailsEditorProps = {
 
 type EditorState = {
   plannedReadyAt: Dayjs | null;
-  mileage?: number;
   comment: string;
 };
 
 function toEditorState(repair: RepairDetail): EditorState {
   return {
     plannedReadyAt: repair.planned_ready_at ? dayjs(repair.planned_ready_at) : null,
-    mileage: repair.mileage ?? repair.vehicle.mileage ?? undefined,
     comment: repair.comment ?? '',
   };
 }
@@ -41,7 +38,6 @@ export function RepairDetailsEditor({ repair, readOnly = false }: RepairDetailsE
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState<EditorState>(() => toEditorState(repair));
   const [updateRepair, { isLoading }] = useUpdateRepairMutation();
-  const minMileage = resolveMinAllowedMileage(repair.vehicle);
 
   useEffect(() => {
     if (!isEditing) {
@@ -63,27 +59,11 @@ export function RepairDetailsEditor({ repair, readOnly = false }: RepairDetailsE
       return;
     }
 
-    if (
-      typeof formState.mileage === 'number' &&
-      minMileage != null &&
-      formState.mileage < minMileage
-    ) {
-      toast.warning(
-        `Пробег не может быть меньше ${formatMileageKm(minMileage)} после статуса «Выдан»`,
-        {
-          position: 'top-right',
-          transition: Bounce,
-        },
-      );
-      return;
-    }
-
     try {
       await updateRepair({
         repairId: repair.id,
         body: {
           planned_ready_at: formState.plannedReadyAt?.format('YYYY-MM-DD') ?? null,
-          mileage: formState.mileage ?? null,
           comment: formState.comment.trim() || null,
         },
       }).unwrap();
@@ -106,7 +86,7 @@ export function RepairDetailsEditor({ repair, readOnly = false }: RepairDetailsE
       <div className={styles.header}>
         <div className={styles.heading}>
           <h2 className={styles.title}>Параметры ремонта</h2>
-          <p className={styles.hint}>Срок выдачи, пробег и заметка мастера</p>
+          <p className={styles.hint}>Срок выдачи и заметка мастера</p>
         </div>
 
         {readOnly ? null : isEditing ? (
@@ -146,30 +126,6 @@ export function RepairDetailsEditor({ repair, readOnly = false }: RepairDetailsE
                 }}
               />
             </Form.Item>
-
-            <Form.Item
-              className={styles.field}
-              extra={
-                minMileage != null
-                  ? `На данный момент пробег автомобиля: ${formatMileageKm(minMileage)}`
-                  : 'Пробег на момент этих работ'
-              }
-              label="Пробег на работах, км"
-            >
-              <InputNumber
-                className={styles.fullWidth}
-                min={minMileage ?? 0}
-                placeholder="Необязательно"
-                size="large"
-                value={formState.mileage}
-                onChange={(value) => {
-                  setFormState((prev) => ({
-                    ...prev,
-                    mileage: typeof value === 'number' ? value : undefined,
-                  }));
-                }}
-              />
-            </Form.Item>
           </div>
 
           <Form.Item className={styles.field} label="Комментарий мастера">
@@ -190,14 +146,6 @@ export function RepairDetailsEditor({ repair, readOnly = false }: RepairDetailsE
             <div className={styles.metaItem}>
               <span className={styles.metaLabel}>Выдача</span>
               <span className={styles.metaValue}>{formatDate(formState.plannedReadyAt)}</span>
-            </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Пробег на работах</span>
-              <span className={styles.metaValue}>
-                {typeof formState.mileage === 'number'
-                  ? formatMileageKm(formState.mileage)
-                  : 'Не указан'}
-              </span>
             </div>
           </div>
 

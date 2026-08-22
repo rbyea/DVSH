@@ -14,7 +14,7 @@
 .title {
   margin: 0;
   color: var(--dvsh-ink);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -43,7 +43,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-sm);
   padding: 12px 14px;
-  background: #fff;
+  background: var(--dvsh-card);
 }
 
 .itemActions {
@@ -54,7 +54,7 @@
 
 .itemTitle {
   color: var(--dvsh-ink);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
 }
 

@@ -15,6 +15,12 @@ export type StationInfo = {
    * Например 50 → мастер 50%, СТО 50%.
    */
   master_share_percent?: number | null;
+  /** Телефон СТО для клиента (публичная карточка, печать). */
+  phone?: string | null;
+  city?: string | null;
+  address?: string | null;
+  /** Свободная строка, например «пн–сб 9:00–20:00». */
+  working_hours?: string | null;
 };
 
 export type CreateMasterRequest = {
@@ -31,6 +37,10 @@ export type UpdateMasterRequest = {
 export type UpdateStationRequest = {
   name?: string;
   master_share_percent?: number | null;
+  phone?: string | null;
+  city?: string | null;
+  address?: string | null;
+  working_hours?: string | null;
 };
 
 /** Snapshot on a work item (may stay after master is deactivated). */

@@ -46,9 +46,13 @@ Auth: JWT `Authorization: Bearer {token}`
 `null` | `pending` | `approved` | `declined`
 
 - СТО жмёт «На согласование» → `estimate_status=pending` + `status=pending_approval`
+- Клиент решает по **списку работ** (без обязательной суммы): `pending` ставится даже если
+  `total=null`
 - Клиент решил → `approved|declined` + `status=in_progress`
 - Пока `pending`: нельзя `is_done`, нельзя `done`/`completed` (403/422)
 - Просто сохранить `total` **не** ставит `pending`
+- При создании ремонта (или в первый раз после него) — автоматическая отправка на согласование.
+  Дубликаты не нужны: повторный `pending` при уже `pending`/`approved` игнорировать (идемпотентно)
 
 ### `client_confirm_status` (после «Выдан»)
 
@@ -118,13 +122,6 @@ Email unique. 422 при занятом email.
 - `/auth/me`, `/auth/logout`, `/auth/refresh` **не** блокировать
 - После оплаты: `active` + `subscription_ends_at`
 - Старые демо-аккаунты без полей — считать `active`
-
-Тарифы на фронте: 1 мес 1 200 ₽ · 3 мес 3 300 ₽ · 12 мес 12 000 ₽. Оплата — интернет-эквайринг
-Альфа-Банка (ИП на НПД, чеки в «Мой налог» автоматически). ТЗ: `docs/backend-alfa-acquiring.md`.
-
-Все staff-данные скоупить по `service_station_id`.
-
----
 
 ## 3. Станция и мастера
 
@@ -496,7 +493,8 @@ POST /public/vehicles/{token}/estimate
 { "decision": "approved" | "declined", "comment": "..." }
 ```
 
-`comment` обязателен при `declined`. Только если `estimate_status=pending`.
+`comment` обязателен при `declined`. Только если `estimate_status=pending`. Решение принимается по
+списку работ; `total` при этом может быть `null`.
 
 ### Confirm (после выдачи)
 

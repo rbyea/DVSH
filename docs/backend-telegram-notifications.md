@@ -1,5 +1,9 @@
 # Telegram / MAX — уведомления о статусе ремонта (ТЗ для Laravel)
 
+> **⚠️ Заменено.** Актуальный канал — **MAX**: см. `docs/backend-max-notifications.md`. Telegram
+> отложен: `api.telegram.org` заблокирован для клиентов из РФ. Этот файл оставлен на случай
+> возобновления Telegram-канала (тот же `NotificationService`, канал `telegram`).
+
 Фронт: React SPA (Автовидно / DVSH). Бэкенд: Laravel, база `/api/v1`.
 
 Цель: клиент СТО подключает уведомления о статусе своего авто в Telegram (позже — в MAX) и получает

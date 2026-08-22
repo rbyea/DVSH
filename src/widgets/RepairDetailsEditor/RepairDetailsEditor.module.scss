@@ -57,7 +57,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: 14px;
   padding: 14px 16px;
-  background: rgb(255 255 255 / 92%);
+  background: color-mix(in srgb, var(--dvsh-card) 92%, transparent);
 }
 
 .metaLabel {
@@ -80,7 +80,7 @@
 
 .commentText {
   margin: 0;
-  color: #374151;
+  color: var(--dvsh-ink);
   font-size: 15px;
   line-height: 1.5;
   white-space: pre-wrap;

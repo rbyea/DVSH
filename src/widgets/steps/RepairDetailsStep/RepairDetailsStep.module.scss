@@ -6,7 +6,11 @@
 }
 
 .sectionWork {
-  background: linear-gradient(180deg, rgb(240 253 250 / 55%), #ffffff 36%), var(--dvsh-card);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #14b8a6 12%, var(--dvsh-card)),
+    var(--dvsh-card) 36%
+  );
 }
 
 .sectionHead {
@@ -51,7 +55,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: 999px;
   padding: 7px 12px;
-  background: #fff;
+  background: var(--dvsh-card);
   color: var(--dvsh-ink);
   font-size: 13px;
   font-weight: 600;
@@ -64,9 +68,9 @@
 }
 
 .chip:hover {
-  border-color: #99f6e4;
-  background: #f0fdfa;
-  color: #0f766e;
+  border-color: color-mix(in srgb, #14b8a6 40%, var(--dvsh-line));
+  background: color-mix(in srgb, #14b8a6 12%, var(--dvsh-card));
+  color: color-mix(in srgb, #0f766e 55%, var(--dvsh-ink));
 }
 
 .list {
@@ -83,7 +87,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-sm);
   padding: 8px;
-  background: #fff;
+  background: var(--dvsh-card);
 }
 
 .listItemWork {
@@ -94,7 +98,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-sm);
   padding: 8px;
-  background: #fff;
+  background: var(--dvsh-card);
 }
 
 .listItemPart {
@@ -136,7 +140,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-lg);
   padding: 14px 18px;
-  background: linear-gradient(180deg, var(--dvsh-accent-soft), #ffffff 70%), var(--dvsh-card);
+  background: linear-gradient(180deg, var(--dvsh-accent-soft), var(--dvsh-card) 70%);
   box-shadow: var(--dvsh-shadow);
 }
 
@@ -172,8 +176,8 @@
   border: 1px solid var(--dvsh-line);
   border-radius: 999px;
   padding: 6px 10px;
-  background: rgb(255 255 255 / 90%);
-  color: #374151;
+  background: color-mix(in srgb, var(--dvsh-card) 90%, transparent);
+  color: var(--dvsh-ink);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;

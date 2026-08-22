@@ -1,1 +1,4 @@
-export { useStationCompletedWorks } from './model/useStationCompletedWorks';
+export {
+  useStationCompletedWorks,
+  type CompletedWorksPeriod,
+} from './model/useStationCompletedWorks';

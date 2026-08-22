@@ -1,5 +1,5 @@
 export type VehicleHistoryStatus =
-  'new' | 'pending_approval' | 'in_progress' | 'waiting_parts' | 'done' | 'completed';
+  'new' | 'pending_approval' | 'revision' | 'in_progress' | 'waiting_parts' | 'done' | 'completed';
 
 export type VehicleRepairHistory = {
   id: string;

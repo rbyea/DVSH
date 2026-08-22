@@ -9,6 +9,7 @@ export {
 export { clearSession, sessionReducer, setSession } from './model/sessionSlice';
 export {
   getPostAuthPath,
+  getSubscriptionDaysLeft,
   getSubscriptionStatus,
   getTrialDaysLeft,
   isSubscriptionBlocked,

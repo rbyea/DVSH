@@ -3,13 +3,7 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Bounce, toast } from 'react-toastify';
 
-import {
-  mergeVehicleLists,
-  useGetClientQuery,
-  useUpdateClientMutation,
-  type Client,
-  type ClientVehicleSummary,
-} from '@/entities/client';
+import { useUpdateClientMutation, type Client } from '@/entities/client';
 import { repairsApi } from '@/entities/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
 import { formatRuPhoneInput, isValidRuPhone } from '@/shared/lib/phone';
@@ -21,9 +15,6 @@ type RepairClientPanelProps = {
   repairId: string;
   client: Client;
   currentVehicleId?: string;
-  selectedVehicleId?: string;
-  knownVehicles?: ClientVehicleSummary[];
-  onSelectVehicle?: (vehicle: ClientVehicleSummary) => void;
   updatedAt: string;
   formatDateTime: (value: string) => string;
   readOnly?: boolean;
@@ -43,28 +34,10 @@ function toFormState(client: Client): ClientFormState {
   };
 }
 
-function formatVehiclesCount(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-
-  if (mod10 === 1 && mod100 !== 11) {
-    return `${count} автомобиль`;
-  }
-
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-    return `${count} автомобиля`;
-  }
-
-  return `${count} автомобилей`;
-}
-
 export function RepairClientPanel({
   repairId,
   client,
   currentVehicleId,
-  selectedVehicleId,
-  knownVehicles,
-  onSelectVehicle,
   updatedAt,
   formatDateTime,
   readOnly = false,
@@ -72,10 +45,7 @@ export function RepairClientPanel({
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState<ClientFormState>(() => toFormState(client));
   const [updateClient, { isLoading }] = useUpdateClientMutation();
-  const { data: clientCard } = useGetClientQuery(String(client.id), { skip: !client.id });
   const dispatch = useDispatch();
-
-  const vehiclesCount = mergeVehicleLists(knownVehicles, clientCard?.vehicles).length;
 
   const handleCancel = () => {
     setFormState(toFormState(client));
@@ -130,11 +100,6 @@ export function RepairClientPanel({
       <div className={styles.header}>
         <div className={styles.headerMain}>
           <h2 className={styles.title}>Клиент</h2>
-          {vehiclesCount > 0 ? (
-            <span className={styles.vehiclesCount}>{formatVehiclesCount(vehiclesCount)}</span>
-          ) : clientCard ? (
-            <span className={styles.vehiclesCount}>{formatVehiclesCount(0)}</span>
-          ) : null}
         </div>
         {readOnly ? null : isEditing ? (
           <div className={styles.actions}>
@@ -216,15 +181,10 @@ export function RepairClientPanel({
       <div className={styles.vehiclesBlock}>
         <ClientVehiclesPanel
           clientId={String(client.id)}
-          clientName={client.name}
           currentBadge="В этом заказе"
           currentVehicleId={currentVehicleId}
-          hint="Нажмите на авто, чтобы посмотреть его ремонты"
-          knownVehicles={knownVehicles}
-          readOnly={readOnly}
-          selectedVehicleId={selectedVehicleId}
+          readOnly
           showNewOrderLink
-          onSelectVehicle={onSelectVehicle}
         />
       </div>
     </article>

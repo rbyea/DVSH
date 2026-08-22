@@ -3,7 +3,9 @@ import { parseMoney, toMoney } from '@/shared/lib/money';
 
 import type { StationInfo } from './types';
 
-export const DEFAULT_MASTER_SHARE_PERCENT = 50;
+import { parseISO } from 'date-fns';
+
+export const DEFAULT_MASTER_SHARE_PERCENT = 0;
 
 const LOCAL_SHARE_STORAGE_KEY = 'dvsh.station.master_share_percent';
 
@@ -34,14 +36,26 @@ export type MasterWorksStat = {
   stationShare: number;
 };
 
+export type WorkTitleStat = {
+  title: string;
+  worksCount: number;
+  amount: number;
+  hours: number;
+};
+
 export type StationWorksStats = {
   worksCount: number;
   amount: number;
   masterShare: number;
   stationShare: number;
   byMaster: MasterWorksStat[];
+  byTitle: WorkTitleStat[];
   works: CompletedWorkRow[];
 };
+
+function normalizeWorkTitle(title: string): string {
+  return title.trim().replace(/\s+/g, ' ').toLowerCase();
+}
 
 function asMoney(value: unknown): number {
   return toMoney(value);
@@ -151,8 +165,8 @@ export function buildStationWorksStats(
   }
 
   works.sort((a, b) => {
-    const aTime = Date.parse(a.completedAt);
-    const bTime = Date.parse(b.completedAt);
+    const aTime = parseISO(a.completedAt).getTime();
+    const bTime = parseISO(b.completedAt).getTime();
 
     if (Number.isNaN(aTime) || Number.isNaN(bTime)) {
       return 0;
@@ -188,6 +202,35 @@ export function buildStationWorksStats(
 
   const byMaster = [...byMasterMap.values()].sort((a, b) => b.amount - a.amount);
 
+  const byTitleMap = new Map<string, WorkTitleStat>();
+
+  for (const work of works) {
+    const key = normalizeWorkTitle(work.title) || '__empty__';
+    const existing = byTitleMap.get(key);
+
+    if (existing) {
+      existing.worksCount += 1;
+      existing.amount += work.price;
+      existing.hours += work.hours ?? 0;
+      continue;
+    }
+
+    byTitleMap.set(key, {
+      title: work.title.trim() || 'Без названия',
+      worksCount: 1,
+      amount: work.price,
+      hours: work.hours ?? 0,
+    });
+  }
+
+  const byTitle = [...byTitleMap.values()].sort((a, b) => {
+    if (b.worksCount !== a.worksCount) {
+      return b.worksCount - a.worksCount;
+    }
+
+    return b.amount - a.amount;
+  });
+
   const amount = works.reduce((sum, item) => sum + item.price, 0);
   const masterShare = works.reduce((sum, item) => sum + item.masterShare, 0);
   const stationShare = works.reduce((sum, item) => sum + item.stationShare, 0);
@@ -198,6 +241,7 @@ export function buildStationWorksStats(
     masterShare,
     stationShare,
     byMaster,
+    byTitle,
     works,
   };
 }

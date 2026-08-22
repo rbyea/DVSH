@@ -301,11 +301,11 @@ export const RepairDetailsClientStep = () => {
                 >
                   <span className={styles.consentText}>
                     Подтверждаю согласие клиента на обработку ПДн согласно{' '}
-                    <Link className={styles.consentLink} to="/legal/privacy" target="_blank">
+                    <Link className={styles.consentLink} to="/legal/privacy">
                       Политике
                     </Link>{' '}
                     и{' '}
-                    <Link className={styles.consentLink} to="/legal/consent" target="_blank">
+                    <Link className={styles.consentLink} to="/legal/consent">
                       Согласию
                     </Link>
                   </span>

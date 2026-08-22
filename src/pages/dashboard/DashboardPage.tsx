@@ -156,6 +156,7 @@ export const DashboardPage = () => {
             { label: 'Все статусы', value: 'all' },
             { label: statusLabels.new, value: 'new' },
             { label: statusLabels.pending_approval, value: 'pending_approval' },
+            { label: statusLabels.revision, value: 'revision' },
             { label: statusLabels.in_progress, value: 'in_progress' },
             { label: statusLabels.waiting_parts, value: 'waiting_parts' },
             { label: statusLabels.done, value: 'done' },

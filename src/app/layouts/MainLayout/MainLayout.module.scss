@@ -32,8 +32,8 @@
 }
 
 .footer {
-  border-top: 1px solid rgb(229 231 235 / 90%);
-  background: rgb(255 255 255 / 72%);
+  border-top: 1px solid var(--dvsh-line);
+  background: color-mix(in srgb, var(--dvsh-card) 86%, transparent);
 }
 
 .footerInner {

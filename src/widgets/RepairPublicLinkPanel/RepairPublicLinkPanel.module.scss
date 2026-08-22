@@ -11,8 +11,12 @@
 }
 
 .highlight {
-  border-color: #99f6e4;
-  background: linear-gradient(180deg, #f0fdfa, #ffffff 55%), var(--dvsh-card);
+  border-color: color-mix(in srgb, #14b8a6 40%, var(--dvsh-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #14b8a6 12%, var(--dvsh-card)),
+    var(--dvsh-card) 55%
+  );
 }
 
 .header {
@@ -33,7 +37,7 @@
 .title {
   margin: 0;
   color: var(--dvsh-ink);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -56,6 +60,17 @@
   margin: 0;
   color: var(--dvsh-muted);
   font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .actions :global(.ant-btn) {
+    width: 100%;
+  }
 }
 
 @media (max-width: 720px) {

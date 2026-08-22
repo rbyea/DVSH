@@ -5,22 +5,34 @@
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-lg);
   padding: 14px 18px;
-  background: linear-gradient(180deg, #fffbeb, #ffffff);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f59e0b 14%, var(--dvsh-card)),
+    var(--dvsh-card)
+  );
 }
 
 .panel[data-status='pending'] {
-  border-color: #fcd34d;
-  background: linear-gradient(180deg, #fffbeb, #ffffff);
+  border-color: color-mix(in srgb, #f59e0b 45%, var(--dvsh-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f59e0b 14%, var(--dvsh-card)),
+    var(--dvsh-card)
+  );
 }
 
 .panel[data-status='disputed'] {
-  border-color: #fca5a5;
-  background: linear-gradient(180deg, #fef2f2, #ffffff);
+  border-color: color-mix(in srgb, #ef4444 40%, var(--dvsh-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #ef4444 12%, var(--dvsh-card)),
+    var(--dvsh-card)
+  );
 }
 
 .panel[data-status='confirmed'] {
-  border-color: #86efac;
-  background: linear-gradient(180deg, #f0fdf4, #ffffff);
+  border-color: var(--dvsh-success-line);
+  background: linear-gradient(180deg, var(--dvsh-success-soft), var(--dvsh-card));
 }
 
 .head {
@@ -51,11 +63,11 @@
   gap: 4px;
   border-radius: 12px;
   padding: 10px 12px;
-  background: rgb(254 242 242 / 80%);
+  background: color-mix(in srgb, #ef4444 10%, var(--dvsh-card));
 }
 
 .commentLabel {
-  color: #991b1b;
+  color: color-mix(in srgb, #ef4444 60%, var(--dvsh-ink));
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -64,14 +76,14 @@
 
 .commentText {
   margin: 0;
-  color: #7f1d1d;
+  color: var(--dvsh-ink);
   font-size: 14px;
   line-height: 1.45;
 }
 
 .meta {
   margin: 0;
-  color: #166534;
+  color: color-mix(in srgb, #16a34a 55%, var(--dvsh-ink));
   font-size: 13px;
   font-weight: 600;
 }

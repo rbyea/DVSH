@@ -1,27 +1,19 @@
 import { Button, Drawer, Menu } from 'antd';
-import type { MenuProps } from 'antd';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAppSelector } from '@/app/store';
 import { useLogout } from '@/features/auth';
+import { BrandMark } from '@/shared/ui/BrandMark';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 
 import styles from './AppHeader.module.scss';
 
-const items: MenuProps['items'] = [
-  {
-    label: 'Ремонты',
-    key: 'dashboard',
-  },
-  {
-    label: 'Новый ремонт',
-    key: 'new-repair',
-  },
-  {
-    label: 'Профиль СТО',
-    key: 'station',
-  },
-];
+const navItems = [
+  { key: 'dashboard', label: 'Ремонты' },
+  { key: 'new-repair', label: 'Новый ремонт' },
+  { key: 'station', label: 'Профиль СТО' },
+] as const;
 
 const routesByKey: Record<string, string> = {
   dashboard: '/dashboard',
@@ -58,7 +50,7 @@ export const AppHeader = () => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
-  const onClick: MenuProps['onClick'] = ({ key }) => {
+  const goTo = (key: string) => {
     navigate(routesByKey[key] ?? '/dashboard');
     setIsMenuOpen(false);
   };
@@ -67,7 +59,7 @@ export const AppHeader = () => {
     <header className={styles.header}>
       <div className={styles.inner}>
         <button className={styles.brand} type="button" onClick={() => navigate('/dashboard')}>
-          <span className={styles.brandMark}>АВ</span>
+          <BrandMark className={styles.brandMark} />
           <span className={styles.brandText}>
             <span className={styles.brandName}>Автовидно</span>
             <span className={styles.brandHint}>Сервисный учёт</span>
@@ -76,13 +68,14 @@ export const AppHeader = () => {
 
         <Menu
           className={styles.menu}
-          onClick={onClick}
+          onClick={({ key }) => goTo(key)}
           selectedKeys={[current]}
           mode="horizontal"
-          items={items}
+          items={[...navItems]}
         />
 
         <div className={styles.userBlock}>
+          <ThemeToggle />
           {user ? (
             <button className={styles.userMeta} type="button" onClick={() => navigate('/station')}>
               <span className={styles.userName}>{user.name}</span>
@@ -113,26 +106,43 @@ export const AppHeader = () => {
 
       <Drawer
         closable
+        classNames={{
+          header: styles.drawerHeader,
+          body: styles.drawerBody,
+        }}
         open={isMenuOpen}
         placement="right"
+        rootClassName={styles.drawer}
         title="Меню"
         width={300}
         onClose={() => setIsMenuOpen(false)}
       >
         {user ? (
-          <div className={styles.drawerUser}>
+          <button
+            className={styles.drawerUser}
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              navigate('/station');
+            }}
+          >
             <span className={styles.drawerUserName}>{user.name}</span>
             <span className={styles.drawerUserEmail}>{user.email}</span>
-          </div>
+          </button>
         ) : null}
 
-        <Menu
-          className={styles.drawerMenu}
-          items={items}
-          mode="inline"
-          selectedKeys={[current]}
-          onClick={onClick}
-        />
+        <nav className={styles.drawerNav}>
+          {navItems.map((item) => (
+            <button
+              className={item.key === current ? styles.drawerLinkActive : styles.drawerLink}
+              key={item.key}
+              type="button"
+              onClick={() => goTo(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
         <Button
           block

@@ -19,11 +19,15 @@ export {
 export {
   clientConfirmStatusColors,
   clientConfirmStatusLabels,
+  publicClientConfirmStatusColors,
+  publicClientConfirmStatusLabels,
   estimateStatusColors,
   estimateStatusLabels,
   isRepairLocked,
   isRepairPermanentlyLocked,
   needsClientConfirm,
+  needsPublicEstimateDecision,
+  resolveStatusAfterEstimate,
   repairStatusColors,
   repairStatusLabels,
 } from './model/status';

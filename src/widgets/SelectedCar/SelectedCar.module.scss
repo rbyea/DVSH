@@ -1,7 +1,7 @@
 .section {
   border: 1px solid var(--dvsh-success-line) !important;
   border-radius: var(--dvsh-radius-lg) !important;
-  background: linear-gradient(180deg, var(--dvsh-success-soft), #ffffff 50%), var(--dvsh-card);
+  background: linear-gradient(180deg, var(--dvsh-success-soft), var(--dvsh-card) 50%);
   box-shadow: var(--dvsh-shadow);
 }
 
@@ -23,7 +23,7 @@
 
 .hint {
   margin: 0;
-  color: #166534;
+  color: color-mix(in srgb, #16a34a 55%, var(--dvsh-ink));
   font-size: 14px;
   line-height: 1.45;
 }
@@ -38,7 +38,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: 10px;
   padding: 10px 12px;
-  background: rgb(255 255 255 / 85%);
+  background: color-mix(in srgb, var(--dvsh-card) 85%, transparent);
   color: var(--dvsh-ink);
   font-size: 14px;
   font-weight: 600;
@@ -53,13 +53,13 @@
   border: 1px solid rgb(22 101 52 / 18%);
   border-radius: 12px;
   padding: 12px 14px;
-  background: rgb(255 255 255 / 70%);
+  background: color-mix(in srgb, var(--dvsh-card) 70%, var(--dvsh-success-soft));
 }
 
 .mileageFloor,
 .mileageTimeline {
   margin: 0;
-  color: #166534;
+  color: color-mix(in srgb, #16a34a 55%, var(--dvsh-ink));
   font-size: 13px;
   line-height: 1.45;
 }

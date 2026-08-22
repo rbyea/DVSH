@@ -67,6 +67,28 @@ export function getTrialDaysLeft(user: User | null | undefined): number | null {
   return Math.max(0, Math.ceil((endsAt - Date.now()) / MS_IN_DAY));
 }
 
+export function getSubscriptionDaysLeft(user: User | null | undefined): number | null {
+  const status = getSubscriptionStatus(user);
+  const endsAt =
+    status === 'trial'
+      ? user?.trial_ends_at
+      : status === 'active'
+        ? user?.subscription_ends_at
+        : null;
+
+  if (endsAt == null) {
+    return null;
+  }
+
+  const time = parseDate(endsAt);
+
+  if (time == null) {
+    return null;
+  }
+
+  return Math.max(0, Math.ceil((time - Date.now()) / MS_IN_DAY));
+}
+
 export function getPostAuthPath(user: User): string {
-  return isSubscriptionBlocked(user) ? '/billing' : '/dashboard';
+  return isSubscriptionBlocked(user) ? '/station#subscription' : '/dashboard';
 }

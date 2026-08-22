@@ -18,7 +18,7 @@ export const MainLayout = () => {
           <span>
             Пробный период: осталось {trialDays} {formatDays(trialDays)}
           </span>
-          <Link className={styles.trialLink} to="/billing">
+          <Link className={styles.trialLink} to="/station#subscription">
             Тарифы
           </Link>
         </div>
@@ -28,15 +28,15 @@ export const MainLayout = () => {
       </main>
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <Link className={styles.footerLink} to="/legal/privacy" target="_blank">
+          <Link className={styles.footerLink} to="/legal/privacy">
             Политика ПДн
           </Link>
           <span aria-hidden>·</span>
-          <Link className={styles.footerLink} to="/legal/consent" target="_blank">
+          <Link className={styles.footerLink} to="/legal/consent">
             Согласие
           </Link>
           <span aria-hidden>·</span>
-          <Link className={styles.footerLink} to="/legal/offer" target="_blank">
+          <Link className={styles.footerLink} to="/legal/offer">
             Оферта
           </Link>
         </div>

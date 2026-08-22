@@ -72,7 +72,7 @@ export const repairCreateFormSchema = z
       .refine((value): value is number => typeof value === 'number', {
         message: 'Укажите пробег автомобиля',
       }),
-    status: z.enum(['new', 'pending_approval', 'in_progress', 'waiting_parts']),
+    status: z.enum(['new', 'pending_approval', 'revision', 'in_progress', 'waiting_parts']),
     plannedReadyAt: z
       .union([
         z.custom<Dayjs>((value) => dayjs.isDayjs(value), {

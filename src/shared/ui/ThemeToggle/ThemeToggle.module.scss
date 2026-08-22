@@ -1,0 +1,37 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 999px;
+  padding: 6px 10px 6px 8px;
+  background: var(--dvsh-card);
+  color: var(--dvsh-ink);
+  cursor: pointer;
+}
+
+.root:hover {
+  border-color: var(--dvsh-accent);
+  color: var(--dvsh-accent);
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 360px) {
+  .label {
+    display: none;
+  }
+
+  .root {
+    padding: 8px;
+  }
+}

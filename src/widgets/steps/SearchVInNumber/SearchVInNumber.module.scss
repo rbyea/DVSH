@@ -1,7 +1,7 @@
 .section {
   border: 1px solid var(--dvsh-line) !important;
   border-radius: var(--dvsh-radius-lg) !important;
-  background: linear-gradient(180deg, rgb(239 246 255 / 70%), #ffffff 40%), var(--dvsh-card);
+  background: linear-gradient(180deg, var(--dvsh-accent-soft), var(--dvsh-card) 40%);
   box-shadow: var(--dvsh-shadow);
 }
 
@@ -25,7 +25,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-sm);
   padding: 14px;
-  background: #fff;
+  background: var(--dvsh-card);
 }
 
 .vehicleLoading {
@@ -41,7 +41,7 @@
   gap: 12px;
   align-items: center;
   width: 100%;
-  color: #374151;
+  color: var(--dvsh-ink);
   text-align: left;
   cursor: pointer;
   transition:

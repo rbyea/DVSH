@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 
 import { useLoginForm } from '@/features/auth';
 import { getAntdValidateStatus } from '@/shared/lib/antd';
+import { BrandMark } from '@/shared/ui/BrandMark';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 
 import styles from './LoginPage.module.scss';
 
@@ -14,8 +16,9 @@ export function LoginPage() {
     <main className={styles.page}>
       <Card className={styles.card} variant="borderless">
         <div className={styles.brand}>
-          <span className={styles.brandMark}>АВ</span>
+          <BrandMark className={styles.brandMark} />
           <span className={styles.brandName}>Автовидно</span>
+          <ThemeToggle className={styles.themeToggle} />
         </div>
 
         <div className={styles.header}>
@@ -75,15 +78,15 @@ export function LoginPage() {
                   >
                     <span className={styles.consentText}>
                       Согласен с{' '}
-                      <Link className={styles.consentLink} to="/legal/privacy" target="_blank">
+                      <Link className={styles.consentLink} to="/legal/privacy">
                         Политикой обработки ПДн
                       </Link>
                       ,{' '}
-                      <Link className={styles.consentLink} to="/legal/consent" target="_blank">
+                      <Link className={styles.consentLink} to="/legal/consent">
                         Согласием
                       </Link>{' '}
                       и{' '}
-                      <Link className={styles.consentLink} to="/legal/offer" target="_blank">
+                      <Link className={styles.consentLink} to="/legal/offer">
                         Офертой
                       </Link>
                     </span>

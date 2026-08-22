@@ -1,4 +1,5 @@
-import { Button, Form, Input, InputNumber } from 'antd';
+import { Button, Form, Input, InputNumber, Spin } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
@@ -32,6 +33,8 @@ type VehicleFormState = {
   mileage?: number;
 };
 
+type VehicleFieldErrors = Partial<Record<keyof VehicleFormState, string>>;
+
 const emptyVehicleForm = (): VehicleFormState => ({
   carModel: '',
   licensePlate: '',
@@ -39,6 +42,35 @@ const emptyVehicleForm = (): VehicleFormState => ({
   chassisNumber: '',
   mileage: undefined,
 });
+
+function validateVehicleForm(
+  form: VehicleFormState,
+  useChassisNumber: boolean,
+): VehicleFieldErrors {
+  const errors: VehicleFieldErrors = {};
+
+  if (!form.carModel.trim()) {
+    errors.carModel = 'Введите модель машины';
+  }
+
+  if (!isValidRuLicensePlate(form.licensePlate)) {
+    errors.licensePlate = 'Введите гос номер в формате А123ВС 777';
+  }
+
+  if (useChassisNumber) {
+    if (!isValidChassisNumber(form.chassisNumber)) {
+      errors.chassisNumber = 'Номер шасси: 5–25 символов (латиница, цифры)';
+    }
+  } else if (!isValidVin(form.vin)) {
+    errors.vin = 'VIN должен содержать 17 символов (без I, O, Q)';
+  }
+
+  if (typeof form.mileage !== 'number') {
+    errors.mileage = 'Укажите пробег автомобиля';
+  }
+
+  return errors;
+}
 
 export type ClientVehiclesPanelProps = {
   clientId: string;
@@ -109,8 +141,10 @@ export function ClientVehiclesPanel({
   showNewOrderLink = false,
 }: ClientVehiclesPanelProps) {
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
+  const [selectingVehicleId, setSelectingVehicleId] = useState<string | null>(null);
   const [useChassisNumber, setUseChassisNumber] = useState(false);
   const [vehicleForm, setVehicleForm] = useState<VehicleFormState>(emptyVehicleForm);
+  const [fieldErrors, setFieldErrors] = useState<VehicleFieldErrors>({});
   const [addedVehicles, setAddedVehicles] = useState<ClientVehicleSummary[]>([]);
   const [createVehicle, { isLoading: isCreatingVehicle }] = useCreateVehicleForClientMutation();
   const resolvedClientId = String(clientId);
@@ -125,6 +159,7 @@ export function ClientVehiclesPanel({
 
   const handleCancelAddVehicle = () => {
     setVehicleForm(emptyVehicleForm());
+    setFieldErrors({});
     setUseChassisNumber(false);
     setIsAddingVehicle(false);
   };
@@ -135,42 +170,14 @@ export function ClientVehiclesPanel({
     const vin = formatVinInput(vehicleForm.vin);
     const chassisNumber = formatChassisNumberInput(vehicleForm.chassisNumber);
 
-    if (!carModel) {
-      toast.warning('Введите модель машины', { position: 'top-right', transition: Bounce });
+    const errors = validateVehicleForm(vehicleForm, useChassisNumber);
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
-    if (!licensePlate || !isValidRuLicensePlate(licensePlate)) {
-      toast.warning('Введите гос номер в формате А123ВС 777', {
-        position: 'top-right',
-        transition: Bounce,
-      });
-      return;
-    }
-
-    if (useChassisNumber) {
-      if (!isValidChassisNumber(chassisNumber)) {
-        toast.warning('Номер шасси: 5–25 символов (латиница, цифры)', {
-          position: 'top-right',
-          transition: Bounce,
-        });
-        return;
-      }
-    } else if (!isValidVin(vin)) {
-      toast.warning('VIN должен содержать 17 символов (без I, O, Q)', {
-        position: 'top-right',
-        transition: Bounce,
-      });
-      return;
-    }
-
-    if (typeof vehicleForm.mileage !== 'number') {
-      toast.warning('Укажите пробег автомобиля', {
-        position: 'top-right',
-        transition: Bounce,
-      });
-      return;
-    }
+    const mileage: number = vehicleForm.mileage as number;
 
     const payload = buildCreateVehicleRequest({
       clientId: resolvedClientId,
@@ -182,7 +189,7 @@ export function ClientVehiclesPanel({
       vin,
       chassisNumber,
       useChassisNumber,
-      mileage: vehicleForm.mileage,
+      mileage,
     });
 
     try {
@@ -275,9 +282,15 @@ export function ClientVehiclesPanel({
                 {canSelectByClick ? (
                   <button
                     className={itemClassName}
+                    disabled={selectingVehicleId != null}
                     type="button"
                     onClick={() => {
-                      void onSelectVehicle?.(item);
+                      const result = onSelectVehicle?.(item);
+
+                      if (result instanceof Promise) {
+                        setSelectingVehicleId(String(item.id));
+                        void result.finally(() => setSelectingVehicleId(null));
+                      }
                     }}
                   >
                     <span className={styles.main}>
@@ -289,7 +302,13 @@ export function ClientVehiclesPanel({
                           : ''}
                       </span>
                     </span>
-                    {isCurrentRepair && currentBadge ? (
+                    {selectingVehicleId === String(item.id) ? (
+                      <span className={styles.selecting}>
+                        <Spin size="small" />
+                        <span className={styles.selectingLabel}>Загрузка…</span>
+                      </span>
+                    ) : null}
+                    {isCurrentRepair && currentBadge && selectingVehicleId !== String(item.id) ? (
                       <span className={styles.badge}>{currentBadge}</span>
                     ) : null}
                   </button>
@@ -304,16 +323,21 @@ export function ClientVehiclesPanel({
                           : ''}
                       </span>
                     </span>
-                    {isCurrentRepair && currentBadge ? (
-                      <span className={styles.badge}>{currentBadge}</span>
-                    ) : null}
+                    <span className={styles.itemAside}>
+                      {isCurrentRepair && currentBadge ? (
+                        <span className={styles.badge}>{currentBadge}</span>
+                      ) : null}
+                      {showNewOrderLink ? (
+                        <Link to={`/repairs/new?vehicleId=${item.id}`}>
+                          <Button className={styles.newOrderButton} size="small">
+                            <PlusOutlined />
+                            Новый заказ
+                          </Button>
+                        </Link>
+                      ) : null}
+                    </span>
                   </div>
                 )}
-                {showNewOrderLink && !isCurrentRepair ? (
-                  <Link className={styles.link} to={`/repairs/new?vehicleId=${item.id}`}>
-                    Новый заказ
-                  </Link>
-                ) : null}
               </li>
             );
           })}
@@ -328,84 +352,119 @@ export function ClientVehiclesPanel({
 
       {isAddingVehicle && !readOnly ? (
         <Form className={styles.form} component={false} layout="vertical" requiredMark={false}>
-          <Form.Item label="Модель" required>
-            <Input
-              placeholder="Toyota Camry"
-              size="large"
-              value={vehicleForm.carModel}
-              onChange={(event) => {
-                setVehicleForm((prev) => ({ ...prev, carModel: event.target.value }));
-              }}
-            />
-          </Form.Item>
-          <Form.Item label="Гос номер" required>
-            <Input
-              placeholder="А123ВС 777"
-              size="large"
-              value={vehicleForm.licensePlate}
-              onChange={(event) => {
-                setVehicleForm((prev) => ({
-                  ...prev,
-                  licensePlate: formatRuLicensePlateMaskedInput(event.target.value),
-                }));
-              }}
-            />
-          </Form.Item>
-          {!useChassisNumber ? (
-            <Form.Item label="VIN" required>
+          <div className={styles.formRow}>
+            <Form.Item
+              className={styles.formItem}
+              label="Модель"
+              required
+              validateStatus={fieldErrors.carModel ? 'error' : undefined}
+              help={fieldErrors.carModel}
+            >
               <Input
-                maxLength={17}
-                placeholder="17 символов"
-                size="large"
-                value={vehicleForm.vin}
+                placeholder="Toyota Camry"
+                value={vehicleForm.carModel}
                 onChange={(event) => {
-                  setVehicleForm((prev) => ({
-                    ...prev,
-                    vin: formatVinInput(event.target.value),
-                  }));
+                  setVehicleForm((prev) => ({ ...prev, carModel: event.target.value }));
+                  setFieldErrors((prev) => ({ ...prev, carModel: undefined }));
                 }}
               />
             </Form.Item>
-          ) : (
-            <Form.Item label="Номер шасси" required>
+            <Form.Item
+              className={styles.formItem}
+              label="Гос номер"
+              required
+              validateStatus={fieldErrors.licensePlate ? 'error' : undefined}
+              help={fieldErrors.licensePlate}
+            >
               <Input
-                placeholder="Номер шасси"
-                size="large"
-                value={vehicleForm.chassisNumber}
+                placeholder="А123ВС 777"
+                value={vehicleForm.licensePlate}
                 onChange={(event) => {
                   setVehicleForm((prev) => ({
                     ...prev,
-                    chassisNumber: formatChassisNumberInput(event.target.value),
+                    licensePlate: formatRuLicensePlateMaskedInput(event.target.value),
                   }));
+                  setFieldErrors((prev) => ({ ...prev, licensePlate: undefined }));
                 }}
               />
             </Form.Item>
-          )}
+          </div>
+          <div className={styles.formRow}>
+            {!useChassisNumber ? (
+              <Form.Item
+                className={styles.formItem}
+                label="VIN"
+                required
+                validateStatus={fieldErrors.vin ? 'error' : undefined}
+                help={fieldErrors.vin}
+              >
+                <Input
+                  maxLength={17}
+                  placeholder="17 символов"
+                  value={vehicleForm.vin}
+                  onChange={(event) => {
+                    setVehicleForm((prev) => ({
+                      ...prev,
+                      vin: formatVinInput(event.target.value),
+                    }));
+                    setFieldErrors((prev) => ({ ...prev, vin: undefined }));
+                  }}
+                />
+              </Form.Item>
+            ) : (
+              <Form.Item
+                className={styles.formItem}
+                label="Номер шасси"
+                required
+                validateStatus={fieldErrors.chassisNumber ? 'error' : undefined}
+                help={fieldErrors.chassisNumber}
+              >
+                <Input
+                  placeholder="Номер шасси"
+                  value={vehicleForm.chassisNumber}
+                  onChange={(event) => {
+                    setVehicleForm((prev) => ({
+                      ...prev,
+                      chassisNumber: formatChassisNumberInput(event.target.value),
+                    }));
+                    setFieldErrors((prev) => ({ ...prev, chassisNumber: undefined }));
+                  }}
+                />
+              </Form.Item>
+            )}
+            <Form.Item
+              className={styles.formItem}
+              label="Пробег автомобиля"
+              required
+              validateStatus={fieldErrors.mileage ? 'error' : undefined}
+              help={fieldErrors.mileage}
+            >
+              <InputNumber
+                className={styles.mileageInput}
+                min={0}
+                placeholder="85000"
+                value={vehicleForm.mileage}
+                onChange={(value) => {
+                  setVehicleForm((prev) => ({
+                    ...prev,
+                    mileage: typeof value === 'number' ? value : undefined,
+                  }));
+                  setFieldErrors((prev) => ({ ...prev, mileage: undefined }));
+                }}
+              />
+            </Form.Item>
+          </div>
           <Button
             size="small"
             type="link"
             onClick={() => {
               setUseChassisNumber((value) => !value);
               setVehicleForm((prev) => ({ ...prev, vin: '', chassisNumber: '' }));
+              setFieldErrors((prev) => ({ ...prev, vin: undefined, chassisNumber: undefined }));
             }}
           >
             {useChassisNumber ? 'Указать VIN' : 'Нет VIN? Номер шасси'}
           </Button>
-          <Form.Item label="Пробег автомобиля" required>
-            <InputNumber
-              className={styles.mileageInput}
-              min={0}
-              placeholder="85000"
-              size="large"
-              value={vehicleForm.mileage}
-              onChange={(value) => {
-                setVehicleForm((prev) => ({
-                  ...prev,
-                  mileage: typeof value === 'number' ? value : undefined,
-                }));
-              }}
-            />
-          </Form.Item>
           <div className={styles.actions}>
             <Button disabled={isCreatingVehicle} onClick={handleCancelAddVehicle}>
               Отмена

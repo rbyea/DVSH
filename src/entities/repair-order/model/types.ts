@@ -1,5 +1,5 @@
 export type RepairStatus =
-  'new' | 'pending_approval' | 'in_progress' | 'waiting_parts' | 'done' | 'completed';
+  'new' | 'pending_approval' | 'revision' | 'in_progress' | 'waiting_parts' | 'done' | 'completed';
 
 export type RepairListItem = {
   id: string;
@@ -202,6 +202,8 @@ export type UpdateRepairRequest = {
   total?: number | null;
   /** Master can put estimate back to pending after editing the quote. */
   estimate_status?: EstimateStatus | null;
+  /** Keep the client's decline note when only status is synced. */
+  estimate_comment?: string | null;
   /** Re-send handover confirmation after disputed fixes. */
   client_confirm_status?: ClientConfirmStatus | null;
 };
@@ -225,6 +227,7 @@ export type PublicRepairHistoryItem = {
   total_formatted?: string | null;
   mileage?: number | null;
   work_items?: PublicRepairWorkItem[];
+  ordered_parts?: Array<{ name: string; quantity: number; price?: number | null }>;
   client_confirm_status?: ClientConfirmStatus | null;
 };
 

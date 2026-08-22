@@ -1,7 +1,7 @@
 import { baseApi } from '@/shared/api';
 import { extractPublicToken } from '@/shared/lib/public-repair';
 
-import { normalizeRepairDetail } from '../model/normalize';
+import { normalizePublicVehicle, normalizeRepairDetail } from '../model/normalize';
 import type {
   ApprovePublicEstimateRequest,
   ConfirmPublicRepairRequest,
@@ -70,7 +70,8 @@ export const repairsApi = baseApi.injectEndpoints({
     }),
     getPublicRepair: build.query<PublicVehicle, string>({
       query: (publicToken) => `/public/vehicles/${publicToken}`,
-      transformResponse: (response: ApiDataResponse<PublicVehicle>) => response.data,
+      transformResponse: (response: ApiDataResponse<PublicVehicle>) =>
+        normalizePublicVehicle(response.data),
       providesTags: (_result, _error, publicToken) => [{ type: 'PublicRepair', id: publicToken }],
     }),
     approvePublicEstimate: build.mutation<
@@ -82,7 +83,8 @@ export const repairsApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      transformResponse: (response: ApiDataResponse<PublicVehicle>) => response.data,
+      transformResponse: (response: ApiDataResponse<PublicVehicle>) =>
+        normalizePublicVehicle(response.data),
       async onQueryStarted({ publicToken }, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
@@ -106,7 +108,8 @@ export const repairsApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      transformResponse: (response: ApiDataResponse<PublicVehicle>) => response.data,
+      transformResponse: (response: ApiDataResponse<PublicVehicle>) =>
+        normalizePublicVehicle(response.data),
       async onQueryStarted({ publicToken }, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;

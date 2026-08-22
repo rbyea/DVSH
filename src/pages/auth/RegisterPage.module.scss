@@ -23,23 +23,22 @@
 }
 
 .brand {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 22px;
 }
 
+.themeToggle {
+  margin-left: auto;
+}
+
 .brandMark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb, #0f766e);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
+  object-fit: cover;
 }
 
 .brandName {

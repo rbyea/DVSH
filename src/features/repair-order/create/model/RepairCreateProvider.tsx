@@ -474,7 +474,16 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
         status: 'new',
         planned_ready_at: values.plannedReadyAt?.format('YYYY-MM-DD') ?? null,
         mileage: values.mileage ?? null,
-        total: values.total ?? null,
+        total:
+          (values.workItems ?? []).reduce(
+            (sum, workItem) => sum + (typeof workItem.price === 'number' ? workItem.price : 0),
+            0,
+          ) +
+          (values.orderedParts ?? []).reduce(
+            (sum, part) =>
+              sum + (typeof part.price === 'number' ? part.price * (part.quantity ?? 1) : 0),
+            0,
+          ),
         comment: values.comment || null,
         work_items: (values.workItems ?? [])
           .filter((workItem) => workItem.title)

@@ -7,8 +7,8 @@ export function RequireActiveSubscription() {
   const user = useAppSelector((state) => state.session.user);
   const location = useLocation();
 
-  if (isSubscriptionBlocked(user) && location.pathname !== '/billing') {
-    return <Navigate replace to="/billing" />;
+  if (isSubscriptionBlocked(user) && location.pathname !== '/station') {
+    return <Navigate replace to="/station#subscription" />;
   }
 
   return <Outlet />;

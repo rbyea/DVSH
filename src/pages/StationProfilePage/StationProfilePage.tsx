@@ -1,165 +1,92 @@
-import { Button, Form, Input, Spin } from 'antd';
-import { useEffect, useState } from 'react';
-import { Bounce, toast } from 'react-toastify';
+import clsx from 'clsx';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAppSelector } from '@/app/store';
-import {
-  DEFAULT_MASTER_SHARE_PERCENT,
-  getStationMasterSharePercent,
-  useGetStationQuery,
-  useUpdateStationMutation,
-} from '@/entities/master';
-import { CreateMasterForm } from '@/features/master/create';
-import { getErrorMessage } from '@/shared/lib/api';
-import { AppInfo } from '@/widgets/AppInfo';
+import { StationProfileForm } from '@/features/station/update';
 import { StationCompletedWorksPanel } from '@/widgets/StationCompletedWorksPanel';
 import { StationMastersPanel } from '@/widgets/StationMastersPanel';
+import { StationSubscriptionPanel } from '@/widgets/StationSubscriptionPanel';
 
 import styles from './StationProfilePage.module.scss';
 
+type StationSection = 'station' | 'subscription' | 'masters' | 'works';
+
+const SECTION_ITEMS: Array<{ key: StationSection; label: string }> = [
+  { key: 'station', label: 'Станция' },
+  { key: 'subscription', label: 'Подписка' },
+  { key: 'masters', label: 'Мастера' },
+  { key: 'works', label: 'Работы' },
+];
+
+function isStationSection(value: string): value is StationSection {
+  return SECTION_ITEMS.some((item) => item.key === value);
+}
+
 export function StationProfilePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const hashSection = location.hash.replace('#', '');
+  const activeSection: StationSection = isStationSection(hashSection) ? hashSection : 'station';
+
   const user = useAppSelector((state) => state.session.user);
-  const [isAdding, setIsAdding] = useState(false);
-  const [stationName, setStationName] = useState('');
-  const [isEditingStation, setIsEditingStation] = useState(false);
 
-  const { data: station, isLoading: isStationLoading } = useGetStationQuery();
-  const [updateStation, { isLoading: isSavingStation }] = useUpdateStationMutation();
-  const masterSharePercent = getStationMasterSharePercent(station);
-
-  useEffect(() => {
-    if (station?.name) {
-      setStationName(station.name);
-    }
-  }, [station?.name]);
-
-  const handleSaveStation = async () => {
-    const name = stationName.trim();
-
-    if (!name) {
-      toast.warning('Введите название СТО', {
-        position: 'top-right',
-        transition: Bounce,
-      });
-      return;
-    }
-
-    try {
-      await updateStation({
-        name,
-        master_share_percent: station?.master_share_percent ?? DEFAULT_MASTER_SHARE_PERCENT,
-      }).unwrap();
-      setIsEditingStation(false);
-      toast.success('Название СТО сохранено', {
-        position: 'top-right',
-        transition: Bounce,
-      });
-    } catch (error) {
-      toast.error(getErrorMessage(error, 'Не удалось сохранить название СТО'), {
-        position: 'top-right',
-        transition: Bounce,
-      });
-    }
+  const openSection = (section: StationSection) => {
+    navigate({ pathname: '/station', hash: section }, { replace: true });
   };
 
+  const sectionTitle = SECTION_ITEMS.find((item) => item.key === activeSection)?.label ?? 'Станция';
+
   return (
-    <div className={styles.page}>
-      <AppInfo
-        eyebrow="Станция"
-        subtitle="Профиль СТО, мастера и сводка выполненных работ."
-        title="Профиль СТО"
-      />
-
-      <section className={styles.card}>
-        <div className={styles.cardHead}>
-          <div>
-            <h2 className={styles.cardTitle}>Станция</h2>
-            <p className={styles.cardHint}>Название вашей сервисной станции</p>
-          </div>
-          {!isEditingStation ? (
-            <Button
-              size="small"
-              type="link"
-              onClick={() => {
-                setStationName(station?.name ?? '');
-                setIsEditingStation(true);
-              }}
+    <div className={styles.layout}>
+      <aside className={styles.sidebar}>
+        <p className={styles.navLabel}>Профиль СТО</p>
+        <nav className={styles.nav} aria-label="Разделы профиля">
+          {SECTION_ITEMS.map((item) => (
+            <button
+              className={clsx(
+                styles.navButton,
+                activeSection === item.key && styles.navButtonActive,
+              )}
+              key={item.key}
+              type="button"
+              onClick={() => openSection(item.key)}
             >
-              Изменить
-            </Button>
-          ) : null}
-        </div>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </aside>
 
-        {isStationLoading ? (
-          <div className={styles.loading}>
-            <Spin />
-          </div>
-        ) : isEditingStation ? (
-          <Form className={styles.stationForm} layout="vertical" requiredMark={false}>
-            <Form.Item label="Название СТО">
-              <Input
-                size="large"
-                value={stationName}
-                onChange={(event) => setStationName(event.target.value)}
-              />
-            </Form.Item>
-            <div className={styles.stationActions}>
-              <Button
-                disabled={isSavingStation}
-                onClick={() => {
-                  setStationName(station?.name ?? '');
-                  setIsEditingStation(false);
-                }}
-              >
-                Отмена
-              </Button>
-              <Button
-                loading={isSavingStation}
-                type="primary"
-                onClick={() => void handleSaveStation()}
-              >
-                Сохранить
-              </Button>
-            </div>
-          </Form>
-        ) : (
-          <p className={styles.stationName}>{station?.name || 'Название пока не задано'}</p>
-        )}
+      <div className={styles.content}>
+        <header className={styles.contentHead}>
+          <p className={styles.eyebrow}>Профиль СТО</p>
+          <h1 className={styles.pageTitle}>{sectionTitle}</h1>
+        </header>
 
-        {user ? (
-          <div className={styles.meBlock}>
-            <span className={styles.meLabel}>Вы вошли как</span>
-            <span className={styles.meValue}>
-              {user.name} · {user.email}
-            </span>
-            <span className={styles.meShare}>
-              Доля мастерам сейчас: {masterSharePercent}% (настраивается в блоке работ ниже)
-            </span>
-          </div>
+        {activeSection === 'station' ? (
+          <>
+            <StationProfileForm />
+            {user ? (
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <div>
+                    <h2 className={styles.cardTitle}>Аккаунт</h2>
+                    <p className={styles.cardHint}>Владелец станции в Автовидно</p>
+                  </div>
+                </div>
+                <p className={styles.accountName}>{user.name}</p>
+                <p className={styles.accountEmail}>{user.email}</p>
+              </section>
+            ) : null}
+          </>
         ) : null}
-      </section>
 
-      <StationCompletedWorksPanel />
+        {activeSection === 'subscription' ? <StationSubscriptionPanel /> : null}
 
-      <StationMastersPanel
-        footer={
-          <div className={styles.mastersFooter}>
-            {!isAdding ? (
-              <Button type="primary" onClick={() => setIsAdding(true)}>
-                Добавить мастера
-              </Button>
-            ) : (
-              <div className={styles.addFormWrap}>
-                <h3 className={styles.addFormTitle}>Новый мастер</h3>
-                <CreateMasterForm
-                  onCancel={() => setIsAdding(false)}
-                  onSuccess={() => setIsAdding(false)}
-                />
-              </div>
-            )}
-          </div>
-        }
-      />
+        {activeSection === 'works' ? <StationCompletedWorksPanel /> : null}
+
+        {activeSection === 'masters' ? <StationMastersPanel /> : null}
+      </div>
     </div>
   );
 }

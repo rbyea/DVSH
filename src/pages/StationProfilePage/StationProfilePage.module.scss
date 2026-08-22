@@ -1,7 +1,95 @@
-.page {
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.sidebar {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 16px 12px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.navLabel {
+  margin: 8px 8px 6px;
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.navLabel:first-child {
+  margin-top: 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navButton {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--dvsh-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navButton:hover {
+  background: var(--dvsh-soft);
+}
+
+.navButtonActive {
+  background: var(--dvsh-accent-soft);
+  color: var(--dvsh-accent);
+}
+
+.content {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+}
+
+.contentHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .card {
@@ -28,8 +116,6 @@
   color: var(--dvsh-ink);
   font-size: 15px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .cardHint {
@@ -39,88 +125,46 @@
   line-height: 1.45;
 }
 
-.stationName {
+.accountName {
   margin: 0;
   color: var(--dvsh-ink);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.02em;
 }
 
-.stationForm :global(.ant-form-item) {
-  margin-bottom: 12px;
-}
-
-.stationActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.meBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  border-top: 1px solid var(--dvsh-line);
-  padding-top: 12px;
-}
-
-.meLabel {
-  color: var(--dvsh-muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.meValue {
-  color: var(--dvsh-ink);
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
-.meShare {
-  margin-top: 4px;
-  color: var(--dvsh-muted);
-  font-size: 13px;
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: 12px 0;
-}
-
-.mastersFooter {
-  margin-top: 4px;
-}
-
-.addFormWrap {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-top: 1px solid var(--dvsh-line);
-  padding-top: 14px;
-}
-
-.addFormTitle {
+.accountEmail {
   margin: 0;
-  color: var(--dvsh-ink);
+  color: var(--dvsh-muted);
   font-size: 14px;
-  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .sidebar {
+    position: static;
+    padding: 12px;
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .navButton {
+    width: auto;
+  }
 }
 
 @media (max-width: 720px) {
+  .pageTitle {
+    font-size: 24px;
+  }
+
   .card {
     padding: 16px;
-  }
-
-  .stationActions {
-    width: 100%;
-  }
-
-  .stationActions :global(.ant-btn) {
-    flex: 1;
   }
 }

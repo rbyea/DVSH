@@ -1,20 +1,22 @@
-import { Button, Modal, Result, Select, Spin, Tag } from 'antd';
+import { Button, DatePicker, Input, Modal, Result, Select, Spin, Tag } from 'antd';
 import clsx from 'clsx';
 import { format, parseISO } from 'date-fns';
+import dayjs, { type Dayjs } from 'dayjs';
 import { ru } from 'date-fns/locale';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
 import {
-  clientConfirmStatusColors,
-  clientConfirmStatusLabels,
   estimateStatusColors,
   estimateStatusLabels,
   getRepairCostBreakdown,
   isRepairLocked,
+  needsPublicEstimateDecision,
+  resolveStatusAfterEstimate,
   repairStatusLabels,
   useGetRepairQuery,
+  useUpdateRepairMutation,
   useUpdateRepairStatusMutation,
   useUpdateWorkItemMutation,
   type RepairStatus,
@@ -22,11 +24,11 @@ import {
 import { useGetVehicleQuery, type VehicleRepairHistory } from '@/entities/vehicle';
 import { printRepairWork } from '@/features/repair-order/print';
 import { getErrorMessage } from '@/shared/lib/api';
+import { disablePastDates, isPastCalendarDate } from '@/shared/lib/date';
 import { parseMoney } from '@/shared/lib/money';
 import { RepairClientConfirmPanel } from '@/widgets/RepairClientConfirmPanel';
 import { RepairClientPanel } from '@/widgets/RepairClientPanel';
-import { RepairDetailsEditor } from '@/widgets/RepairDetailsEditor';
-import { RepairEstimatePanel } from '@/widgets/RepairEstimatePanel';
+import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
 import { RepairPartsChecklist } from '@/widgets/RepairPartsChecklist';
 import { RepairPublicLinkPanel } from '@/widgets/RepairPublicLinkPanel';
 import { RepairVehiclePanel } from '@/widgets/RepairVehiclePanel';
@@ -42,6 +44,7 @@ type LocationState = {
 const statusClassName: Record<RepairStatus, string> = {
   new: styles.status_new,
   pending_approval: styles.status_pending_approval,
+  revision: styles.status_revision,
   in_progress: styles.status_in_progress,
   waiting_parts: styles.status_waiting_parts,
   done: styles.status_done,
@@ -98,7 +101,8 @@ export function RepairDetailsPage() {
   const location = useLocation();
   const justCreated = Boolean((location.state as LocationState | null)?.justCreated);
   const [highlightPublicLink, setHighlightPublicLink] = useState(justCreated);
-  const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
+  const [isEditingComment, setIsEditingComment] = useState(false);
+  const [commentDraft, setCommentDraft] = useState('');
 
   const {
     data: repair,
@@ -108,14 +112,16 @@ export function RepairDetailsPage() {
     skip: !repairId,
   });
 
-  const activeHistoryVehicleId = historyVehicleId ?? repair?.vehicle.id ?? '';
+  const activeHistoryVehicleId = repair?.vehicle.id ?? '';
 
   const { data: vehicleCard } = useGetVehicleQuery(activeHistoryVehicleId, {
     skip: !activeHistoryVehicleId,
   });
   const [updateStatus, { isLoading: isStatusUpdating }] = useUpdateRepairStatusMutation();
+  const [updateRepair, { isLoading: isRepairUpdating }] = useUpdateRepairMutation();
   const [updateWorkItem, { isLoading: isWorkUpdating }] = useUpdateWorkItemMutation();
-  const isStatusBusy = isStatusUpdating || isWorkUpdating;
+  const isStatusBusy = isStatusUpdating || isRepairUpdating || isWorkUpdating;
+  const syncedAfterEstimateRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (justCreated) {
@@ -124,12 +130,42 @@ export function RepairDetailsPage() {
   }, [justCreated]);
 
   useEffect(() => {
-    if (!repair?.vehicle.id) {
+    if (!isEditingComment) {
+      setCommentDraft(repair?.comment ?? '');
+    }
+  }, [repair, isEditingComment]);
+
+  useEffect(() => {
+    if (!repair || isRepairLocked(repair)) {
       return;
     }
 
-    setHistoryVehicleId((current) => current ?? repair.vehicle.id);
-  }, [repair?.vehicle.id]);
+    if (repair.status !== 'pending_approval') {
+      return;
+    }
+
+    if (repair.estimate_status !== 'approved' && repair.estimate_status !== 'declined') {
+      syncedAfterEstimateRef.current = null;
+      return;
+    }
+
+    const nextStatus = resolveStatusAfterEstimate(repair.status, repair.estimate_status);
+    const syncKey = `${repair.id}:${repair.estimate_status}:${repair.estimate_decided_at ?? ''}`;
+
+    if (nextStatus === repair.status || syncedAfterEstimateRef.current === syncKey) {
+      return;
+    }
+
+    syncedAfterEstimateRef.current = syncKey;
+    void updateRepair({
+      repairId: repair.id,
+      body: {
+        status: nextStatus,
+        estimate_status: repair.estimate_status,
+        estimate_comment: repair.estimate_comment ?? null,
+      },
+    });
+  }, [repair, updateRepair]);
 
   if (isLoading) {
     return (
@@ -166,9 +202,8 @@ export function RepairDetailsPage() {
     costBreakdown.calculatedTotal > 0 ? costBreakdown.calculatedTotal : parseMoney(repair.total);
   const isLocked = isRepairLocked(repair);
   const confirmStatus = repair.client_confirm_status ?? null;
-  const isEstimatePending = repair.estimate_status === 'pending';
-  const historyVehicleIdResolved = historyVehicleId ?? repair.vehicle.id;
-  const isHistoryForCurrentVehicle = String(historyVehicleIdResolved) === String(repair.vehicle.id);
+  const isEstimatePending = needsPublicEstimateDecision(repair);
+  const displayStatus = resolveStatusAfterEstimate(repair.status, repair.estimate_status);
   const vehicleHistory: VehicleRepairHistory[] = (vehicleCard?.repairs ?? []).map((item) => ({
     id: String(item.id),
     order_number: item.order_number,
@@ -186,6 +221,51 @@ export function RepairDetailsPage() {
   const historyTitle = historyVehicleLabel
     ? `История · ${historyVehicleLabel}`
     : 'История по этому авто';
+
+  const handleSaveReadyDate = async (value: Dayjs | null) => {
+    if (isLocked) {
+      return;
+    }
+
+    if (isPastCalendarDate(value)) {
+      toast.warning('Дата выдачи не может быть в прошлом', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+      return;
+    }
+
+    try {
+      await updateRepair({
+        repairId: repair.id,
+        body: { planned_ready_at: value?.format('YYYY-MM-DD') ?? null },
+      }).unwrap();
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Не удалось сохранить дату выдачи'), {
+        position: 'top-right',
+        transition: Bounce,
+      });
+    }
+  };
+
+  const handleSaveComment = async () => {
+    if (isLocked) {
+      return;
+    }
+
+    try {
+      await updateRepair({
+        repairId: repair.id,
+        body: { comment: commentDraft.trim() || null },
+      }).unwrap();
+      setIsEditingComment(false);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Не удалось сохранить комментарий'), {
+        position: 'top-right',
+        transition: Bounce,
+      });
+    }
+  };
 
   const markAllWorksDone = async () => {
     const incompleteWorks = repair.work_items.filter((item) => !item.is_done);
@@ -210,11 +290,16 @@ export function RepairDetailsPage() {
       return;
     }
 
-    if (isEstimatePending && status === 'done') {
-      toast.warning('Сначала дождитесь согласования сметы клиентом', {
-        position: 'top-right',
-        transition: Bounce,
-      });
+    if ((isEstimatePending || repair.estimate_status === 'declined') && status === 'done') {
+      toast.warning(
+        isEstimatePending
+          ? 'Клиент ещё не согласовал работы по ссылке'
+          : 'Сначала измените работы и отправьте клиенту снова',
+        {
+          position: 'top-right',
+          transition: Bounce,
+        },
+      );
       return;
     }
 
@@ -223,7 +308,26 @@ export function RepairDetailsPage() {
         await markAllWorksDone();
       }
 
-      await updateStatus({ repairId: repair.id, status }).unwrap();
+      if (status === 'pending_approval') {
+        await updateRepair({
+          repairId: repair.id,
+          body: {
+            status: 'pending_approval',
+            estimate_status: 'pending',
+          },
+        }).unwrap();
+      } else if (repair.estimate_status === 'approved' || repair.estimate_status === 'declined') {
+        await updateRepair({
+          repairId: repair.id,
+          body: {
+            status,
+            estimate_status: repair.estimate_status,
+            estimate_comment: repair.estimate_comment ?? null,
+          },
+        }).unwrap();
+      } else {
+        await updateStatus({ repairId: repair.id, status }).unwrap();
+      }
       toast.success(
         status === 'done' && repair.work_items.length > 0
           ? 'Статус «Готово»: все работы отмечены выполненными'
@@ -296,66 +400,16 @@ export function RepairDetailsPage() {
         <h1 className={styles.pageTitle}>Заказ-наряд {repair.order_number}</h1>
       </header>
 
-      {repair.status === 'completed' && confirmStatus ? (
-        <RepairClientConfirmPanel repair={repair} />
-      ) : isLocked ? (
-        <div className={styles.lockedBanner}>
-          <div>
-            <p className={styles.lockedBannerTitle}>Автомобиль выдан</p>
-            <p className={styles.lockedBannerText}>
-              Заказ-наряд закрыт. Данные зафиксированы в карточке, редактирование недоступно.
-            </p>
-          </div>
-          <Tag color="default">Выдан</Tag>
-        </div>
-      ) : null}
-
-      <section className={styles.grid}>
-        <RepairClientPanel
-          client={repair.client}
-          currentVehicleId={repair.vehicle.id}
-          formatDateTime={formatDateTime}
-          knownVehicles={[
-            {
-              id: String(repair.vehicle.id),
-              car_model: repair.vehicle.car_model,
-              license_plate: repair.vehicle.license_plate,
-              vin: repair.vehicle.vin,
-              chassis_number: repair.vehicle.chassis_number,
-              mileage: repair.vehicle.mileage,
-            },
-          ]}
-          readOnly={isLocked}
-          repairId={repair.id}
-          selectedVehicleId={historyVehicleIdResolved}
-          updatedAt={repair.updated_at}
-          onSelectVehicle={(vehicle) => {
-            setHistoryVehicleId(String(vehicle.id));
-          }}
-        />
-        <RepairVehiclePanel
-          readOnly={isLocked}
-          repairId={repair.id}
-          repairMileage={repair.mileage}
-          vehicle={repair.vehicle}
-        />
-      </section>
-
-      <section className={clsx(styles.hero, statusClassName[repair.status])}>
+      <section className={clsx(styles.hero, statusClassName[displayStatus])}>
         <div className={styles.heroTop}>
           <div>
             <p className={styles.eyebrow}>Текущий статус</p>
-            <h2 className={styles.heroTitle}>{repairStatusLabels[repair.status]}</h2>
+            <h2 className={styles.heroTitle}>{repairStatusLabels[displayStatus]}</h2>
           </div>
           <div className={styles.statusControl}>
             {repair.estimate_status ? (
               <Tag color={estimateStatusColors[repair.estimate_status]}>
                 {estimateStatusLabels[repair.estimate_status]}
-              </Tag>
-            ) : null}
-            {confirmStatus ? (
-              <Tag color={clientConfirmStatusColors[confirmStatus]}>
-                {clientConfirmStatusLabels[confirmStatus]}
               </Tag>
             ) : null}
             {isLocked ? (
@@ -364,9 +418,20 @@ export function RepairDetailsPage() {
               <Select<RepairStatus>
                 className={styles.statusSelect}
                 disabled={isStatusBusy}
-                options={editableStatusOptions}
+                options={editableStatusOptions.map((option) =>
+                  option.value === 'done' &&
+                  (isEstimatePending || repair.estimate_status === 'declined')
+                    ? {
+                        ...option,
+                        disabled: true,
+                        label: isEstimatePending
+                          ? 'Готово · ждём клиента'
+                          : 'Готово · сначала отправьте снова',
+                      }
+                    : option,
+                )}
                 size="large"
-                value={repair.status}
+                value={displayStatus}
                 onChange={(value) => {
                   void handleStatusChange(value);
                 }}
@@ -384,13 +449,32 @@ export function RepairDetailsPage() {
                 ? 'работы, доп. работы и запчасти'
                 : repair.estimate_status
                   ? estimateStatusLabels[repair.estimate_status]
-                  : 'смета для клиента'}
+                  : 'стоимость появится после добавления работ'}
             </span>
           </div>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Выдача</span>
-            <span className={styles.statValue}>{formatDate(repair.planned_ready_at)}</span>
-            <span className={styles.statHint}>плановая дата</span>
+            {isLocked ? (
+              <span className={styles.statValue}>{formatDate(repair.planned_ready_at)}</span>
+            ) : (
+              <DatePicker
+                allowClear
+                bordered={false}
+                className={styles.readyDate}
+                disabled={isRepairUpdating}
+                disabledDate={disablePastDates}
+                format="DD.MM.YYYY"
+                placeholder="Не указана"
+                suffixIcon={null}
+                value={repair.planned_ready_at ? dayjs(repair.planned_ready_at) : null}
+                onChange={(value) => {
+                  void handleSaveReadyDate(value);
+                }}
+              />
+            )}
+            <span className={styles.statHint}>
+              {isLocked ? 'плановая дата' : 'нажмите, чтобы изменить'}
+            </span>
           </div>
           <div className={styles.stat}>
             <span className={styles.statLabel}>Прогресс</span>
@@ -402,6 +486,57 @@ export function RepairDetailsPage() {
             </span>
           </div>
         </div>
+
+        {isLocked && !repair.comment?.trim() ? null : (
+          <div className={styles.masterNote}>
+            {isEditingComment && !isLocked ? (
+              <div className={styles.masterNoteEdit}>
+                <Input.TextArea
+                  autoFocus
+                  placeholder="Что важно не забыть по этому ремонту"
+                  rows={2}
+                  value={commentDraft}
+                  onChange={(event) => setCommentDraft(event.target.value)}
+                />
+                <div className={styles.masterNoteActions}>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setCommentDraft(repair.comment ?? '');
+                      setIsEditingComment(false);
+                    }}
+                  >
+                    Отмена
+                  </Button>
+                  <Button
+                    loading={isRepairUpdating}
+                    size="small"
+                    type="primary"
+                    onClick={() => void handleSaveComment()}
+                  >
+                    Сохранить
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className={styles.masterNoteButton}
+                disabled={isLocked}
+                type="button"
+                onClick={() => {
+                  if (!isLocked) {
+                    setIsEditingComment(true);
+                  }
+                }}
+              >
+                <span className={styles.statLabel}>Комментарий мастера</span>
+                <span className={styles.masterNoteText}>
+                  {repair.comment?.trim() || 'Добавить заметку к заказу'}
+                </span>
+              </button>
+            )}
+          </div>
+        )}
 
         {repair.status === 'done' ? (
           <div className={styles.issueActions}>
@@ -415,27 +550,74 @@ export function RepairDetailsPage() {
         ) : null}
       </section>
 
+      {repair.estimate_status === 'declined' && !isLocked ? (
+        <div className={styles.commentPanel}>
+          <p className={styles.lockedBannerTitle}>Изменение работ</p>
+          {repair.estimate_comment?.trim() ? (
+            <p className={styles.commentText}>«{repair.estimate_comment.trim()}»</p>
+          ) : (
+            <p className={styles.lockedBannerText}>Клиент не оставил комментарий.</p>
+          )}
+          <p className={styles.lockedBannerText}>
+            Измените работы или запчасти и отправьте список клиенту снова.
+          </p>
+        </div>
+      ) : null}
+
+      {repair.status === 'completed' && confirmStatus ? (
+        <RepairClientConfirmPanel repair={repair} />
+      ) : isLocked ? (
+        <div className={styles.lockedBanner}>
+          <div>
+            <p className={styles.lockedBannerTitle}>Автомобиль выдан</p>
+            <p className={styles.lockedBannerText}>
+              Заказ-наряд закрыт. Данные зафиксированы в карточке, редактирование недоступно.
+            </p>
+          </div>
+          <Tag color="default">Выдан</Tag>
+        </div>
+      ) : null}
+
       <RepairPublicLinkPanel
+        estimateStatus={repair.estimate_status}
         highlight={highlightPublicLink}
         publicToken={repair.public_token}
         publicUrl={repair.public_url}
+        readOnly={isLocked}
+        repairId={repair.id}
+        repairStatus={repair.status}
       />
 
+      <section className={styles.grid}>
+        <RepairClientPanel
+          client={repair.client}
+          currentVehicleId={repair.vehicle.id}
+          formatDateTime={formatDateTime}
+          readOnly={isLocked}
+          repairId={repair.id}
+          updatedAt={repair.updated_at}
+        />
+        <RepairVehiclePanel
+          readOnly={isLocked}
+          repairId={repair.id}
+          repairMileage={repair.mileage}
+          vehicle={repair.vehicle}
+        />
+      </section>
+
       <RepairWorksList
-        defaultOpen
         emptyText="У этого автомобиля пока нет прошлых заказ-нарядов"
-        excludeRepairId={isHistoryForCurrentVehicle ? repair.id : undefined}
+        excludeRepairId={repair.id}
         repairs={vehicleHistory}
         showWhenEmpty
         title={historyTitle}
       />
 
-      <section className={styles.paramsBlock}>
-        <RepairDetailsEditor readOnly={isLocked} repair={repair} />
-        <div className={styles.estimateSection}>
-          <RepairEstimatePanel embedded readOnly={isLocked} repair={repair} />
-        </div>
-      </section>
+      <RepairDiagnosticsPanel
+        readOnly={isLocked}
+        repairId={repair.id}
+        vehicleVin={repair.vehicle.vin}
+      />
 
       <section className={styles.split}>
         <article className={styles.panel}>

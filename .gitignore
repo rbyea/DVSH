@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Secrets — файлы с токенами/доступами
+docs/backend-handoff-2026-08-18.md
+docs/telegram-bot.local
+docs/max-bot.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

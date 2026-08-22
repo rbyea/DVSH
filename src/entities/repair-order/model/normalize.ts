@@ -1,6 +1,7 @@
 import { parseMoney } from '@/shared/lib/money';
 
-import type { RepairDetail, RepairPart, RepairWorkItem } from './types';
+import { resolveStatusAfterEstimate, repairStatusLabels } from './status';
+import type { PublicVehicle, RepairDetail, RepairPart, RepairWorkItem } from './types';
 
 type RepairDetailPayload = RepairDetail & {
   parts?: RepairPart[] | null;
@@ -30,5 +31,28 @@ export function normalizeRepairDetail(data: RepairDetailPayload): RepairDetail {
     total: parseMoney(data.total),
     work_items: (data.work_items ?? []).map(normalizeWorkItem),
     ordered_parts: parts.map(normalizePart),
+  };
+}
+
+export function normalizePublicVehicle(data: PublicVehicle): PublicVehicle {
+  const currentRepair = data.current_repair;
+
+  if (!currentRepair) {
+    return data;
+  }
+
+  const status = resolveStatusAfterEstimate(currentRepair.status, currentRepair.estimate_status);
+
+  if (status === currentRepair.status) {
+    return data;
+  }
+
+  return {
+    ...data,
+    current_repair: {
+      ...currentRepair,
+      status,
+      status_label: repairStatusLabels[status],
+    },
   };
 }

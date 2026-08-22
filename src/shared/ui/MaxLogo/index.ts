@@ -1,0 +1,1 @@
+export { MaxLogo } from './MaxLogo';

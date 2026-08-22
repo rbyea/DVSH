@@ -12,9 +12,7 @@
   border: 1px solid var(--dvsh-line);
   border-radius: var(--dvsh-radius-lg);
   padding: 28px;
-  background:
-    linear-gradient(135deg, rgb(255 255 255 / 94%), rgb(255 255 255 / 88%)),
-    linear-gradient(135deg, var(--dvsh-accent-soft), #ffffff 58%);
+  background: linear-gradient(135deg, var(--dvsh-accent-soft), var(--dvsh-card) 62%);
   box-shadow: var(--dvsh-shadow);
 }
 
