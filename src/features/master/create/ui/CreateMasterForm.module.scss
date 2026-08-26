@@ -8,6 +8,20 @@
   margin-bottom: 12px;
 }
 
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.rowItem {
+  margin-bottom: 12px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -22,5 +36,9 @@
 
   .actions :global(.ant-btn) {
     flex: 1;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
   }
 }

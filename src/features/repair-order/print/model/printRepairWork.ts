@@ -133,6 +133,24 @@ export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
     <div>Сумма: <strong>${total > 0 ? formatMoney(total) : '—'}</strong></div>
   </div>`;
 
+  const partsSection =
+    parts.length === 0
+      ? ''
+      : `
+  <h2>Запчасти</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px">№</th>
+        <th>Наименование</th>
+        <th style="width:80px">Кол-во</th>
+        <th style="width:100px">Цена</th>
+        <th style="width:110px">Сумма</th>
+      </tr>
+    </thead>
+    <tbody>${partRows}</tbody>
+  </table>`;
+
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -178,24 +196,11 @@ export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
   </div>
 
   ${workTable('Работы', regularWorks, 'Работы не указаны', worksTotal)}
-  ${workTable('Доп. работы', extraWorks, 'Доп. работы не указаны', extraWorksTotal)}
-
-  <h2>Запчасти</h2>
-  <table>
-    <thead>
-      <tr>
-        <th style="width:40px">№</th>
-        <th>Наименование</th>
-        <th style="width:80px">Кол-во</th>
-        <th style="width:100px">Цена</th>
-        <th style="width:110px">Сумма</th>
-      </tr>
-    </thead>
-    <tbody>${partRows}</tbody>
-  </table>
+  ${extraWorks.length > 0 ? workTable('Доп. работы', extraWorks, 'Доп. работы не указаны', extraWorksTotal) : ''}
+  ${partsSection}
 
   <div class="totals">
-    <div>Запчасти: <strong>${partsTotal > 0 ? formatMoney(partsTotal) : '—'}</strong></div>
+    ${parts.length > 0 ? `<div>Запчасти: <strong>${partsTotal > 0 ? formatMoney(partsTotal) : '—'}</strong></div>` : ''}
     <div>К оплате: <strong>${calculatedTotal > 0 ? formatMoney(calculatedTotal) : formatMoney(repair.total)}</strong></div>
   </div>
 

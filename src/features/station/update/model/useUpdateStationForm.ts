@@ -76,12 +76,7 @@ export function useUpdateStationForm(onSaved?: () => void) {
     };
 
     try {
-      try {
-        await updateStation({ ...core, ...contacts }).unwrap();
-      } catch {
-        await updateStation(core).unwrap();
-      }
-
+      await updateStation({ ...core, ...contacts }).unwrap();
       writeLocalStationContacts(station.id, contacts);
       reset({
         name: core.name,

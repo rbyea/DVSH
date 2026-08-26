@@ -9,7 +9,9 @@ import {
   useDeletePartMutation,
   useUpdatePartMutation,
   type RepairPart,
+  type RepairStatus,
 } from '@/entities/repair-order';
+import { useSendQuoteForApproval } from '@/features/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
 import { DeferredInputNumber } from '@/shared/ui/DeferredInputNumber';
 
@@ -17,8 +19,10 @@ import styles from './RepairPartsChecklist.module.scss';
 
 type RepairPartsChecklistProps = {
   repairId: string;
+  repairStatus?: RepairStatus;
   parts: RepairPart[];
   readOnly?: boolean;
+  quoteLocked?: boolean;
 };
 
 function formatMoney(value: number): string {
@@ -31,8 +35,10 @@ function formatMoney(value: number): string {
 
 export function RepairPartsChecklist({
   repairId,
+  repairStatus,
   parts,
   readOnly = false,
+  quoteLocked = false,
 }: RepairPartsChecklistProps) {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState<number>(1);
@@ -44,7 +50,27 @@ export function RepairPartsChecklist({
   const [addPart, { isLoading: isAdding }] = useAddPartMutation();
   const [updatePart] = useUpdatePartMutation();
   const [deletePart] = useDeletePartMutation();
+  const { sendQuoteForApproval } = useSendQuoteForApproval(repairId, repairStatus);
 
+  const notifyQuoteChanged = async () => {
+    try {
+      const sent = await sendQuoteForApproval();
+
+      if (sent) {
+        toast.info('Список ушёл клиенту на согласование', {
+          position: 'top-right',
+          transition: Bounce,
+        });
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Запчасть сохранена, но согласование не отправилось'), {
+        position: 'top-right',
+        transition: Bounce,
+      });
+    }
+  };
+
+  const canEditQuote = !readOnly && !quoteLocked;
   const { partsTotal } = getRepairCostBreakdown({ orderedParts: parts });
 
   const handleChangeQuantity = async (part: RepairPart, nextQuantity: number) => {
@@ -60,6 +86,7 @@ export function RepairPartsChecklist({
         partId: part.id,
         body: { quantity: nextQuantity },
       }).unwrap();
+      await notifyQuoteChanged();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось обновить количество'), {
         position: 'top-right',
@@ -86,6 +113,7 @@ export function RepairPartsChecklist({
         partId: part.id,
         body: { price: normalized },
       }).unwrap();
+      await notifyQuoteChanged();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось обновить цену'), {
         position: 'top-right',
@@ -130,6 +158,7 @@ export function RepairPartsChecklist({
         partId: part.id,
         body: { name: nextName },
       }).unwrap();
+      await notifyQuoteChanged();
       handleCancelEdit();
       toast.success('Запчасть обновлена', {
         position: 'top-right',
@@ -160,6 +189,7 @@ export function RepairPartsChecklist({
             repairId,
             partId: part.id,
           }).unwrap();
+          await notifyQuoteChanged();
         } catch (error) {
           toast.error(getErrorMessage(error, 'Не удалось удалить запчасть'), {
             position: 'top-right',
@@ -193,6 +223,7 @@ export function RepairPartsChecklist({
           price: typeof price === 'number' ? price : null,
         },
       }).unwrap();
+      await notifyQuoteChanged();
       setName('');
       setQuantity(1);
       setPrice(null);
@@ -214,6 +245,12 @@ export function RepairPartsChecklist({
         </span>
       </div>
 
+      {quoteLocked && !readOnly ? (
+        <p className={styles.lockNote}>
+          Смета на согласовании. Запчасти можно менять после ответа клиента.
+        </p>
+      ) : null}
+
       {parts.length > 0 ? (
         <ul className={styles.list}>
           {parts.map((part) => {
@@ -223,7 +260,7 @@ export function RepairPartsChecklist({
 
             return (
               <li className={styles.item} key={part.id}>
-                {isEditing && !readOnly ? (
+                {isEditing && canEditQuote ? (
                   <Input
                     autoFocus
                     disabled={isPending}
@@ -239,7 +276,7 @@ export function RepairPartsChecklist({
                 )}
 
                 <div className={styles.qtyControl}>
-                  {readOnly ? (
+                  {!canEditQuote ? (
                     <span className={styles.qtyValue}>× {part.quantity}</span>
                   ) : (
                     <>
@@ -267,7 +304,7 @@ export function RepairPartsChecklist({
                 </div>
 
                 <div className={styles.priceControl}>
-                  {readOnly ? (
+                  {!canEditQuote ? (
                     <span className={styles.priceValue}>
                       {typeof part.price === 'number'
                         ? `${formatMoney(part.price)}${part.quantity > 1 ? ` · ${formatMoney(lineTotal)}` : ''}`
@@ -289,7 +326,7 @@ export function RepairPartsChecklist({
                   )}
                 </div>
 
-                {readOnly ? null : (
+                {!canEditQuote ? null : (
                   <div className={styles.itemActions}>
                     {isEditing ? (
                       <>
@@ -337,11 +374,11 @@ export function RepairPartsChecklist({
         </ul>
       ) : (
         <p className={styles.empty}>
-          {readOnly ? 'Запчасти не указаны' : 'Запчасти пока не добавлены'}
+          {!canEditQuote ? 'Запчасти не указаны' : 'Запчасти пока не добавлены'}
         </p>
       )}
 
-      {readOnly ? null : (
+      {!canEditQuote ? null : (
         <div className={styles.addBlock}>
           <Input
             className={styles.nameInput}

@@ -1,10 +1,15 @@
-﻿import { Button, Form, Input, InputNumber } from 'antd';
+import { Button, Form, Input, InputNumber } from 'antd';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Bounce, toast } from 'react-toastify';
 
-import { repairsApi, useUpdateRepairMutation } from '@/entities/repair-order';
-import { useUpdateVehicleMutation, type VehicleCard } from '@/entities/vehicle';
+import { repairsApi, useUpdateRepairMutation, type RepairStatus } from '@/entities/repair-order';
+import {
+  CarModelAutoComplete,
+  useUpdateVehicleMutation,
+  type VehicleCard,
+} from '@/entities/vehicle';
+import { useSendQuoteForApproval } from '@/features/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
 import {
   formatChassisNumberInput,
@@ -17,6 +22,8 @@ import {
   isValidVin,
   resolveMinAllowedMileage,
 } from '@/shared/lib/vehicle';
+import { RuLicensePlate, RuLicensePlateFlag } from '@/shared/ui/RuLicensePlate';
+import { CarBrandMark } from '@/shared/ui/CarBrandMark';
 
 import styles from './RepairVehiclePanel.module.scss';
 
@@ -33,6 +40,7 @@ type VehicleView = Pick<
 
 type RepairVehiclePanelProps = {
   repairId: string;
+  repairStatus?: RepairStatus;
   vehicle: VehicleView;
   repairMileage?: number | null;
   readOnly?: boolean;
@@ -58,6 +66,7 @@ function toFormState(vehicle: VehicleView, repairMileage?: number | null): Vehic
 
 export function RepairVehiclePanel({
   repairId,
+  repairStatus,
   vehicle,
   repairMileage,
   readOnly = false,
@@ -72,6 +81,7 @@ export function RepairVehiclePanel({
   );
   const [updateVehicle, { isLoading: isVehicleSaving }] = useUpdateVehicleMutation();
   const [updateRepair, { isLoading: isRepairSaving }] = useUpdateRepairMutation();
+  const { sendQuoteForApproval } = useSendQuoteForApproval(repairId, repairStatus);
   const isLoading = isVehicleSaving || isRepairSaving;
   const minMileage = resolveMinAllowedMileage(vehicle);
   const displayMileage = repairMileage ?? vehicle.mileage;
@@ -186,11 +196,15 @@ export function RepairVehiclePanel({
       ]);
 
       dispatch(repairsApi.util.invalidateTags([{ type: 'Repair', id: repairId }]));
+      const sent = await sendQuoteForApproval();
       setIsEditing(false);
-      toast.success('Автомобиль обновлён', {
-        position: 'top-right',
-        transition: Bounce,
-      });
+      toast.success(
+        sent ? 'Автомобиль обновлён · клиент снова согласовывает работы' : 'Автомобиль обновлён',
+        {
+          position: 'top-right',
+          transition: Bounce,
+        },
+      );
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось обновить автомобиль'), {
         position: 'top-right',
@@ -227,11 +241,11 @@ export function RepairVehiclePanel({
       {isEditing && !readOnly ? (
         <Form className={styles.form} layout="vertical" requiredMark={false}>
           <Form.Item label="Модель">
-            <Input
+            <CarModelAutoComplete
               size="large"
               value={formState.carModel}
-              onChange={(event) => {
-                setFormState((prev) => ({ ...prev, carModel: event.target.value }));
+              onChange={(carModel) => {
+                setFormState((prev) => ({ ...prev, carModel }));
               }}
             />
           </Form.Item>
@@ -239,6 +253,7 @@ export function RepairVehiclePanel({
             <Input
               className={styles.plateInput}
               placeholder="А123ВС 777"
+              prefix={<RuLicensePlateFlag className={styles.plateFlag} />}
               size="large"
               value={formState.licensePlate}
               onChange={(event) => {
@@ -332,11 +347,14 @@ export function RepairVehiclePanel({
         </Form>
       ) : (
         <>
-          <div className={styles.plate}>{vehicle.license_plate}</div>
+          <RuLicensePlate value={vehicle.license_plate} />
           <div className={styles.vehicleMeta}>
             <div className={styles.contactRow}>
               <span className={styles.contactLabel}>Модель</span>
-              <span className={styles.contactValue}>{vehicle.car_model}</span>
+              <span className={styles.contactValue}>
+                <CarBrandMark carModel={vehicle.car_model} />
+                {vehicle.car_model}
+              </span>
             </div>
             <div className={styles.contactRow}>
               <span className={styles.contactLabel}>{displayIdLabel}</span>

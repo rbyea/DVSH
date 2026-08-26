@@ -1,3 +1,13 @@
+import type { VehicleDiagnostic } from '@/shared/lib/diagnostics';
+
+export type PublicStationContacts = {
+  name: string;
+  phone?: string | null;
+  city?: string | null;
+  address?: string | null;
+  working_hours?: string | null;
+};
+
 export type RepairStatus =
   'new' | 'pending_approval' | 'revision' | 'in_progress' | 'waiting_parts' | 'done' | 'completed';
 
@@ -114,6 +124,13 @@ export type CreateWorkItemRequest = {
   is_extra?: boolean;
 };
 
+export type WorkTitleSuggestion = {
+  title: string;
+  price: number | null;
+  hours: number | null;
+  master_id: string | null;
+};
+
 export type UpdateWorkItemRequest = {
   title?: string;
   is_done?: boolean;
@@ -159,6 +176,7 @@ export type RepairDetailVehicle = {
   mileage?: number | null;
   /** Floor for mileage edits — from last issued (completed) repair. */
   last_completed_mileage?: number | null;
+  latest_diagnostic?: VehicleDiagnostic | null;
 };
 
 export type EstimateStatus = 'pending' | 'approved' | 'declined';
@@ -274,6 +292,8 @@ export type PublicVehicle = {
   chassis_number?: string | null;
   /** Fallback name when not nested in current_repair. */
   client_name?: string | null;
+  station?: PublicStationContacts | null;
+  latest_diagnostic?: VehicleDiagnostic | null;
   current_repair: PublicCurrentRepair | null;
   previous_repairs: PublicRepairHistoryItem[];
   /**
@@ -303,4 +323,15 @@ export type ConfirmPublicRepairRequest = {
 export type PublicLinkResponse = {
   public_token: string;
   public_url: string;
+};
+
+export type RepairNotification = {
+  channel: string;
+  is_active: boolean;
+  chat_id?: string | null;
+};
+
+export type RepairNotificationLink = {
+  url?: string;
+  link?: string;
 };

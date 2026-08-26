@@ -129,8 +129,18 @@ a {
 .ant-input-lg,
 .ant-select-lg .ant-select-selector,
 .ant-picker-large,
-.ant-btn-lg {
+.ant-btn-lg,
+.ant-input-number-lg {
   border-radius: 12px !important;
+}
+
+.ant-input-affix-wrapper .ant-input,
+.ant-input-affix-wrapper-lg .ant-input,
+.ant-input-affix-wrapper .ant-input-lg,
+.ant-input-number .ant-input-number-input,
+.ant-select-selector .ant-select-selection-search-input,
+.ant-picker-input > input {
+  border-radius: 0 !important;
 }
 
 .dvsh-clipboard-helper {
@@ -139,6 +149,42 @@ a {
   top: 0;
   opacity: 0;
   pointer-events: none;
+}
+
+.ant-modal-root .ant-modal-content,
+.ant-modal-root .ant-modal-container,
+.ant-modal-root .ant-modal-confirm-body,
+.ant-popover .ant-popover-inner,
+.ant-popconfirm .ant-popconfirm-inner-content {
+  background: var(--dvsh-card) !important;
+  color: var(--dvsh-ink) !important;
+}
+
+.ant-modal-root .ant-modal-header,
+.ant-modal-root .ant-modal-footer,
+.ant-modal-root .ant-modal-confirm-title,
+.ant-modal-root .ant-modal-title {
+  background: transparent !important;
+  color: var(--dvsh-ink) !important;
+}
+
+.ant-modal-root .ant-modal-confirm-content,
+.ant-modal-root .ant-modal-confirm-paragraph,
+.ant-modal-root .ant-modal-body {
+  color: var(--dvsh-muted) !important;
+}
+
+.ant-modal-root .ant-modal-close,
+.ant-modal-root .ant-modal-close-x {
+  color: var(--dvsh-muted) !important;
+}
+
+.ant-modal-root .ant-btn-default,
+.ant-popover .ant-btn-default {
+  background: var(--dvsh-soft) !important;
+  border-color: var(--dvsh-line) !important;
+  color: var(--dvsh-ink) !important;
+  box-shadow: none;
 }
 
 @media (max-width: 720px) {

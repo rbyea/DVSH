@@ -112,12 +112,20 @@
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0;
   color: var(--dvsh-ink);
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.15;
+}
+
+.titleBrand {
+  width: 40px;
+  height: 40px;
 }
 
 .statusLine {
@@ -299,6 +307,29 @@
   color: var(--dvsh-muted);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.stationList {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.stationList dt {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stationList dd {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .panelEmpty {
@@ -609,6 +640,12 @@
   overflow-wrap: anywhere;
 }
 
+.confirmCar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .confirmWorkCell {
   display: flex;
   align-items: flex-start;
@@ -752,6 +789,9 @@
 }
 
 .vehicleModel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--dvsh-ink);
   font-size: 15px;
   font-weight: 800;

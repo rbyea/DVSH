@@ -40,6 +40,11 @@
   letter-spacing: 0.14em;
 }
 
+.plateFlag {
+  width: 18px;
+  height: 12px;
+}
+
 .idSwitchButton {
   height: auto !important;
   margin-top: 6px;
@@ -69,23 +74,6 @@
   width: 100%;
 }
 
-.plate {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 160px;
-  margin-bottom: 16px;
-  border: 2px solid var(--dvsh-ink);
-  border-radius: 10px;
-  padding: 10px 14px;
-  background: linear-gradient(180deg, var(--dvsh-card), var(--dvsh-soft));
-  color: var(--dvsh-ink);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .vehicleMeta {
   display: flex;
   flex-direction: column;
@@ -107,6 +95,9 @@
 }
 
 .contactValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--dvsh-ink);
   font-size: 16px;
   word-break: break-word;
@@ -128,23 +119,11 @@
   .actions :global(.ant-btn) {
     flex: 1;
   }
-
-  .plate {
-    max-width: 100%;
-    min-width: 0;
-    font-size: 18px;
-    letter-spacing: 0.04em;
-  }
 }
 
 @media (max-width: 360px) {
   .panel {
     padding: 12px;
     border-radius: 14px;
-  }
-
-  .plate {
-    font-size: 16px;
-    padding: 8px 10px;
   }
 }

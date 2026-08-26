@@ -37,6 +37,18 @@
   gap: 4px;
 }
 
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.navGroupSplit {
+  margin-top: 8px;
+  border-top: 1px solid var(--dvsh-line);
+  padding-top: 12px;
+}
+
 .navButton {
   display: block;
   width: 100%;
@@ -152,6 +164,12 @@
   .nav {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+
+  .navGroupSplit {
+    margin-top: 4px;
+    border-top: 0;
+    padding-top: 4px;
   }
 
   .navButton {

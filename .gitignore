@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.codegraph/
 
 # Secrets — файлы с токенами/доступами
 docs/backend-handoff-2026-08-18.md

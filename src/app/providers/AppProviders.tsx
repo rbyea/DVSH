@@ -1,4 +1,4 @@
-import { ConfigProvider, theme as antdTheme } from 'antd';
+import { App, ConfigProvider, theme as antdTheme } from 'antd';
 import ruRU from 'antd/locale/ru_RU';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ru';
@@ -50,11 +50,19 @@ function ThemedApp() {
             headerColor: isDark ? '#94a3b8' : '#6b7280',
             rowHoverBg: isDark ? '#1b222c' : '#f8fafc',
           },
+          Modal: {
+            contentBg: isDark ? '#12171e' : '#ffffff',
+            headerBg: isDark ? '#12171e' : '#ffffff',
+            footerBg: isDark ? '#12171e' : '#ffffff',
+            titleColor: isDark ? '#e8edf4' : '#111827',
+          },
         },
       }}
     >
-      <RouterProvider router={appRouter} />
-      <ToastContainer position="top-right" theme={isDark ? 'dark' : 'light'} />
+      <App>
+        <RouterProvider router={appRouter} />
+        <ToastContainer position="top-right" theme={isDark ? 'dark' : 'light'} />
+      </App>
     </ConfigProvider>
   );
 }

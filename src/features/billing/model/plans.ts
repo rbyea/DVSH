@@ -91,6 +91,19 @@ export function getPlanByDurationMs(durationMs: number): BillingPlan | null {
   return billingPlans.find((plan) => plan.months === months) ?? null;
 }
 
+/** Ближайший тариф по длительности (если точного 1/3/12 мес нет). */
+export function getNearestPlanByDurationMs(durationMs: number): BillingPlan | null {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
+    return null;
+  }
+
+  const months = durationMs / MS_IN_DAY / DAYS_IN_MONTH;
+
+  return billingPlans.reduce((closest, plan) =>
+    Math.abs(plan.months - months) < Math.abs(closest.months - months) ? plan : closest,
+  );
+}
+
 /** Тариф по дате окончания оплаченного периода. */
 export function getPlanByEndDate(endDate: string | null | undefined): BillingPlan | null {
   if (!endDate) {
@@ -104,4 +117,18 @@ export function getPlanByEndDate(endDate: string | null | undefined): BillingPla
   }
 
   return getPlanByDurationMs(endsAt - Date.now());
+}
+
+export function getNearestPlanByEndDate(endDate: string | null | undefined): BillingPlan | null {
+  if (!endDate) {
+    return null;
+  }
+
+  const endsAt = Date.parse(endDate);
+
+  if (Number.isNaN(endsAt)) {
+    return null;
+  }
+
+  return getNearestPlanByDurationMs(endsAt - Date.now());
 }

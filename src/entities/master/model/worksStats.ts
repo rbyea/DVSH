@@ -41,6 +41,8 @@ export type WorkTitleStat = {
   worksCount: number;
   amount: number;
   hours: number;
+  masterShare: number;
+  stationShare: number;
 };
 
 export type StationWorksStats = {
@@ -141,8 +143,7 @@ export function buildStationWorksStats(
 
       const price = asMoney(item.price);
       const { masterId, masterName, masterSpecialty } = resolveMaster(item);
-      const hasMaster = Boolean(masterId || masterName);
-      const masterShare = hasMaster ? Math.round(price * shareRatio) : 0;
+      const masterShare = Math.round(price * shareRatio);
       const stationShare = price - masterShare;
 
       works.push({
@@ -212,6 +213,8 @@ export function buildStationWorksStats(
       existing.worksCount += 1;
       existing.amount += work.price;
       existing.hours += work.hours ?? 0;
+      existing.masterShare += work.masterShare;
+      existing.stationShare += work.stationShare;
       continue;
     }
 
@@ -220,6 +223,8 @@ export function buildStationWorksStats(
       worksCount: 1,
       amount: work.price,
       hours: work.hours ?? 0,
+      masterShare: work.masterShare,
+      stationShare: work.stationShare,
     });
   }
 

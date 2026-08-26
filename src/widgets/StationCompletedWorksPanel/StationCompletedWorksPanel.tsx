@@ -1,4 +1,4 @@
-import { Button, DatePicker, InputNumber, Segmented, Spin } from 'antd';
+import { Button, DatePicker, Input, Pagination, Segmented, Select, Spin } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import {
@@ -12,16 +12,8 @@ import {
   type ChartData,
   type ChartOptions,
 } from 'chart.js';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { Bounce, toast } from 'react-toastify';
-
-import {
-  normalizeMasterSharePercent,
-  useGetStationQuery,
-  useUpdateStationMutation,
-  writeLocalMasterSharePercent,
-} from '@/entities/master';
 import {
   useStationCompletedWorks,
   type CompletedWorksPeriod,
@@ -40,6 +32,8 @@ const PERIOD_OPTIONS: Array<{ id: CompletedWorksPeriod; label: string }> = [
   { id: 'quarter', label: 'Квартал' },
   { id: 'custom', label: 'Свой' },
 ];
+
+const PAGE_SIZE_OPTIONS = [5, 20, 50, 100] as const;
 
 const CHART_COLORS = ['#0f766e', '#2563eb', '#111827', '#64748b', '#b45309', '#7c3aed', '#be185d'];
 
@@ -152,23 +146,12 @@ const moneyBarOptions: ChartOptions<'bar'> = {
 
 export function StationCompletedWorksPanel() {
   const [view, setView] = useState<ViewMode>('works');
-  const [isEditingShare, setIsEditingShare] = useState(false);
-  const [shareDraft, setShareDraft] = useState<number>(50);
+  const [worksSearch, setWorksSearch] = useState('');
+  const [worksPage, setWorksPage] = useState(1);
+  const [worksPageSize, setWorksPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(5);
 
-  const { data: station } = useGetStationQuery();
-  const [updateStation, { isLoading: isSavingShare }] = useUpdateStationMutation();
-  const {
-    stats,
-    period,
-    setPeriod,
-    customRange,
-    setCustomRange,
-    sharePercent,
-    refreshSharePercent,
-    isLoading,
-    isError,
-    refetch,
-  } = useStationCompletedWorks();
+  const { stats, period, setPeriod, customRange, setCustomRange, isLoading, isError, refetch } =
+    useStationCompletedWorks();
 
   const masterAmountData = useMemo<ChartData<'doughnut'>>(
     () => ({
@@ -218,34 +201,31 @@ export function StationCompletedWorksPanel() {
     };
   }, [stats.byTitle]);
 
-  const handleStartEditShare = () => {
-    setShareDraft(sharePercent);
-    setIsEditingShare(true);
-  };
+  const filteredTitles = useMemo(() => {
+    const query = worksSearch.trim().toLowerCase();
 
-  const handleSaveShare = async () => {
-    const next = normalizeMasterSharePercent(shareDraft);
-    writeLocalMasterSharePercent(next);
-
-    try {
-      await updateStation({
-        name: station?.name,
-        master_share_percent: next,
-      }).unwrap();
-      toast.success(`Доля мастера: ${next}%`, {
-        position: 'top-right',
-        transition: Bounce,
-      });
-    } catch {
-      toast.success(`Доля мастера: ${next}% (сохранено на этом устройстве)`, {
-        position: 'top-right',
-        transition: Bounce,
-      });
-    } finally {
-      refreshSharePercent();
-      setIsEditingShare(false);
+    if (!query) {
+      return stats.byTitle;
     }
-  };
+
+    return stats.byTitle.filter((item) => item.title.toLowerCase().includes(query));
+  }, [stats.byTitle, worksSearch]);
+
+  const worksPageCount = Math.max(1, Math.ceil(filteredTitles.length / worksPageSize));
+  const pagedTitles = filteredTitles.slice(
+    (worksPage - 1) * worksPageSize,
+    worksPage * worksPageSize,
+  );
+
+  useEffect(() => {
+    setWorksPage(1);
+  }, [period, customRange, worksSearch, worksPageSize, view]);
+
+  useEffect(() => {
+    if (worksPage > worksPageCount) {
+      setWorksPage(worksPageCount);
+    }
+  }, [worksPage, worksPageCount]);
 
   return (
     <section className={styles.panel}>
@@ -253,7 +233,7 @@ export function StationCompletedWorksPanel() {
         <div>
           <h2 className={styles.title}>Сводка</h2>
           <p className={styles.hint}>
-            Заказ-наряды «Готово» и «Выдан». Одинаковые работы считаются вместе.
+            Заказ-наряды «Готово» и «Выдан». Доля считается по всем работам, даже без мастера.
           </p>
         </div>
         <div className={styles.headControls}>
@@ -301,39 +281,6 @@ export function StationCompletedWorksPanel() {
           }}
         />
       ) : null}
-
-      <div className={styles.shareCard}>
-        <span className={styles.shareLabel}>Доля мастерам</span>
-        {isEditingShare ? (
-          <div className={styles.shareEdit}>
-            <InputNumber
-              addonAfter="%"
-              className={styles.shareInput}
-              max={100}
-              min={0}
-              size="large"
-              value={shareDraft}
-              onChange={(value) => setShareDraft(typeof value === 'number' ? value : sharePercent)}
-            />
-            <Button disabled={isSavingShare} onClick={() => setIsEditingShare(false)}>
-              Отмена
-            </Button>
-            <Button loading={isSavingShare} type="primary" onClick={() => void handleSaveShare()}>
-              Сохранить
-            </Button>
-          </div>
-        ) : (
-          <div className={styles.shareValueRow}>
-            <strong className={styles.shareValue}>{sharePercent}%</strong>
-            <span className={styles.shareHint}>
-              мастер {sharePercent}% · СТО {100 - sharePercent}%
-            </span>
-            <Button size="small" type="link" onClick={handleStartEditShare}>
-              Изменить
-            </Button>
-          </div>
-        )}
-      </div>
 
       {isError ? (
         <div className={styles.emptyBox}>
@@ -384,31 +331,79 @@ export function StationCompletedWorksPanel() {
                   </article>
                 ) : null}
 
-                <ul className={styles.rankList}>
-                  {stats.byTitle.map((item, index) => (
-                    <li className={styles.rankItem} key={`${item.title}-${index}`}>
-                      <span className={styles.rankIndex}>{index + 1}</span>
-                      <div className={styles.rankMain}>
-                        <span className={styles.rankTitle}>{item.title}</span>
-                        <span className={styles.rankMeta}>
-                          {formatWorksCount(item.worksCount)}
-                          {formatHours(item.hours) ? ` · ${formatHours(item.hours)}` : ''}
-                        </span>
+                <div className={styles.listToolbar}>
+                  <Input
+                    allowClear
+                    className={styles.listSearch}
+                    placeholder="Найти работу"
+                    size="large"
+                    value={worksSearch}
+                    onChange={(event) => setWorksSearch(event.target.value)}
+                  />
+                </div>
+
+                {filteredTitles.length === 0 ? (
+                  <div className={styles.emptyBox}>
+                    <p className={styles.emptyTitle}>Ничего не нашлось</p>
+                    <p className={styles.emptyText}>Попробуйте другое название работы.</p>
+                  </div>
+                ) : (
+                  <>
+                    <ul className={styles.rankList}>
+                      {pagedTitles.map((item, index) => {
+                        const rank = (worksPage - 1) * worksPageSize + index + 1;
+
+                        return (
+                          <li className={styles.rankItem} key={`${item.title}-${rank}`}>
+                            <span className={styles.rankIndex}>{rank}</span>
+                            <div className={styles.rankMain}>
+                              <span className={styles.rankTitle}>{item.title}</span>
+                              <span className={styles.rankMeta}>
+                                {formatWorksCount(item.worksCount)}
+                                {formatHours(item.hours) ? ` · ${formatHours(item.hours)}` : ''}
+                                {` · мастер ${formatMoney(item.masterShare)} · СТО ${formatMoney(item.stationShare)}`}
+                              </span>
+                            </div>
+                            <div className={styles.rankAside}>
+                              <span className={styles.rankCount}>{item.worksCount}</span>
+                              <span className={styles.rankAmount}>{formatMoney(item.amount)}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <div className={styles.pager}>
+                      <div className={styles.pagerPages}>
+                        {filteredTitles.length > worksPageSize ? (
+                          <Pagination
+                            current={worksPage}
+                            pageSize={worksPageSize}
+                            showSizeChanger={false}
+                            total={filteredTitles.length}
+                            onChange={setWorksPage}
+                          />
+                        ) : null}
                       </div>
-                      <div className={styles.rankAside}>
-                        <span className={styles.rankCount}>{item.worksCount}</span>
-                        <span className={styles.rankAmount}>{formatMoney(item.amount)}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                      <Select
+                        className={styles.pageSizeSelect}
+                        options={PAGE_SIZE_OPTIONS.map((value) => ({
+                          value,
+                          label: String(value),
+                        }))}
+                        value={worksPageSize}
+                        onChange={(value) => setWorksPageSize(value)}
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )
           ) : stats.byMaster.length === 0 ? (
             <div className={styles.emptyBox}>
-              <p className={styles.emptyTitle}>Нет работ с мастером</p>
+              <p className={styles.emptyTitle}>Выполненных работ пока нет</p>
               <p className={styles.emptyText}>
-                Назначьте мастера на работу в заказ-наряде — он появится в сводке.
+                Когда заказ-наряд станет «Готово» или «Выдан», работы появятся здесь. Доля мастерам
+                считается и без карточки мастера.
               </p>
             </div>
           ) : (
@@ -436,6 +431,7 @@ export function StationCompletedWorksPanel() {
                       <span className={styles.rankMeta}>
                         {item.specialty ? `${item.specialty} · ` : ''}
                         {formatWorksCount(item.worksCount)}
+                        {` · мастер ${formatMoney(item.masterShare)} · СТО ${formatMoney(item.stationShare)}`}
                       </span>
                     </div>
                     <div className={styles.rankAside}>

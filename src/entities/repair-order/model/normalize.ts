@@ -1,6 +1,6 @@
+import { pickLatestDiagnostic } from '@/shared/lib/diagnostics';
 import { parseMoney } from '@/shared/lib/money';
 
-import { resolveStatusAfterEstimate, repairStatusLabels } from './status';
 import type { PublicVehicle, RepairDetail, RepairPart, RepairWorkItem } from './types';
 
 type RepairDetailPayload = RepairDetail & {
@@ -36,23 +36,26 @@ export function normalizeRepairDetail(data: RepairDetailPayload): RepairDetail {
 
 export function normalizePublicVehicle(data: PublicVehicle): PublicVehicle {
   const currentRepair = data.current_repair;
+  const latestDiagnostic = pickLatestDiagnostic(data);
 
   if (!currentRepair) {
-    return data;
+    return {
+      ...data,
+      latest_diagnostic: latestDiagnostic,
+    };
   }
 
-  const status = resolveStatusAfterEstimate(currentRepair.status, currentRepair.estimate_status);
-
-  if (status === currentRepair.status) {
-    return data;
-  }
+  const estimateStatus =
+    currentRepair.status === 'pending_approval' && !currentRepair.estimate_status
+      ? 'pending'
+      : currentRepair.estimate_status;
 
   return {
     ...data,
+    latest_diagnostic: latestDiagnostic,
     current_repair: {
       ...currentRepair,
-      status,
-      status_label: repairStatusLabels[status],
+      estimate_status: estimateStatus,
     },
   };
 }

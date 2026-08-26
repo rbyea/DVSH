@@ -62,6 +62,18 @@
   font-size: 14px;
 }
 
+.maxStatus {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.maxStatus a {
+  color: var(--dvsh-accent);
+  font-weight: 700;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

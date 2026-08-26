@@ -14,3 +14,12 @@ export {
   normalizeRuLicensePlate,
 } from './ruLicensePlate';
 export { formatVinInput, isValidVin } from './vin';
+export {
+  resolveCarBrand,
+  simpleIconsUrl,
+  listCarBrands,
+  collectCarBrands,
+  brandStartsWithQuery,
+  carModelStartsWithQuery,
+} from './carBrand';
+export type { CarBrand } from './carBrand';

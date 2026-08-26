@@ -1,0 +1,1 @@
+export { CarBrandMark } from './CarBrandMark';

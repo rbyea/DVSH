@@ -6,18 +6,22 @@ import { useEffect, useRef, useState } from 'react';
 import { Bounce, toast } from 'react-toastify';
 
 import { useRepairDiagnostics } from '@/features/repair-order';
+import { getErrorMessage } from '@/shared/lib/api';
 import {
   matchDiagnosticVin,
   normalizeDiagnosticVin,
   type DiagnosticScan,
   type DiagnosticVinMatch,
+  type VehicleDiagnostic,
 } from '@/shared/lib/diagnostics';
 
 import styles from './RepairDiagnosticsPanel.module.scss';
 
 type RepairDiagnosticsPanelProps = {
   repairId: string;
+  vehicleId?: string | null;
   vehicleVin?: string | null;
+  latestDiagnostic?: VehicleDiagnostic | null;
   readOnly?: boolean;
 };
 
@@ -109,16 +113,16 @@ function FaultList({ scan }: { scan: DiagnosticScan }) {
 
 export function RepairDiagnosticsPanel({
   repairId,
+  vehicleId,
   vehicleVin,
+  latestDiagnostic,
   readOnly = false,
 }: RepairDiagnosticsPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isFaultsOpen, setIsFaultsOpen] = useState(false);
-  const { scan, preview, importFile, remove, dismissPreview } = useRepairDiagnostics(
-    repairId,
-    vehicleVin,
-  );
+  const { scan, preview, importFile, remove, dismissPreview, vinMatchMessages } =
+    useRepairDiagnostics(repairId, vehicleVin, vehicleId, latestDiagnostic);
 
   useEffect(() => {
     if (preview) {
@@ -132,26 +136,28 @@ export function RepairDiagnosticsPanel({
 
       if (result.ok) {
         setIsOpen(true);
-        toast.success('Диагностика прикреплена — VIN совпал', {
-          position: 'top-right',
-          transition: Bounce,
-        });
+
+        if (result.match === 'match') {
+          toast.success('Диагностика прикреплена — VIN совпал', {
+            position: 'top-right',
+            transition: Bounce,
+          });
+        } else {
+          toast.warning(`Диагностика прикреплена. ${vinMatchMessages[result.match]}`, {
+            position: 'top-right',
+            transition: Bounce,
+          });
+        }
+
         return;
       }
 
-      const messages: Record<DiagnosticVinMatch, string> = {
-        match: '',
-        mismatch: 'VIN в файле не совпадает с авто в заказ-наряде — скан не сохраняем',
-        'vehicle-empty': 'Сначала укажите VIN автомобиля в карточке',
-        'scan-empty': 'В CSV не найден VIN — проверьте файл сканера',
-      };
-
-      toast.error(messages[result.match], {
+      toast.error(vinMatchMessages[result.match], {
         position: 'top-right',
         transition: Bounce,
       });
-    } catch {
-      toast.error('Не удалось прочитать CSV', {
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Не удалось прочитать CSV'), {
         position: 'top-right',
         transition: Bounce,
       });
@@ -164,12 +170,14 @@ export function RepairDiagnosticsPanel({
   const collapsedHint = shown
     ? [
         vehicleTitle(shown),
-        faultCount > 0 ? `${faultCount} кодов` : null,
+        faultCount > 0 ? `${faultCount} кодов` : 'Без активных кодов',
         matchLabels[activeMatch ?? 'scan-empty'],
       ]
         .filter(Boolean)
         .join(' · ')
-    : 'CSV со сканера, сверка VIN с авто';
+    : readOnly
+      ? 'Скан появится после диагностики на СТО'
+      : 'CSV со сканера, сверка VIN с авто';
 
   return (
     <section className={clsx(styles.root, isOpen && styles.rootOpen)}>
@@ -198,11 +206,19 @@ export function RepairDiagnosticsPanel({
               {scan ? (
                 <Button
                   onClick={() => {
-                    remove();
-                    toast.success('Диагностику сняли с карточки', {
-                      position: 'top-right',
-                      transition: Bounce,
-                    });
+                    void remove()
+                      .then(() => {
+                        toast.success('Диагностику сняли с карточки', {
+                          position: 'top-right',
+                          transition: Bounce,
+                        });
+                      })
+                      .catch((error: unknown) => {
+                        toast.error(getErrorMessage(error, 'Не удалось удалить диагностику'), {
+                          position: 'top-right',
+                          transition: Bounce,
+                        });
+                      });
                   }}
                 >
                   Удалить
@@ -229,28 +245,28 @@ export function RepairDiagnosticsPanel({
           )}
 
           {!shown ? (
-            <Upload.Dragger
-              accept=".csv,text/csv"
-              disabled={readOnly}
-              maxCount={1}
-              showUploadList={false}
-              beforeUpload={(file) => {
-                void handleFiles(file);
-                return false;
-              }}
-            >
-              <p className={styles.dropTitle}>Перетащите CSV сканера</p>
-              <p className={styles.dropHint}>Или выберите файл — сверим VIN с карточкой авто</p>
-            </Upload.Dragger>
+            readOnly ? (
+              <p className={styles.empty}>Скан появится после диагностики на СТО</p>
+            ) : (
+              <Upload.Dragger
+                accept=".csv,text/csv"
+                disabled={readOnly}
+                maxCount={1}
+                showUploadList={false}
+                beforeUpload={(file) => {
+                  void handleFiles(file);
+                  return false;
+                }}
+              >
+                <p className={styles.dropTitle}>Перетащите CSV сканера</p>
+                <p className={styles.dropHint}>Или выберите файл — сверим VIN с карточкой авто</p>
+              </Upload.Dragger>
+            )
           ) : (
             <>
               {preview ? (
                 <div className={styles.previewBar}>
-                  <p className={styles.previewNote}>
-                    {scan
-                      ? 'Файл не сохранён — VIN не совпал. Ниже предпросмотр.'
-                      : 'Скан не сохранён.'}
-                  </p>
+                  <p className={styles.previewNote}>Скан не сохранён — в файле нет VIN.</p>
                   <Button size="small" onClick={dismissPreview}>
                     Закрыть
                   </Button>

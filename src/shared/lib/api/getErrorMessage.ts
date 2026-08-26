@@ -28,13 +28,20 @@ function getLaravelErrors(error: unknown): Record<string, string[]> | null {
 function humanizeServerMessage(message: string): string | null {
   const normalized = message.toLowerCase();
 
+  if (normalized.includes('доступ запрещ') || normalized.includes('access denied')) {
+    return 'Банк отклонил доступ к шлюзу. Для логина r-* нужен https://payment.alfabank.ru/payment/rest, логин *-api и его пароль (часто сначала сменить в кабинете).';
+  }
+
   if (
-    normalized.includes('mileage') &&
-    (normalized.includes('меньше') ||
-      normalized.includes('greater than or equal') ||
-      normalized.includes('min'))
+    normalized.includes('gateway is unavailable') ||
+    normalized.includes('ответил http') ||
+    normalized.includes('не удалось подключиться к шлюзу')
   ) {
-    return 'Пробег не может быть меньше пробега с последнего выданного заказа.';
+    return 'Неверный адрес API. Для логина r-* это https://payment.alfabank.ru/payment/rest — не ecom.alfabank.ru и не ссылка на форму карты.';
+  }
+
+  if (normalized.includes('pending payment') || normalized.includes('already exists')) {
+    return 'По этому тарифу уже есть незакрытая оплата. Нажмите «Продлить» ещё раз после обновления страницы или дождитесь возврата из банка.';
   }
 
   if (
@@ -66,9 +73,30 @@ function resolveFieldLabel(field: string | undefined): string | undefined {
   return apiFieldLabels[key] ?? apiFieldLabels[field];
 }
 
+const diagnosticVinMessages: Record<string, string> = {
+  scan_vin_empty: 'В CSV не найден VIN — проверьте файл сканера',
+  vehicle_vin_empty: 'Сначала укажите VIN автомобиля в карточке',
+  vin_mismatch: 'VIN в файле не совпадает с авто в заказ-наряде',
+};
+
 function formatValidationMessage(field: string | undefined, message: string): string {
-  const label = resolveFieldLabel(field);
+  const diagnosticMessage = diagnosticVinMessages[message];
+
+  if (diagnosticMessage) {
+    return diagnosticMessage;
+  }
+
+  const fieldKey = (field?.split('.').pop() ?? field ?? '').toLowerCase();
   const normalized = message.toLowerCase();
+
+  if (
+    (fieldKey === 'vin' || /\bvin\b/.test(normalized)) &&
+    (normalized.includes('already been taken') || normalized.includes('уже занят'))
+  ) {
+    return 'VIN-код уже занят.';
+  }
+
+  const label = resolveFieldLabel(field);
   const isRequired =
     normalized.includes('required') ||
     normalized.includes('обязательн') ||
@@ -133,6 +161,10 @@ const apiFieldLabels: Record<string, string> = {
   city: 'Город',
   address: 'Адрес',
   working_hours: 'График работы',
+  master_id: 'Мастер',
+  amount: 'Сумма',
+  occurred_on: 'Дата',
+  comment: 'Комментарий',
 };
 
 const apiFieldToFormField: Record<string, string> = {
@@ -173,7 +205,10 @@ export function applyApiFieldErrors<TFieldValues extends FieldValues>(
     }
 
     const formField = (apiFieldToFormField[apiField] ?? apiField) as FieldPath<TFieldValues>;
-    setError(formField, { type: 'server', message });
+    setError(formField, {
+      type: 'server',
+      message: formatValidationMessage(apiField, message),
+    });
     applied = true;
   }
 

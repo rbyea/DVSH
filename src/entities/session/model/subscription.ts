@@ -1,6 +1,7 @@
 import type { SubscriptionStatus, User } from './types';
 
-const MS_IN_DAY = 24 * 60 * 60 * 1000;
+const MS_IN_HOUR = 60 * 60 * 1000;
+const MS_IN_DAY = 24 * MS_IN_HOUR;
 
 function parseDate(value: string | null | undefined): number | null {
   if (!value) {
@@ -67,7 +68,7 @@ export function getTrialDaysLeft(user: User | null | undefined): number | null {
   return Math.max(0, Math.ceil((endsAt - Date.now()) / MS_IN_DAY));
 }
 
-export function getSubscriptionDaysLeft(user: User | null | undefined): number | null {
+export function getSubscriptionRemainingMs(user: User | null | undefined): number | null {
   const status = getSubscriptionStatus(user);
   const endsAt =
     status === 'trial'
@@ -86,7 +87,27 @@ export function getSubscriptionDaysLeft(user: User | null | undefined): number |
     return null;
   }
 
-  return Math.max(0, Math.ceil((time - Date.now()) / MS_IN_DAY));
+  return Math.max(0, time - Date.now());
+}
+
+export function getSubscriptionDaysLeft(user: User | null | undefined): number | null {
+  const remainingMs = getSubscriptionRemainingMs(user);
+
+  if (remainingMs == null) {
+    return null;
+  }
+
+  return Math.ceil(remainingMs / MS_IN_DAY);
+}
+
+export function getSubscriptionHoursLeft(user: User | null | undefined): number | null {
+  const remainingMs = getSubscriptionRemainingMs(user);
+
+  if (remainingMs == null) {
+    return null;
+  }
+
+  return Math.ceil(remainingMs / MS_IN_HOUR);
 }
 
 export function getPostAuthPath(user: User): string {

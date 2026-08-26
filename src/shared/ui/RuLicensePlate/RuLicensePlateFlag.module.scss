@@ -1,0 +1,30 @@
+.flag {
+  display: inline-flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  width: 22px;
+  height: 14px;
+  border: 1px solid #94a3b8;
+}
+
+:global(html[data-theme='dark']) .flag {
+  border-color: #64748b;
+}
+
+.flag span {
+  flex: 1;
+  width: 100%;
+}
+
+.flag span:nth-child(1) {
+  background: #fff;
+}
+
+.flag span:nth-child(2) {
+  background: #0039a6;
+}
+
+.flag span:nth-child(3) {
+  background: #d52b1e;
+}

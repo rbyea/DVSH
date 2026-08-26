@@ -1,5 +1,7 @@
 import { Button, Modal, Spin } from 'antd';
 import clsx from 'clsx';
+import { format, parseISO } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import { useState } from 'react';
 import { Bounce, toast } from 'react-toastify';
 
@@ -32,8 +34,23 @@ function getInitials(fullName: string): string {
   return `${parts[0].slice(0, 1)}${parts[1].slice(0, 1)}`.toUpperCase();
 }
 
+function formatBirthday(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = parseISO(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return format(date, 'd MMMM yyyy', { locale: ru });
+}
+
 export function StationMastersPanel({ canManage = true }: StationMastersPanelProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [editingMaster, setEditingMaster] = useState<Master | null>(null);
   const { data: masters = [], isLoading, isError, refetch } = useGetMastersQuery();
   const [updateMaster, { isLoading: isUpdating }] = useUpdateMasterMutation();
   const [deleteMaster, { isLoading: isDeleting }] = useDeleteMasterMutation();
@@ -100,7 +117,7 @@ export function StationMastersPanel({ canManage = true }: StationMastersPanelPro
             </p>
           ) : null}
         </div>
-        {canManage && !isAdding ? (
+        {canManage && !isAdding && !editingMaster ? (
           <Button type="primary" onClick={() => setIsAdding(true)}>
             Добавить
           </Button>
@@ -120,7 +137,7 @@ export function StationMastersPanel({ canManage = true }: StationMastersPanelPro
         </div>
       ) : null}
 
-      {!isError && !isLoading && masters.length === 0 && !isAdding ? (
+      {!isError && !isLoading && masters.length === 0 && !isAdding && !editingMaster ? (
         <div className={styles.emptyBox}>
           <p className={styles.emptyTitle}>Пока никого нет</p>
           <p className={styles.emptyText}>
@@ -142,6 +159,11 @@ export function StationMastersPanel({ canManage = true }: StationMastersPanelPro
               <div className={styles.itemMain}>
                 <span className={styles.itemName}>{master.full_name}</span>
                 <span className={styles.itemSpecialty}>{master.specialty}</span>
+                {master.phone || master.birthday ? (
+                  <span className={styles.itemMeta}>
+                    {[master.phone, formatBirthday(master.birthday)].filter(Boolean).join(' · ')}
+                  </span>
+                ) : null}
               </div>
               <div className={styles.itemAside}>
                 <span
@@ -155,18 +177,29 @@ export function StationMastersPanel({ canManage = true }: StationMastersPanelPro
                 {canManage ? (
                   <div className={styles.itemActions}>
                     <Button
+                      className={styles.actionBtn}
                       disabled={busy}
                       size="small"
-                      type="link"
+                      onClick={() => {
+                        setIsAdding(false);
+                        setEditingMaster(master);
+                      }}
+                    >
+                      Изменить
+                    </Button>
+                    <Button
+                      className={styles.actionBtn}
+                      disabled={busy}
+                      size="small"
                       onClick={() => void handleToggleActive(master)}
                     >
                       {master.is_active ? 'Скрыть' : 'Показать'}
                     </Button>
                     <Button
-                      danger
+                      className={styles.actionBtn}
                       disabled={busy}
                       size="small"
-                      type="link"
+                      type="text"
                       onClick={() => handleDelete(master)}
                     >
                       Удалить
@@ -185,6 +218,18 @@ export function StationMastersPanel({ canManage = true }: StationMastersPanelPro
           <CreateMasterForm
             onCancel={() => setIsAdding(false)}
             onSuccess={() => setIsAdding(false)}
+          />
+        </div>
+      ) : null}
+
+      {canManage && editingMaster ? (
+        <div className={styles.addCard}>
+          <h3 className={styles.addTitle}>Изменить мастера</h3>
+          <CreateMasterForm
+            key={editingMaster.id}
+            master={editingMaster}
+            onCancel={() => setEditingMaster(null)}
+            onSuccess={() => setEditingMaster(null)}
           />
         </div>
       ) : null}

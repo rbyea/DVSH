@@ -10,16 +10,16 @@
   align-items: center;
   justify-content: center;
   gap: 8px 16px;
-  border-bottom: 1px solid #fde68a;
+  border-bottom: 1px solid var(--dvsh-line);
   padding: 8px 16px;
-  background: #fffbeb;
-  color: #92400e;
+  background: var(--dvsh-accent-soft);
+  color: var(--dvsh-accent);
   font-size: 13px;
   font-weight: 600;
 }
 
 .trialLink {
-  color: #92400e;
+  color: var(--dvsh-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
 }

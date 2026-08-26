@@ -170,6 +170,13 @@
   min-width: 0;
 }
 
+.modelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .model {
   color: var(--dvsh-ink);
   font-size: 14px;

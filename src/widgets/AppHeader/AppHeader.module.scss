@@ -66,6 +66,43 @@
   font-weight: 600;
 }
 
+.navCluster {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tariffsPlaque {
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--dvsh-accent) 40%, var(--dvsh-line));
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: var(--dvsh-accent-soft);
+  color: var(--dvsh-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.tariffsPlaque:hover,
+.tariffsPlaqueActive {
+  border-color: var(--dvsh-accent);
+  background: var(--dvsh-accent);
+  color: #fff;
+}
+
+:global(html[data-theme='dark']) .tariffsPlaque:hover,
+:global(html[data-theme='dark']) .tariffsPlaqueActive {
+  border-color: color-mix(in srgb, var(--dvsh-accent) 70%, var(--dvsh-line));
+  background: color-mix(in srgb, var(--dvsh-accent) 18%, var(--dvsh-card));
+  color: var(--dvsh-accent);
+}
+
 .userBlock {
   display: flex;
   align-items: center;
@@ -215,6 +252,13 @@
   color: var(--dvsh-accent);
 }
 
+.drawerTariffs {
+  width: 100%;
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
 .drawerLogout {
   margin-top: 4px;
   border-color: var(--dvsh-line) !important;
@@ -235,6 +279,10 @@
   }
 
   .menu {
+    display: none;
+  }
+
+  .navCluster {
     display: none;
   }
 

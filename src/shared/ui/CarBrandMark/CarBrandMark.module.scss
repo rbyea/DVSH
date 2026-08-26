@@ -1,0 +1,21 @@
+.mark {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+}
+
+.logo {
+  object-fit: contain;
+}
+
+.letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--dvsh-soft);
+  color: var(--dvsh-ink);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}

@@ -69,53 +69,6 @@
   line-height: 1.45;
 }
 
-.shareCard {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border: 1px solid var(--dvsh-line);
-  border-radius: 16px;
-  padding: 16px;
-  background: var(--dvsh-soft);
-}
-
-.shareLabel {
-  color: var(--dvsh-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.shareValueRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 12px;
-}
-
-.shareValue {
-  color: var(--dvsh-ink);
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.shareHint {
-  color: var(--dvsh-muted);
-  font-size: 14px;
-}
-
-.shareEdit {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.shareInput {
-  width: 140px;
-}
-
 .summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -253,6 +206,37 @@
   color: var(--dvsh-muted);
   font-size: 13px;
   font-weight: 600;
+}
+
+.listToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.listSearch {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagerPages {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.pageSizeSelect {
+  flex-shrink: 0;
+  width: 72px;
+  margin-left: auto;
 }
 
 .emptyBox {

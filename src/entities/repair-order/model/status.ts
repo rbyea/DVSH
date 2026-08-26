@@ -1,5 +1,15 @@
 import type { ClientConfirmStatus, EstimateStatus, RepairStatus } from './types';
 
+/**
+ * Статусы заказа:
+ * - new — только создали
+ * - pending_approval — отдали ссылку клиенту или изменили смету (работы/запчасти/карточка)
+ * - revision — клиент отклонил список и вернул на доработку
+ * - in_progress — клиент согласовал, СТО работает
+ * - waiting_parts — ждут запчасти
+ * - done — готово, ждёт выдачи
+ * - completed — авто выдано; дальше клиент подтверждает данные (не смету)
+ */
 export const repairStatusLabels: Record<RepairStatus, string> = {
   new: 'Новый',
   pending_approval: 'На согласовании',
@@ -8,6 +18,16 @@ export const repairStatusLabels: Record<RepairStatus, string> = {
   waiting_parts: 'Ждём запчасти',
   done: 'Готово',
   completed: 'Выдан',
+};
+
+export const repairStatusHints: Record<RepairStatus, string> = {
+  new: 'Заказ создан. Скопируйте ссылку или измените работы — клиент получит согласование.',
+  pending_approval: 'Клиент должен согласовать работы по ссылке.',
+  revision: 'Клиент вернул список. Поправьте работы — заказ снова уйдёт на согласование.',
+  in_progress: 'Клиент согласовал, машина в работе.',
+  waiting_parts: 'Ждём запчасти, чтобы продолжить ремонт.',
+  done: 'Готово, можно выдавать автомобиль.',
+  completed: 'Авто выдано. Клиент подтверждает данные выдачи, не смету.',
 };
 
 export const repairStatusColors: Record<RepairStatus, string> = {
@@ -94,11 +114,19 @@ type PublicEstimateSource = {
 
 /** Client must approve works whenever the order is waiting on them. */
 export function needsPublicEstimateDecision(repair: PublicEstimateSource): boolean {
-  if (repair.estimate_status === 'approved' || repair.estimate_status === 'declined') {
+  if (repair.status === 'revision' || repair.status === 'done' || repair.status === 'completed') {
     return false;
   }
 
-  return repair.estimate_status === 'pending' || repair.status === 'pending_approval';
+  if (repair.estimate_status === 'declined') {
+    return false;
+  }
+
+  if (repair.status === 'pending_approval') {
+    return true;
+  }
+
+  return repair.estimate_status === 'pending';
 }
 
 /** After the client answers, leave «На согласовании»: approve → work, decline → revise list. */

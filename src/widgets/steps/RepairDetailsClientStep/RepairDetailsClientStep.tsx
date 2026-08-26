@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { CarModelAutoComplete } from '@/entities/vehicle';
 import { getCreateFieldElementId, useRepairCreateContext } from '@/features/repair-order/create';
 import { getAntdValidateStatus } from '@/shared/lib/antd';
 import { formatRuPhoneInput } from '@/shared/lib/phone';
@@ -14,6 +15,7 @@ import {
   formatVinInput,
   resolveMinAllowedMileage,
 } from '@/shared/lib/vehicle';
+import { RuLicensePlateFlag } from '@/shared/ui/RuLicensePlate';
 import { ClientVehiclesPanel } from '@/widgets/ClientVehiclesPanel';
 
 import styles from './RepairDetailsClientStep.module.scss';
@@ -150,7 +152,15 @@ export const RepairDetailsClientStep = () => {
             <Controller
               control={control}
               name="carModel"
-              render={({ field }) => <Input {...field} placeholder="Toyota Camry" size="large" />}
+              render={({ field }) => (
+                <CarModelAutoComplete
+                  placeholder="Toyota Camry"
+                  size="large"
+                  value={field.value ?? ''}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                />
+              )}
             />
           </Form.Item>
         </div>
@@ -169,6 +179,7 @@ export const RepairDetailsClientStep = () => {
                   {...field}
                   className={styles.plateInput}
                   placeholder="А123ВС 777"
+                  prefix={<RuLicensePlateFlag className={styles.plateFlag} />}
                   size="large"
                   value={field.value}
                   onChange={(event) =>

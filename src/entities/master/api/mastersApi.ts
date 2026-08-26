@@ -7,6 +7,7 @@ import type {
   UpdateMasterRequest,
   UpdateStationRequest,
 } from '../model/types';
+import type { CreatePayoutExtraRequest, PayoutExtra, StationPayouts } from '../model/payouts';
 
 type ApiDataResponse<T> = {
   data: T;
@@ -26,7 +27,10 @@ export const mastersApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiDataResponse<StationInfo>) => response.data,
-      invalidatesTags: [{ type: 'Station', id: 'CURRENT' }],
+      invalidatesTags: [
+        { type: 'Station', id: 'CURRENT' },
+        { type: 'Payout', id: 'LIST' },
+      ],
     }),
     getMasters: build.query<Master[], void>({
       query: () => '/station/masters',
@@ -70,6 +74,51 @@ export const mastersApi = baseApi.injectEndpoints({
         { type: 'Master', id: 'LIST' },
       ],
     }),
+    getStationPayouts: build.query<StationPayouts, { from: string; to: string }>({
+      query: ({ from, to }) => ({
+        url: '/station/payouts',
+        params: { from, to },
+      }),
+      transformResponse: (response: ApiDataResponse<StationPayouts>) => response.data,
+      providesTags: [{ type: 'Payout', id: 'LIST' }],
+    }),
+    createPayoutExtra: build.mutation<PayoutExtra, CreatePayoutExtraRequest>({
+      query: (body) => ({
+        url: '/station/payouts/extras',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<PayoutExtra>) => response.data,
+      invalidatesTags: [{ type: 'Payout', id: 'LIST' }],
+    }),
+    deletePayoutExtra: build.mutation<void, string>({
+      query: (id) => ({
+        url: `/station/payouts/extras/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'Payout', id: 'LIST' }],
+    }),
+    togglePayoutSettlement: build.mutation<
+      { settled: boolean },
+      { occurred_on: string; master_id: string | null }
+    >({
+      query: (body) => ({
+        url: '/station/payouts/settlements',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<{ settled: boolean }>) => response.data,
+      invalidatesTags: [{ type: 'Payout', id: 'LIST' }],
+    }),
+    togglePayoutExtraSettle: build.mutation<{ id: string; settled: boolean }, string>({
+      query: (id) => ({
+        url: `/station/payouts/extras/${id}/settle`,
+        method: 'POST',
+      }),
+      transformResponse: (response: ApiDataResponse<{ id: string; settled: boolean }>) =>
+        response.data,
+      invalidatesTags: [{ type: 'Payout', id: 'LIST' }],
+    }),
   }),
 });
 
@@ -80,4 +129,9 @@ export const {
   useCreateMasterMutation,
   useUpdateMasterMutation,
   useDeleteMasterMutation,
+  useGetStationPayoutsQuery,
+  useCreatePayoutExtraMutation,
+  useDeletePayoutExtraMutation,
+  useTogglePayoutExtraSettleMutation,
+  useTogglePayoutSettlementMutation,
 } = mastersApi;

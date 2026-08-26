@@ -1,0 +1,165 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.lead {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.empty {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--dvsh-line);
+  padding: 12px 0;
+}
+
+.row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.rowMain,
+.rowMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowMeta {
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.resumeLink {
+  margin-top: 2px;
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--dvsh-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.resumeLink:hover:not(:disabled) {
+  color: color-mix(in srgb, var(--dvsh-accent) 70%, var(--dvsh-ink));
+}
+
+.resumeLink:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.plan {
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.when {
+  color: var(--dvsh-muted);
+  font-size: 13px;
+}
+
+.amount {
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.status {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status_paid {
+  background: color-mix(in srgb, #14b8a6 18%, var(--dvsh-card));
+  color: color-mix(in srgb, #0f766e 55%, var(--dvsh-ink));
+}
+
+.status_pending {
+  background: color-mix(in srgb, #f59e0b 18%, var(--dvsh-card));
+  color: color-mix(in srgb, #d97706 55%, var(--dvsh-ink));
+}
+
+.status_declined,
+.status_failed {
+  background: color-mix(in srgb, #ef4444 16%, var(--dvsh-card));
+  color: color-mix(in srgb, #ef4444 55%, var(--dvsh-ink));
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+@media (max-width: 800px) {
+  .card {
+    padding: 16px;
+  }
+
+  .row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .rowMeta {
+    align-items: flex-start;
+  }
+}

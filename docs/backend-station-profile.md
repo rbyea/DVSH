@@ -1,5 +1,7 @@
 # Бэкенд: текущий пакет изменений
 
+Бэкенд закрыл пакет 23.08.2026: отчёт `docs/backend-station-profile-handoff.md`. Ниже — исходное ТЗ.
+
 Последующие задачи для Laravel складываем **в этот файл**, новые `docs/backend-*.md` не создаём.
 Старые хендоффы остаются как есть.
 
@@ -341,3 +343,63 @@ Body (все поля optional, как сейчас):
   `estimate_comment`
 - `GET /repairs/{id}` и публичный GET отдают `status: "revision"` и `estimate_comment`
 - «Отправить снова» с фронта: `{ status: "pending_approval", estimate_status: "pending" }`
+
+---
+
+## 7. Смена сметы со стороны СТО → снова `pending_approval` (23.08)
+
+Фронт при добавлении/правке работы или запчасти (не галочка «выполнено») и при «Копировать /
+Открыть» ссылку шлёт:
+
+`PATCH /api/v1/repairs/{id}/status` `{ "status": "pending_approval" }`
+
+Ожидание: из `new` / `revision` / `in_progress` / `waiting_parts` статус становится
+`pending_approval`, `estimate_status=pending` (как в §5). `GET` staff и public сразу отдают эти
+поля, иначе клиент не видит «Согласовать».
+
+Если переход из `new` или `in_progress` в `pending_approval` режется whitelist — это блокер, нужно
+разрешить.
+
+---
+
+## 8. Выплаты мастерам (`/station#payouts`)
+
+Отдельная вкладка: сколько отдать по доле `master_share_percent` и разовые суммы без работ.
+
+Дата работы — `DATE(repair_orders.updated_at)` у заказов `done` / `completed`. В `completed`
+учитываются все работы, в `done` — только `is_done`. Доля считается даже без мастера («Без
+мастера»).
+
+### Таблица `master_payout_extras`
+
+| Поле                 | Тип          | Notes        |
+| -------------------- | ------------ | ------------ |
+| `service_station_id` | FK           | каскад       |
+| `master_id`          | FK masters   | обязателен   |
+| `amount`             | unsigned int | рубли, ≥ 1   |
+| `occurred_on`        | date         | день выплаты |
+| `comment`            | string, null | до 255       |
+
+### `GET /api/v1/station/payouts?from=Y-m-d&to=Y-m-d`
+
+Период не длиннее 93 дней. Без дат — текущий месяц. `data`: `share_percent`, `from`, `to`, `totals`,
+`by_master[]`, `days[]` (с `by_master` за день), `extras[]`.
+
+`to_pay` = доля мастера от работ и от внесённых сумм без работ (вносят полную сумму, доля та же).
+
+### `POST /api/v1/station/payouts/extras`
+
+```json
+{
+  "master_id": 1,
+  "amount": 1500,
+  "occurred_on": "2026-08-12",
+  "comment": "Премия"
+}
+```
+
+201 `{ "data": { "id", "master_id", "full_name", "amount", "occurred_on", "comment" } }`
+
+### `DELETE /api/v1/station/payouts/extras/{id}`
+
+204. Чужой station → 403.

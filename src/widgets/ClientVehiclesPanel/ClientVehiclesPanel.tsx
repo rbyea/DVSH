@@ -11,6 +11,7 @@ import {
   useGetClientQuery,
   type ClientVehicleSummary,
 } from '@/entities/client';
+import { CarModelAutoComplete } from '@/entities/vehicle';
 import { getErrorMessage } from '@/shared/lib/api';
 import {
   formatChassisNumberInput,
@@ -22,6 +23,7 @@ import {
   isValidRuLicensePlate,
   isValidVin,
 } from '@/shared/lib/vehicle';
+import { CarBrandMark } from '@/shared/ui/CarBrandMark';
 
 import styles from './ClientVehiclesPanel.module.scss';
 
@@ -294,7 +296,10 @@ export function ClientVehiclesPanel({
                     }}
                   >
                     <span className={styles.main}>
-                      <span className={styles.model}>{item.car_model}</span>
+                      <span className={styles.modelRow}>
+                        <CarBrandMark carModel={item.car_model} fallback="none" />
+                        <span className={styles.model}>{item.car_model}</span>
+                      </span>
                       <span className={styles.meta}>
                         {item.license_plate} · {vehicleIdLabel(item)}
                         {typeof item.mileage === 'number'
@@ -315,7 +320,10 @@ export function ClientVehiclesPanel({
                 ) : (
                   <div className={itemClassName}>
                     <span className={styles.main}>
-                      <span className={styles.model}>{item.car_model}</span>
+                      <span className={styles.modelRow}>
+                        <CarBrandMark carModel={item.car_model} fallback="none" />
+                        <span className={styles.model}>{item.car_model}</span>
+                      </span>
                       <span className={styles.meta}>
                         {item.license_plate} · {vehicleIdLabel(item)}
                         {typeof item.mileage === 'number'
@@ -360,11 +368,11 @@ export function ClientVehiclesPanel({
               validateStatus={fieldErrors.carModel ? 'error' : undefined}
               help={fieldErrors.carModel}
             >
-              <Input
+              <CarModelAutoComplete
                 placeholder="Toyota Camry"
                 value={vehicleForm.carModel}
-                onChange={(event) => {
-                  setVehicleForm((prev) => ({ ...prev, carModel: event.target.value }));
+                onChange={(carModel) => {
+                  setVehicleForm((prev) => ({ ...prev, carModel }));
                   setFieldErrors((prev) => ({ ...prev, carModel: undefined }));
                 }}
               />

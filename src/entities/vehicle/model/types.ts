@@ -1,3 +1,11 @@
+import type { VehicleDiagnostic } from '@/shared/lib/diagnostics';
+
+export type {
+  CreateVehicleDiagnosticRequest,
+  VehicleDiagnostic,
+  VehicleDiagnosticFault,
+} from '@/shared/lib/diagnostics';
+
 export type VehicleHistoryStatus =
   'new' | 'pending_approval' | 'revision' | 'in_progress' | 'waiting_parts' | 'done' | 'completed';
 
@@ -57,6 +65,11 @@ export type VehicleCard = {
   mileage?: number | null;
   last_completed_mileage?: number | null;
   repairs: VehicleRepairSummary[];
+  latest_diagnostic?: VehicleDiagnostic | null;
+};
+
+export type VehicleModelSuggestion = {
+  car_model: string;
 };
 
 export type UpdateVehicleRequest = {

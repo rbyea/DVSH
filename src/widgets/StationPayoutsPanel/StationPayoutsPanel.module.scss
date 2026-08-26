@@ -1,0 +1,451 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.hint {
+  margin: 4px 0 0;
+  max-width: 62ch;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.totals small {
+  margin-left: 6px;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.totalsMuted {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shareCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--dvsh-soft);
+}
+
+.shareLabel {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shareValueRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.shareValue {
+  color: var(--dvsh-ink);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.shareHint {
+  color: var(--dvsh-muted);
+  font-size: 14px;
+}
+
+.shareEdit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.shareInput {
+  width: 140px;
+}
+
+.loading,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.75fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.calendar {
+  min-width: 0;
+}
+
+.calHead {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.calPickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.calMonth,
+.calYear {
+  min-width: 0;
+  color: var(--dvsh-ink);
+  font-weight: 800;
+}
+
+.calMonth {
+  width: 150px;
+}
+
+.calYear {
+  width: 92px;
+}
+
+.calMonth :global(.ant-select-selection-item),
+.calYear :global(.ant-select-selection-item) {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.calMonth :global(.ant-select-selection-item),
+.calMonth :global(.ant-select-item-option-content) {
+  text-transform: capitalize;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 68px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 12px;
+  padding: 8px 8px 7px;
+  background: var(--dvsh-card);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.day:hover {
+  border-color: color-mix(in srgb, var(--dvsh-accent) 35%, var(--dvsh-line));
+  background: var(--dvsh-soft);
+}
+
+.dayOutside {
+  background: transparent;
+  opacity: 0.42;
+}
+
+.dayToday:not(.daySelected) {
+  box-shadow: inset 0 0 0 1px var(--dvsh-accent);
+}
+
+.daySelected {
+  border-color: var(--dvsh-accent);
+  background: var(--dvsh-accent-soft);
+}
+
+.dayHasPay:not(.daySelected):not(.dayOutside) {
+  border-color: color-mix(in srgb, var(--dvsh-accent) 32%, var(--dvsh-line));
+  background: color-mix(in srgb, var(--dvsh-accent) 12%, var(--dvsh-card));
+}
+
+.dayNum {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dayPay {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--dvsh-accent);
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  height: 0;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.dayPanel .subTitle {
+  flex-shrink: 0;
+}
+
+.dayScroll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.subTitle {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.empty {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--dvsh-card);
+}
+
+.itemSettled {
+  border-color: var(--dvsh-success-line);
+  background: var(--dvsh-success-soft);
+}
+
+.itemBody {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.itemMain {
+  min-width: 0;
+}
+
+.itemName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.itemMeta {
+  margin: 4px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+}
+
+.itemPay {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.itemPay strong {
+  font-size: 15px;
+}
+
+.itemSplit {
+  color: var(--dvsh-muted);
+  font-size: 11px;
+}
+
+.itemActions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.giveButton {
+  border-color: color-mix(in srgb, #16a34a 40%, var(--dvsh-line)) !important;
+  color: #15803d !important;
+  font-weight: 700 !important;
+}
+
+.giveButton:hover {
+  border-color: #16a34a !important;
+  color: #166534 !important;
+}
+
+.giveButtonDone {
+  border-color: #16a34a !important;
+  background: #16a34a !important;
+  color: #fff !important;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--dvsh-soft);
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.formMaster {
+  min-width: 200px;
+  flex: 1 1 180px;
+}
+
+.formAmount {
+  width: 120px;
+}
+
+.formComment {
+  min-width: 180px;
+  flex: 1 1 160px;
+}
+
+@media (max-width: 1080px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+
+  .dayPanel {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .dayScroll {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 900px) {
+  .totals {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .day {
+    min-height: 56px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid,
+  .weekdays {
+    gap: 4px;
+  }
+
+  .day {
+    min-height: 52px;
+    border-radius: 10px;
+    padding: 5px 4px;
+  }
+
+  .dayNum {
+    font-size: 12px;
+  }
+
+  .dayPay {
+    font-size: 10px;
+  }
+}

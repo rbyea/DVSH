@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
-  clearRepairDiagnostic,
+  useCreateVehicleDiagnosticMutation,
+  useDeleteVehicleDiagnosticMutation,
+} from '@/entities/vehicle';
+import {
+  diagnosticScanFromApi,
+  diagnosticScanToApiPayload,
   matchDiagnosticVin,
   parseScannerCsv,
-  readRepairDiagnostic,
-  writeRepairDiagnostic,
   type DiagnosticScan,
   type DiagnosticVinMatch,
+  type VehicleDiagnostic,
 } from '@/shared/lib/diagnostics';
 
 export type ImportDiagnosticResult = {
@@ -16,16 +20,27 @@ export type ImportDiagnosticResult = {
   scan: DiagnosticScan;
 };
 
-export function useRepairDiagnostics(repairId: string, vehicleVin?: string | null) {
-  const [scan, setScan] = useState<DiagnosticScan | null>(() =>
-    repairId ? readRepairDiagnostic(repairId) : null,
-  );
-  const [preview, setPreview] = useState<DiagnosticScan | null>(null);
+const vinMatchMessages: Record<DiagnosticVinMatch, string> = {
+  match: '',
+  mismatch: 'VIN в файле не совпадает с авто в заказ-наряде',
+  'vehicle-empty': 'В карточке авто нет VIN — скан сохранили, сверить не с чем',
+  'scan-empty': 'В CSV не найден VIN — проверьте файл сканера',
+};
 
-  useEffect(() => {
-    setScan(repairId ? readRepairDiagnostic(repairId) : null);
-    setPreview(null);
-  }, [repairId]);
+export function useRepairDiagnostics(
+  repairId: string,
+  vehicleVin?: string | null,
+  vehicleId?: string | null,
+  latestDiagnostic?: VehicleDiagnostic | null,
+) {
+  const [preview, setPreview] = useState<DiagnosticScan | null>(null);
+  const [createDiagnostic] = useCreateVehicleDiagnosticMutation();
+  const [deleteDiagnostic] = useDeleteVehicleDiagnosticMutation();
+
+  const scan = useMemo(
+    () => (latestDiagnostic ? diagnosticScanFromApi(latestDiagnostic) : null),
+    [latestDiagnostic],
+  );
 
   const attachedMatch = useMemo(
     () => (scan ? matchDiagnosticVin(scan.vin, vehicleVin) : null),
@@ -38,24 +53,44 @@ export function useRepairDiagnostics(repairId: string, vehicleVin?: string | nul
       const parsed = parseScannerCsv(text, file.name);
       const match = matchDiagnosticVin(parsed.vin, vehicleVin);
 
-      if (match === 'match') {
-        writeRepairDiagnostic(repairId, parsed);
-        setScan(parsed);
-        setPreview(null);
-        return { ok: true, match, scan: parsed };
+      if (match === 'scan-empty') {
+        setPreview(parsed);
+        return { ok: false, match, scan: parsed };
       }
 
-      setPreview(parsed);
-      return { ok: false, match, scan: parsed };
+      if (!vehicleId) {
+        setPreview(parsed);
+        return { ok: false, match: 'vehicle-empty', scan: parsed };
+      }
+
+      try {
+        await createDiagnostic({
+          vehicleId,
+          body: diagnosticScanToApiPayload(parsed, repairId),
+        }).unwrap();
+        setPreview(null);
+        return { ok: true, match, scan: parsed };
+      } catch (error) {
+        setPreview(parsed);
+        throw error;
+      }
     },
-    [repairId, vehicleVin],
+    [createDiagnostic, repairId, vehicleId, vehicleVin],
   );
 
-  const remove = useCallback(() => {
-    clearRepairDiagnostic(repairId);
-    setScan(null);
+  const remove = useCallback(async () => {
+    if (!vehicleId || !scan?.id) {
+      setPreview(null);
+      return;
+    }
+
+    await deleteDiagnostic({
+      vehicleId,
+      diagnosticId: scan.id,
+      repairId,
+    }).unwrap();
     setPreview(null);
-  }, [repairId]);
+  }, [deleteDiagnostic, repairId, scan, vehicleId]);
 
   const dismissPreview = useCallback(() => {
     setPreview(null);
@@ -68,5 +103,6 @@ export function useRepairDiagnostics(repairId: string, vehicleVin?: string | nul
     importFile,
     remove,
     dismissPreview,
+    vinMatchMessages,
   };
 }

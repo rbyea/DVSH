@@ -1,4 +1,4 @@
-import { Button, Checkbox, Input, InputNumber, Modal, Select, Tag } from 'antd';
+import { Button, Checkbox, InputNumber, Modal, Select, Tag } from 'antd';
 import clsx from 'clsx';
 import { useState } from 'react';
 import { Bounce, toast } from 'react-toastify';
@@ -10,8 +10,12 @@ import {
   useAddWorkItemMutation,
   useDeleteWorkItemMutation,
   useUpdateWorkItemMutation,
+  WorkTitleAutoComplete,
+  type RepairStatus,
   type RepairWorkItem,
+  type WorkTitleSuggestion,
 } from '@/entities/repair-order';
+import { useSendQuoteForApproval } from '@/features/repair-order';
 import { getErrorMessage } from '@/shared/lib/api';
 import { parseMoney } from '@/shared/lib/money';
 import { DeferredInputNumber } from '@/shared/ui/DeferredInputNumber';
@@ -20,10 +24,13 @@ import styles from './RepairWorksChecklist.module.scss';
 
 type RepairWorksChecklistProps = {
   repairId: string;
+  repairStatus?: RepairStatus;
   workItems: RepairWorkItem[];
   readOnly?: boolean;
   /** True while estimate awaits client approval — cannot mark works done. */
   executionLocked?: boolean;
+  /** Freeze add/edit/delete (extra works while the client reviews the quote). */
+  quoteLocked?: boolean;
   /** Доп. работы — отдельный блок и отдельная сумма */
   isExtra?: boolean;
 };
@@ -66,9 +73,11 @@ function formatWorkHours(value: number | null | undefined): string | null {
 
 export function RepairWorksChecklist({
   repairId,
+  repairStatus,
   workItems,
   readOnly = false,
   executionLocked = false,
+  quoteLocked = false,
   isExtra = false,
 }: RepairWorksChecklistProps) {
   const [title, setTitle] = useState('');
@@ -90,10 +99,30 @@ export function RepairWorksChecklist({
   const [addWorkItem, { isLoading: isAdding }] = useAddWorkItemMutation();
   const [updateWorkItem] = useUpdateWorkItemMutation();
   const [deleteWorkItem] = useDeleteWorkItemMutation();
+  const { sendQuoteForApproval } = useSendQuoteForApproval(repairId, repairStatus);
+
+  const notifyQuoteChanged = async () => {
+    try {
+      const sent = await sendQuoteForApproval();
+
+      if (sent) {
+        toast.info('Список ушёл клиенту на согласование', {
+          position: 'top-right',
+          transition: Bounce,
+        });
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Работа сохранена, но согласование не отправилось'), {
+        position: 'top-right',
+        transition: Bounce,
+      });
+    }
+  };
 
   const visibleItems = workItems.filter((item) => isExtraWorkItem(item) === isExtra);
   const doneCount = visibleItems.filter(isWorkDone).length;
   const canToggleDone = !readOnly && !executionLocked;
+  const canEditQuote = !readOnly && !quoteLocked;
   const costBreakdown = getRepairCostBreakdown({ workItems });
   const sectionTotal = isExtra ? costBreakdown.extraWorksTotal : costBreakdown.worksTotal;
   const sectionTitle = isExtra ? 'Доп. работы' : 'Работы';
@@ -170,6 +199,7 @@ export function RepairWorksChecklist({
         workItemId: item.id,
         body: { title: nextTitle },
       }).unwrap();
+      await notifyQuoteChanged();
       handleCancelEdit();
       toast.success('Работа обновлена', {
         position: 'top-right',
@@ -194,6 +224,7 @@ export function RepairWorksChecklist({
         workItemId: item.id,
         body: { master_id: masterId },
       }).unwrap();
+      await notifyQuoteChanged();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось назначить мастера'), {
         position: 'top-right',
@@ -213,6 +244,7 @@ export function RepairWorksChecklist({
         workItemId: item.id,
         body: { price },
       }).unwrap();
+      await notifyQuoteChanged();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось сохранить цену'), {
         position: 'top-right',
@@ -232,6 +264,7 @@ export function RepairWorksChecklist({
         workItemId: item.id,
         body: { hours },
       }).unwrap();
+      await notifyQuoteChanged();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось сохранить часы'), {
         position: 'top-right',
@@ -244,7 +277,7 @@ export function RepairWorksChecklist({
 
   const handleDelete = (item: RepairWorkItem) => {
     Modal.confirm({
-      title: 'Удалить работу?',
+      title: isExtra ? 'Удалить доп. работу?' : 'Удалить работу?',
       content: `«${item.title}» будет удалена из заказ-наряда.`,
       okText: 'Удалить',
       okType: 'danger',
@@ -257,6 +290,7 @@ export function RepairWorksChecklist({
             repairId,
             workItemId: item.id,
           }).unwrap();
+          await notifyQuoteChanged();
         } catch (error) {
           toast.error(getErrorMessage(error, 'Не удалось удалить работу'), {
             position: 'top-right',
@@ -268,6 +302,13 @@ export function RepairWorksChecklist({
         }
       },
     });
+  };
+
+  const handleSelectSuggestion = (suggestion: WorkTitleSuggestion) => {
+    setTitle(suggestion.title);
+    setNewMasterId(suggestion.master_id ?? undefined);
+    setNewHours(typeof suggestion.hours === 'number' ? suggestion.hours : undefined);
+    setNewPrice(typeof suggestion.price === 'number' ? suggestion.price : undefined);
   };
 
   const handleAdd = async () => {
@@ -292,6 +333,7 @@ export function RepairWorksChecklist({
           is_extra: isExtra,
         },
       }).unwrap();
+      await notifyQuoteChanged();
       setTitle('');
       setNewMasterId(undefined);
       setNewPrice(undefined);
@@ -320,9 +362,16 @@ export function RepairWorksChecklist({
         </span>
       </div>
 
-      {executionLocked && !readOnly ? (
+      {executionLocked && !readOnly && !quoteLocked ? (
         <p className={styles.lockNote}>
           Смета на согласовании у клиента. Отмечать выполнение работ можно после подтверждения.
+        </p>
+      ) : null}
+
+      {quoteLocked && !readOnly ? (
+        <p className={styles.lockNote}>
+          Смета на согласовании. Доп. работы можно менять после ответа клиента или когда вернёте
+          заказ в работу.
         </p>
       ) : null}
 
@@ -346,13 +395,14 @@ export function RepairWorksChecklist({
                   />
 
                   <div className={styles.itemMain}>
-                    {isEditing && !readOnly ? (
-                      <Input
+                    {isEditing && canEditQuote ? (
+                      <WorkTitleAutoComplete
                         autoFocus
                         disabled={isPending}
                         size="middle"
+                        style={{ width: '100%' }}
                         value={editingTitle}
-                        onChange={(event) => setEditingTitle(event.target.value)}
+                        onChange={setEditingTitle}
                         onPressEnter={() => {
                           void handleSaveTitle(item);
                         }}
@@ -363,7 +413,7 @@ export function RepairWorksChecklist({
                   </div>
 
                   <div className={styles.itemActions}>
-                    {readOnly ? (
+                    {!canEditQuote ? (
                       <Tag color={done ? 'success' : 'default'}>{done ? 'Готово' : 'Ждёт'}</Tag>
                     ) : isEditing ? (
                       <>
@@ -407,7 +457,7 @@ export function RepairWorksChecklist({
                   </div>
                 </div>
 
-                {readOnly ? (
+                {!canEditQuote ? (
                   <div className={styles.metaRead}>
                     <span>{assignedLabel ?? 'Мастер не назначен'}</span>
                     <span>{formatWorkHours(item.hours) ?? 'Часы не указаны'}</span>
@@ -470,13 +520,15 @@ export function RepairWorksChecklist({
         <p className={styles.empty}>{emptyText}</p>
       )}
 
-      {readOnly ? null : (
+      {!canEditQuote ? null : (
         <div className={styles.addBlock}>
-          <Input
+          <WorkTitleAutoComplete
             placeholder={addPlaceholder}
             size="large"
+            style={{ width: '100%' }}
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={setTitle}
+            onSelectSuggestion={handleSelectSuggestion}
             onPressEnter={() => {
               void handleAdd();
             }}

@@ -5,7 +5,7 @@ import { Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
 import { useGetMastersQuery } from '@/entities/master';
-import { getRepairCostBreakdown } from '@/entities/repair-order';
+import { getRepairCostBreakdown, WorkTitleAutoComplete } from '@/entities/repair-order';
 import { useRepairCreateContext } from '@/features/repair-order/create';
 import { disablePastDates } from '@/shared/lib/date';
 import { ModalRepair } from '@/widgets/Modals/ModalRepair/ModalRepair';
@@ -21,6 +21,7 @@ export const RepairDetailsStep = () => {
     errors,
     control,
     availableQuickWorkTemplates,
+    setValue,
     setCurrentStep,
     isSubmitting,
     isDirty,
@@ -100,18 +101,7 @@ export const RepairDetailsStep = () => {
     }
   };
 
-  const handleWorkTitleKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
-    index: number,
-    isExtra: boolean,
-  ) => {
-    if (event.key !== 'Enter') {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
+  const handleWorkTitleEnter = (index: number, isExtra: boolean) => {
     const title = watchedWorks?.[index]?.title?.trim() ?? '';
 
     if (!title) {
@@ -151,13 +141,31 @@ export const RepairDetailsStep = () => {
         control={control}
         name={`workItems.${index}.title`}
         render={({ field: workField }) => (
-          <Input
-            {...workField}
+          <WorkTitleAutoComplete
             className={styles.workTitleInput}
             placeholder={isExtra ? 'Название доп. работы' : 'Название работы'}
             size="large"
             status={errors.workItems?.[index]?.title ? 'error' : undefined}
-            onKeyDown={(event) => handleWorkTitleKeyDown(event, index, isExtra)}
+            value={workField.value ?? ''}
+            onBlur={workField.onBlur}
+            onChange={workField.onChange}
+            onSelectSuggestion={(suggestion) => {
+              workField.onChange(suggestion.title);
+              setValue(`workItems.${index}.masterId`, suggestion.master_id ?? undefined, {
+                shouldDirty: true,
+              });
+              setValue(
+                `workItems.${index}.hours`,
+                typeof suggestion.hours === 'number' ? suggestion.hours : undefined,
+                { shouldDirty: true },
+              );
+              setValue(
+                `workItems.${index}.price`,
+                typeof suggestion.price === 'number' ? suggestion.price : undefined,
+                { shouldDirty: true },
+              );
+            }}
+            onPressEnter={() => handleWorkTitleEnter(index, isExtra)}
           />
         )}
       />

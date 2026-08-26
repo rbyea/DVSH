@@ -3,6 +3,8 @@ export type Master = {
   full_name: string;
   /** Профессия / специализация на СТО */
   specialty: string;
+  birthday?: string | null;
+  phone?: string | null;
   is_active: boolean;
   created_at?: string | null;
 };
@@ -26,11 +28,15 @@ export type StationInfo = {
 export type CreateMasterRequest = {
   full_name: string;
   specialty: string;
+  birthday?: string | null;
+  phone?: string | null;
 };
 
 export type UpdateMasterRequest = {
   full_name?: string;
   specialty?: string;
+  birthday?: string | null;
+  phone?: string | null;
   is_active?: boolean;
 };
 

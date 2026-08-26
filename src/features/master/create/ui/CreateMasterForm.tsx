@@ -1,21 +1,24 @@
-import { AutoComplete, Button, Form, Input } from 'antd';
+import { AutoComplete, Button, DatePicker, Form, Input } from 'antd';
+import dayjs from 'dayjs';
 import { Controller } from 'react-hook-form';
 
-import { masterSpecialtySuggestions } from '@/entities/master';
+import { masterSpecialtySuggestions, type Master } from '@/entities/master';
 import { getAntdValidateStatus } from '@/shared/lib/antd';
+import { formatRuPhoneInput } from '@/shared/lib/phone';
 
 import { useCreateMasterForm } from '../model/useCreateMasterForm';
 import styles from './CreateMasterForm.module.scss';
 
 type CreateMasterFormProps = {
+  master?: Master;
   onCancel: () => void;
   onSuccess?: () => void;
 };
 
 const specialtyOptions = masterSpecialtySuggestions.map((value) => ({ value }));
 
-export function CreateMasterForm({ onCancel, onSuccess }: CreateMasterFormProps) {
-  const { control, errors, isSubmitting, onSubmit, reset } = useCreateMasterForm(onSuccess);
+export function CreateMasterForm({ master, onCancel, onSuccess }: CreateMasterFormProps) {
+  const { control, errors, isSubmitting, onSubmit, reset } = useCreateMasterForm(onSuccess, master);
 
   return (
     <Form
@@ -58,6 +61,52 @@ export function CreateMasterForm({ onCancel, onSuccess }: CreateMasterFormProps)
           )}
         />
       </Form.Item>
+      <div className={styles.row}>
+        <Form.Item
+          className={styles.rowItem}
+          help={errors.birthday?.message}
+          label="День рождения"
+          validateStatus={getAntdValidateStatus(Boolean(errors.birthday))}
+        >
+          <Controller
+            control={control}
+            name="birthday"
+            render={({ field }) => (
+              <DatePicker
+                allowClear
+                className={styles.fullWidth}
+                disabledDate={(current) => Boolean(current && current.isAfter(dayjs(), 'day'))}
+                format="DD.MM.YYYY"
+                placeholder="Не указан"
+                size="large"
+                value={field.value ? dayjs(field.value, 'YYYY-MM-DD') : null}
+                onChange={(value) => field.onChange(value ? value.format('YYYY-MM-DD') : '')}
+              />
+            )}
+          />
+        </Form.Item>
+        <Form.Item
+          className={styles.rowItem}
+          help={errors.phone?.message}
+          label="Телефон"
+          validateStatus={getAntdValidateStatus(Boolean(errors.phone))}
+        >
+          <Controller
+            control={control}
+            name="phone"
+            render={({ field }) => (
+              <Input
+                {...field}
+                inputMode="tel"
+                placeholder="+7 999 123-45-67"
+                size="large"
+                value={field.value}
+                onChange={(event) => field.onChange(formatRuPhoneInput(event.target.value))}
+              />
+            )}
+          />
+        </Form.Item>
+      </div>
       <div className={styles.actions}>
         <Button
           disabled={isSubmitting}

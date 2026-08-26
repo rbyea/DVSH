@@ -45,6 +45,7 @@ export const clientsApi = baseApi.injectEndpoints({
       invalidatesTags: [
         { type: 'Client', id: 'LIST' },
         { type: 'Vehicle', id: 'SEARCH' },
+        { type: 'Vehicle', id: 'MODELS' },
       ],
     }),
     updateClient: build.mutation<Client, { id: string; body: UpdateClientRequest }>({
@@ -139,6 +140,7 @@ export const clientsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { client_id }) => [
         { type: 'Client', id: String(client_id) },
         { type: 'Vehicle', id: 'SEARCH' },
+        { type: 'Vehicle', id: 'MODELS' },
       ],
     }),
   }),

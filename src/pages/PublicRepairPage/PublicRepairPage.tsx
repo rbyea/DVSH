@@ -18,6 +18,7 @@ import {
   type ClientConfirmDecision,
   type EstimateDecision,
   type PublicCurrentRepair,
+  type PublicStationContacts,
   type PublicVehicle,
   type RepairStatus,
 } from '@/entities/repair-order';
@@ -27,9 +28,11 @@ import { acceptPublicPdnNotice, hasAcceptedPublicPdnNotice } from '@/shared/lib/
 import { formatMileageKm } from '@/shared/lib/vehicle';
 import { MAX_BOT_URL } from '@/shared/config';
 import { BrandMark } from '@/shared/ui/BrandMark';
+import { CarBrandMark } from '@/shared/ui/CarBrandMark';
 import { MaxLogo } from '@/shared/ui/MaxLogo';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { PublicMileageChart } from '@/widgets/PublicMileageChart';
+import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
 
 import styles from './PublicRepairPage.module.scss';
 
@@ -50,7 +53,22 @@ function getVehicleFingerprint(vehicle: PublicVehicle): string {
     carModel: vehicle.car_model,
     licensePlate: vehicle.license_plate,
     clientName: vehicle.client_name,
+    station: vehicle.station,
+    latestDiagnostic: vehicle.latest_diagnostic,
   });
+}
+
+function hasStationContacts(station?: PublicStationContacts | null): boolean {
+  if (!station) {
+    return false;
+  }
+
+  return Boolean(
+    station.phone?.trim() ||
+    station.city?.trim() ||
+    station.address?.trim() ||
+    station.working_hours?.trim(),
+  );
 }
 
 function formatDate(value: string | null | undefined): string {
@@ -462,12 +480,122 @@ export function PublicRepairPage() {
 
         <section className={styles.hero}>
           <h1 className={styles.title}>
-            {vehicle.car_model} · {vehicle.license_plate}
+            <CarBrandMark
+              className={styles.titleBrand}
+              carModel={vehicle.car_model}
+              fallback="none"
+            />
+            <span>
+              {vehicle.car_model} · {vehicle.license_plate}
+            </span>
           </h1>
           <p className={styles.statusLine}>{statusLine}</p>
           {heroMeta ? <p className={styles.heroMeta}>{heroMeta}</p> : null}
           <PublicMileageChart currentRepair={currentRepair} previousRepairs={previousRepairs} />
         </section>
+
+        {hasStationContacts(vehicle.station) ? (
+          <section className={styles.panel}>
+            <div className={styles.panelHead}>
+              <h2 className={styles.panelTitle}>Сервис</h2>
+            </div>
+            <dl className={styles.stationList}>
+              {vehicle.station?.name ? (
+                <>
+                  <dt>СТО</dt>
+                  <dd>{vehicle.station.name}</dd>
+                </>
+              ) : null}
+              {vehicle.station?.phone ? (
+                <>
+                  <dt>Телефон</dt>
+                  <dd>{vehicle.station.phone}</dd>
+                </>
+              ) : null}
+              {vehicle.station?.city ? (
+                <>
+                  <dt>Город</dt>
+                  <dd>{vehicle.station.city}</dd>
+                </>
+              ) : null}
+              {vehicle.station?.address ? (
+                <>
+                  <dt>Адрес</dt>
+                  <dd>{vehicle.station.address}</dd>
+                </>
+              ) : null}
+              {vehicle.station?.working_hours ? (
+                <>
+                  <dt>График</dt>
+                  <dd>{vehicle.station.working_hours}</dd>
+                </>
+              ) : null}
+            </dl>
+          </section>
+        ) : null}
+
+        {needsEstimateDecision && showCurrentRepair && currentRepair ? (
+          <section className={clsx(styles.panel, styles.confirmPending)}>
+            <div className={styles.panelHead}>
+              <div>
+                <h2 className={styles.panelTitle}>Согласование работ</h2>
+                <p className={styles.panelHint}>
+                  Сервис обновил список. Если всё верно — согласуйте. Чтобы изменить объём,
+                  отклоните и напишите коротко.
+                </p>
+              </div>
+            </div>
+            {!isDeclining ? (
+              <div className={styles.estimateActions}>
+                <Button
+                  loading={isSubmitting}
+                  size="large"
+                  type="primary"
+                  onClick={() => {
+                    void handleDecision('approved');
+                  }}
+                >
+                  Согласовать
+                </Button>
+                <Button disabled={isSubmitting} size="large" onClick={() => setIsDeclining(true)}>
+                  Отклонить
+                </Button>
+              </div>
+            ) : (
+              <div className={styles.declineBox}>
+                <Input.TextArea
+                  placeholder="Например: пока без замены колодок, только диагностика"
+                  rows={3}
+                  value={declineComment}
+                  onChange={(event) => setDeclineComment(event.target.value)}
+                />
+                <div className={styles.estimateActions}>
+                  <Button
+                    danger
+                    loading={isSubmitting}
+                    size="large"
+                    type="primary"
+                    onClick={() => {
+                      void handleDecision('declined');
+                    }}
+                  >
+                    Отправить отказ
+                  </Button>
+                  <Button
+                    disabled={isSubmitting}
+                    size="large"
+                    onClick={() => {
+                      setIsDeclining(false);
+                      setDeclineComment('');
+                    }}
+                  >
+                    Назад
+                  </Button>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : null}
 
         {showConfirmPanel && currentRepair && confirmStatus ? (
           <section
@@ -507,8 +635,11 @@ export function PublicRepairPage() {
                     </tr>
                     <tr>
                       <th scope="row">Автомобиль</th>
-                      <td>
-                        {vehicle.car_model} · {vehicle.license_plate}
+                      <td className={styles.confirmCar}>
+                        <CarBrandMark carModel={vehicle.car_model} fallback="none" />
+                        <span>
+                          {vehicle.car_model} · {vehicle.license_plate}
+                        </span>
                       </td>
                     </tr>
                     <tr>
@@ -696,69 +827,15 @@ export function PublicRepairPage() {
                 {currentRepair.estimate_comment ? `: «${currentRepair.estimate_comment}»` : '.'}
               </p>
             ) : null}
-
-            {needsEstimateDecision ? (
-              <>
-                <p className={styles.estimateMessage}>
-                  Если всё верно — согласуйте. Чтобы изменить объём, отклоните и напишите коротко.
-                </p>
-                {!isDeclining ? (
-                  <div className={styles.estimateActions}>
-                    <Button
-                      loading={isSubmitting}
-                      size="large"
-                      type="primary"
-                      onClick={() => {
-                        void handleDecision('approved');
-                      }}
-                    >
-                      Согласовать
-                    </Button>
-                    <Button
-                      disabled={isSubmitting}
-                      size="large"
-                      onClick={() => setIsDeclining(true)}
-                    >
-                      Отклонить
-                    </Button>
-                  </div>
-                ) : (
-                  <div className={styles.declineBox}>
-                    <Input.TextArea
-                      placeholder="Например: пока без замены колодок, только диагностика"
-                      rows={3}
-                      value={declineComment}
-                      onChange={(event) => setDeclineComment(event.target.value)}
-                    />
-                    <div className={styles.estimateActions}>
-                      <Button
-                        danger
-                        loading={isSubmitting}
-                        size="large"
-                        type="primary"
-                        onClick={() => {
-                          void handleDecision('declined');
-                        }}
-                      >
-                        Отправить отказ
-                      </Button>
-                      <Button
-                        disabled={isSubmitting}
-                        size="large"
-                        onClick={() => {
-                          setIsDeclining(false);
-                          setDeclineComment('');
-                        }}
-                      >
-                        Назад
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : null}
           </section>
         ) : null}
+
+        <RepairDiagnosticsPanel
+          latestDiagnostic={vehicle.latest_diagnostic}
+          readOnly
+          repairId={currentRepair?.order_number ?? 'public'}
+          vehicleVin={vehicle.vin}
+        />
 
         {clientVehiclesCount > 1 ? (
           <section className={clsx(styles.panel, styles.vehiclesPanel)}>
@@ -771,7 +848,10 @@ export function PublicRepairPage() {
                   <li key={item.public_token}>
                     {isCurrent ? (
                       <div className={clsx(styles.vehicleItem, styles.vehicleItemCurrent)}>
-                        <span className={styles.vehicleModel}>{item.car_model}</span>
+                        <span className={styles.vehicleModel}>
+                          <CarBrandMark carModel={item.car_model} fallback="none" />
+                          {item.car_model}
+                        </span>
                         <span className={styles.vehicleMeta}>{item.license_plate}</span>
                       </div>
                     ) : (
@@ -782,7 +862,10 @@ export function PublicRepairPage() {
                           navigate(`/public/vehicles/${item.public_token}`);
                         }}
                       >
-                        <span className={styles.vehicleModel}>{item.car_model}</span>
+                        <span className={styles.vehicleModel}>
+                          <CarBrandMark carModel={item.car_model} fallback="none" />
+                          {item.car_model}
+                        </span>
                         <span className={styles.vehicleMeta}>{item.license_plate}</span>
                       </button>
                     )}

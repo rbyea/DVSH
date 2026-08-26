@@ -109,7 +109,7 @@
 
 .statusHint {
   margin: 0;
-  max-width: 46ch;
+  width: 100%;
   color: var(--dvsh-muted);
   font-size: 15px;
   line-height: 1.5;
@@ -232,49 +232,130 @@
   line-height: 1.45;
 }
 
+.includesPeek {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.includesPeekItem {
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: var(--dvsh-soft);
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .plans {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  align-items: stretch;
+  gap: 14px;
 }
 
 .plan {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-height: 148px;
+  gap: 8px;
+  min-height: 188px;
+  overflow: hidden;
   border: 1px solid var(--dvsh-line);
-  border-radius: 16px;
-  padding: 18px 16px;
+  border-radius: 20px;
+  padding: 22px 18px 18px;
   background: var(--dvsh-card);
   text-align: left;
   cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
-.planRecommended {
-  border-color: color-mix(in srgb, #14b8a6 40%, var(--dvsh-line));
+.plan::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--dvsh-line);
+  content: '';
+}
+
+.plan:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.plan_month::before {
+  background: #64748b;
+}
+
+.plan_quarter::before {
+  background: #0f766e;
+}
+
+.plan_year::before {
+  background: var(--dvsh-accent);
+}
+
+.plan_month {
   background: linear-gradient(
-    180deg,
-    color-mix(in srgb, #14b8a6 12%, var(--dvsh-card)),
-    var(--dvsh-card) 48%
+    165deg,
+    color-mix(in srgb, #64748b 10%, var(--dvsh-card)),
+    var(--dvsh-card) 46%
   );
 }
 
+.plan_quarter {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, #14b8a6 16%, var(--dvsh-card)),
+    var(--dvsh-card) 52%
+  );
+}
+
+.plan_year {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--dvsh-accent) 16%, var(--dvsh-card)),
+    var(--dvsh-card) 52%
+  );
+}
+
+.planRecommended {
+  z-index: 1;
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, #14b8a6 55%, var(--dvsh-line));
+  box-shadow: 0 16px 32px rgb(15 118 110 / 16%);
+}
+
+.planRecommended:hover {
+  transform: translateY(-9px);
+}
+
 .planSelected {
-  border-color: var(--dvsh-ink);
-  box-shadow: 0 0 0 1px var(--dvsh-ink);
+  border-color: var(--dvsh-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dvsh-accent) 45%, transparent);
+}
+
+.planRecommended.planSelected {
+  box-shadow:
+    0 16px 32px rgb(15 118 110 / 16%),
+    0 0 0 2px color-mix(in srgb, #14b8a6 50%, transparent);
 }
 
 .planBadge,
 .planCurrent {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   border-radius: 999px;
-  padding: 3px 8px;
+  padding: 4px 9px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -290,7 +371,27 @@
 }
 
 .planRecommended .planCurrent {
-  top: 36px;
+  top: 40px;
+}
+
+.planPeriod {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--dvsh-ink);
+}
+
+.planPeriodValue {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+}
+
+.planPeriodUnit {
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .planTitle {
@@ -302,37 +403,65 @@
 }
 
 .planPrice {
+  margin-top: auto;
   color: var(--dvsh-ink);
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 
 .planHint {
   color: var(--dvsh-muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .planSaving {
-  margin-top: 4px;
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: color-mix(in srgb, #14b8a6 16%, var(--dvsh-card));
   color: #0f766e;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
 }
 
-.includes {
+:global(html[data-theme='dark']) .planRecommended {
+  box-shadow: 0 16px 32px rgb(0 0 0 / 28%);
+}
+
+:global(html[data-theme='dark']) .planSaving {
+  color: #5eead4;
+}
+
+.includesCard {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  border-top: 1px solid var(--dvsh-line);
-  padding-top: 16px;
+  gap: 16px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.includesHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .includesTitle {
   margin: 0;
   color: var(--dvsh-ink);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
+}
+
+.includesLead {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .includesGroups {
@@ -393,9 +522,32 @@
   line-height: 1.45;
 }
 
+.payRow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.payHint {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.historyLink {
+  color: var(--dvsh-accent);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (max-width: 800px) {
   .statusCard,
-  .plansCard {
+  .plansCard,
+  .includesCard {
     padding: 16px;
   }
 
@@ -409,6 +561,12 @@
 
   .plan {
     min-height: 0;
+    transform: none;
+  }
+
+  .planRecommended,
+  .planRecommended:hover {
+    transform: none;
   }
 
   .includesGroups {

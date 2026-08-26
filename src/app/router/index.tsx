@@ -1,5 +1,4 @@
-import { createElement } from 'react';
-import { createBrowserRouter, Navigate, redirect } from 'react-router-dom';
+import { createBrowserRouter, redirect } from 'react-router-dom';
 
 import { RepairCreateProvider } from '@/features/repair-order/create';
 import { LoginPage, RegisterPage } from '@/pages/auth';
@@ -11,6 +10,7 @@ import { PublicRepairPage } from '@/pages/PublicRepairPage';
 import { StationProfilePage } from '@/pages/StationProfilePage';
 import { RepairCreatePage } from '@/pages/RepairCreatePage';
 import { RepairDetailsPage } from '@/pages/RepairDetailsPage';
+import { hasAccessToken } from '@/shared/lib/auth';
 
 import { MainLayout } from '../layouts/MainLayout';
 import { RootLayout } from '../layouts/RootLayout';
@@ -26,6 +26,10 @@ export const appRouter = createBrowserRouter([
   {
     Component: RootLayout,
     children: [
+      {
+        index: true,
+        loader: () => redirect(hasAccessToken() ? '/dashboard' : '/login'),
+      },
       {
         path: '/public/vehicles/:publicToken',
         Component: PublicRepairPage,
@@ -74,7 +78,6 @@ export const appRouter = createBrowserRouter([
             element: <RequireActiveSubscription />,
             children: [
               {
-                path: '/',
                 Component: MainLayout,
                 children: [
                   {
@@ -96,10 +99,6 @@ export const appRouter = createBrowserRouter([
                   {
                     path: '/repairs/:repairId',
                     Component: RepairDetailsPage,
-                  },
-                  {
-                    index: true,
-                    element: createElement(Navigate, { to: '/dashboard', replace: true }),
                   },
                   {
                     path: '*',

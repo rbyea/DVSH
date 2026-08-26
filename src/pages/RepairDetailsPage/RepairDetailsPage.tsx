@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { format, parseISO } from 'date-fns';
 import dayjs, { type Dayjs } from 'dayjs';
 import { ru } from 'date-fns/locale';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
@@ -13,7 +13,7 @@ import {
   getRepairCostBreakdown,
   isRepairLocked,
   needsPublicEstimateDecision,
-  resolveStatusAfterEstimate,
+  repairStatusHints,
   repairStatusLabels,
   useGetRepairQuery,
   useUpdateRepairMutation,
@@ -22,6 +22,7 @@ import {
   type RepairStatus,
 } from '@/entities/repair-order';
 import { useGetVehicleQuery, type VehicleRepairHistory } from '@/entities/vehicle';
+import { useSendQuoteForApproval } from '@/features/repair-order';
 import { printRepairWork } from '@/features/repair-order/print';
 import { getErrorMessage } from '@/shared/lib/api';
 import { disablePastDates, isPastCalendarDate } from '@/shared/lib/date';
@@ -120,8 +121,8 @@ export function RepairDetailsPage() {
   const [updateStatus, { isLoading: isStatusUpdating }] = useUpdateRepairStatusMutation();
   const [updateRepair, { isLoading: isRepairUpdating }] = useUpdateRepairMutation();
   const [updateWorkItem, { isLoading: isWorkUpdating }] = useUpdateWorkItemMutation();
+  const { sendQuoteForApproval } = useSendQuoteForApproval(repairId, repair?.status);
   const isStatusBusy = isStatusUpdating || isRepairUpdating || isWorkUpdating;
-  const syncedAfterEstimateRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (justCreated) {
@@ -134,38 +135,6 @@ export function RepairDetailsPage() {
       setCommentDraft(repair?.comment ?? '');
     }
   }, [repair, isEditingComment]);
-
-  useEffect(() => {
-    if (!repair || isRepairLocked(repair)) {
-      return;
-    }
-
-    if (repair.status !== 'pending_approval') {
-      return;
-    }
-
-    if (repair.estimate_status !== 'approved' && repair.estimate_status !== 'declined') {
-      syncedAfterEstimateRef.current = null;
-      return;
-    }
-
-    const nextStatus = resolveStatusAfterEstimate(repair.status, repair.estimate_status);
-    const syncKey = `${repair.id}:${repair.estimate_status}:${repair.estimate_decided_at ?? ''}`;
-
-    if (nextStatus === repair.status || syncedAfterEstimateRef.current === syncKey) {
-      return;
-    }
-
-    syncedAfterEstimateRef.current = syncKey;
-    void updateRepair({
-      repairId: repair.id,
-      body: {
-        status: nextStatus,
-        estimate_status: repair.estimate_status,
-        estimate_comment: repair.estimate_comment ?? null,
-      },
-    });
-  }, [repair, updateRepair]);
 
   if (isLoading) {
     return (
@@ -203,7 +172,6 @@ export function RepairDetailsPage() {
   const isLocked = isRepairLocked(repair);
   const confirmStatus = repair.client_confirm_status ?? null;
   const isEstimatePending = needsPublicEstimateDecision(repair);
-  const displayStatus = resolveStatusAfterEstimate(repair.status, repair.estimate_status);
   const vehicleHistory: VehicleRepairHistory[] = (vehicleCard?.repairs ?? []).map((item) => ({
     id: String(item.id),
     order_number: item.order_number,
@@ -240,6 +208,7 @@ export function RepairDetailsPage() {
         repairId: repair.id,
         body: { planned_ready_at: value?.format('YYYY-MM-DD') ?? null },
       }).unwrap();
+      await sendQuoteForApproval();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось сохранить дату выдачи'), {
         position: 'top-right',
@@ -258,6 +227,7 @@ export function RepairDetailsPage() {
         repairId: repair.id,
         body: { comment: commentDraft.trim() || null },
       }).unwrap();
+      await sendQuoteForApproval();
       setIsEditingComment(false);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Не удалось сохранить комментарий'), {
@@ -290,16 +260,11 @@ export function RepairDetailsPage() {
       return;
     }
 
-    if ((isEstimatePending || repair.estimate_status === 'declined') && status === 'done') {
-      toast.warning(
-        isEstimatePending
-          ? 'Клиент ещё не согласовал работы по ссылке'
-          : 'Сначала измените работы и отправьте клиенту снова',
-        {
-          position: 'top-right',
-          transition: Bounce,
-        },
-      );
+    if (isEstimatePending && status === 'done') {
+      toast.warning('Клиент ещё не согласовал работы по ссылке', {
+        position: 'top-right',
+        transition: Bounce,
+      });
       return;
     }
 
@@ -316,17 +281,14 @@ export function RepairDetailsPage() {
             estimate_status: 'pending',
           },
         }).unwrap();
-      } else if (repair.estimate_status === 'approved' || repair.estimate_status === 'declined') {
+      } else {
         await updateRepair({
           repairId: repair.id,
           body: {
             status,
-            estimate_status: repair.estimate_status,
             estimate_comment: repair.estimate_comment ?? null,
           },
         }).unwrap();
-      } else {
-        await updateStatus({ repairId: repair.id, status }).unwrap();
       }
       toast.success(
         status === 'done' && repair.work_items.length > 0
@@ -400,11 +362,12 @@ export function RepairDetailsPage() {
         <h1 className={styles.pageTitle}>Заказ-наряд {repair.order_number}</h1>
       </header>
 
-      <section className={clsx(styles.hero, statusClassName[displayStatus])}>
+      <section className={clsx(styles.hero, statusClassName[repair.status])}>
         <div className={styles.heroTop}>
           <div>
             <p className={styles.eyebrow}>Текущий статус</p>
-            <h2 className={styles.heroTitle}>{repairStatusLabels[displayStatus]}</h2>
+            <h2 className={styles.heroTitle}>{repairStatusLabels[repair.status]}</h2>
+            <p className={styles.statHint}>{repairStatusHints[repair.status]}</p>
           </div>
           <div className={styles.statusControl}>
             {repair.estimate_status ? (
@@ -418,20 +381,27 @@ export function RepairDetailsPage() {
               <Select<RepairStatus>
                 className={styles.statusSelect}
                 disabled={isStatusBusy}
-                options={editableStatusOptions.map((option) =>
-                  option.value === 'done' &&
-                  (isEstimatePending || repair.estimate_status === 'declined')
-                    ? {
-                        ...option,
-                        disabled: true,
-                        label: isEstimatePending
-                          ? 'Готово · ждём клиента'
-                          : 'Готово · сначала отправьте снова',
-                      }
-                    : option,
-                )}
+                options={editableStatusOptions.map((option) => {
+                  if (option.value === 'revision' && repair.status !== 'revision') {
+                    return {
+                      ...option,
+                      disabled: true,
+                      label: 'Изменение работ · ставит клиент',
+                    };
+                  }
+
+                  if (option.value === 'done' && isEstimatePending) {
+                    return {
+                      ...option,
+                      disabled: true,
+                      label: 'Готово · ждём клиента',
+                    };
+                  }
+
+                  return option;
+                })}
                 size="large"
-                value={displayStatus}
+                value={repair.status}
                 onChange={(value) => {
                   void handleStatusChange(value);
                 }}
@@ -550,7 +520,7 @@ export function RepairDetailsPage() {
         ) : null}
       </section>
 
-      {repair.estimate_status === 'declined' && !isLocked ? (
+      {(repair.estimate_status === 'declined' || repair.status === 'revision') && !isLocked ? (
         <div className={styles.commentPanel}>
           <p className={styles.lockedBannerTitle}>Изменение работ</p>
           {repair.estimate_comment?.trim() ? (
@@ -601,6 +571,7 @@ export function RepairDetailsPage() {
           readOnly={isLocked}
           repairId={repair.id}
           repairMileage={repair.mileage}
+          repairStatus={repair.status}
           vehicle={repair.vehicle}
         />
       </section>
@@ -614,8 +585,10 @@ export function RepairDetailsPage() {
       />
 
       <RepairDiagnosticsPanel
+        latestDiagnostic={repair.vehicle.latest_diagnostic}
         readOnly={isLocked}
         repairId={repair.id}
+        vehicleId={repair.vehicle.id}
         vehicleVin={repair.vehicle.vin}
       />
 
@@ -625,6 +598,7 @@ export function RepairDetailsPage() {
             executionLocked={isEstimatePending}
             readOnly={isLocked}
             repairId={repair.id}
+            repairStatus={repair.status}
             workItems={repair.work_items}
           />
         </article>
@@ -632,8 +606,10 @@ export function RepairDetailsPage() {
         <article className={styles.panel}>
           <RepairPartsChecklist
             parts={repair.ordered_parts}
+            quoteLocked={isEstimatePending}
             readOnly={isLocked}
             repairId={repair.id}
+            repairStatus={repair.status}
           />
         </article>
       </section>
@@ -642,8 +618,10 @@ export function RepairDetailsPage() {
         <RepairWorksChecklist
           executionLocked={isEstimatePending}
           isExtra
+          quoteLocked={isEstimatePending}
           readOnly={isLocked}
           repairId={repair.id}
+          repairStatus={repair.status}
           workItems={repair.work_items}
         />
       </section>

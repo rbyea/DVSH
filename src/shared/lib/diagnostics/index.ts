@@ -1,4 +1,11 @@
-export { clearRepairDiagnostic, readRepairDiagnostic, writeRepairDiagnostic } from './storage';
+export { diagnosticScanFromApi, diagnosticScanToApiPayload, pickLatestDiagnostic } from './mapApi';
 export { parseScannerCsv } from './parseScannerCsv';
 export { matchDiagnosticVin, normalizeDiagnosticVin } from './vinMatch';
-export type { DiagnosticFault, DiagnosticScan, DiagnosticVinMatch } from './types';
+export type {
+  CreateVehicleDiagnosticRequest,
+  DiagnosticFault,
+  DiagnosticScan,
+  DiagnosticVinMatch,
+  VehicleDiagnostic,
+  VehicleDiagnosticFault,
+} from './types';
