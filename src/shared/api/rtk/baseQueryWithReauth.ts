@@ -10,12 +10,17 @@ import type { ApiDataResponse, TokenPayload } from '@/entities/session/model/typ
 import { API_BASE_URL } from '@/shared/config';
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/shared/lib/auth';
 
+function isPublicApiUrl(url: string): boolean {
+  return url.includes('/public/');
+}
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  prepareHeaders: (headers) => {
+  prepareHeaders: (headers, api) => {
+    const requestUrl = typeof api.arg === 'string' ? api.arg : (api.arg?.url ?? '');
     const token = getAccessToken();
 
-    if (token) {
+    if (token && !isPublicApiUrl(requestUrl)) {
       headers.set('Authorization', `Bearer ${token}`);
     }
 
@@ -39,7 +44,8 @@ function shouldSkipReauth(url: string): boolean {
     url.includes('/auth/login') ||
     url.includes('/auth/register') ||
     url.includes('/auth/refresh') ||
-    url.includes('/auth/logout')
+    url.includes('/auth/logout') ||
+    isPublicApiUrl(url)
   );
 }
 

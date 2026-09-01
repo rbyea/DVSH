@@ -2,10 +2,14 @@ import type { VehicleDiagnostic } from '@/shared/lib/diagnostics';
 
 export type PublicStationContacts = {
   name: string;
+  legal_name?: string | null;
   phone?: string | null;
   city?: string | null;
   address?: string | null;
+  map_url?: string | null;
   working_hours?: string | null;
+  inn?: string | null;
+  ogrn?: string | null;
 };
 
 export type RepairStatus =

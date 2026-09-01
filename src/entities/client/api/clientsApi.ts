@@ -46,6 +46,7 @@ export const clientsApi = baseApi.injectEndpoints({
         { type: 'Client', id: 'LIST' },
         { type: 'Vehicle', id: 'SEARCH' },
         { type: 'Vehicle', id: 'MODELS' },
+        { type: 'Vehicle', id: 'LIST' },
       ],
     }),
     updateClient: build.mutation<Client, { id: string; body: UpdateClientRequest }>({
@@ -141,6 +142,7 @@ export const clientsApi = baseApi.injectEndpoints({
         { type: 'Client', id: String(client_id) },
         { type: 'Vehicle', id: 'SEARCH' },
         { type: 'Vehicle', id: 'MODELS' },
+        { type: 'Vehicle', id: 'LIST' },
       ],
     }),
   }),

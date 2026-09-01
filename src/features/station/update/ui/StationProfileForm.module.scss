@@ -39,6 +39,13 @@
   letter-spacing: -0.02em;
 }
 
+.legalName {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .facts {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -65,6 +72,10 @@
   font-size: 15px;
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+
+.fact a {
+  color: var(--dvsh-accent);
 }
 
 .form :global(.ant-form-item) {

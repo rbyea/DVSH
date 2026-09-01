@@ -68,6 +68,12 @@
   text-transform: uppercase;
 }
 
+.vehicleResultShared {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .vehicleEmptyResult {
   border-style: dashed;
   color: var(--dvsh-muted);

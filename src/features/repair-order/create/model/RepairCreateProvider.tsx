@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useForm, useWatch, type UseFormSetError } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
 import { useCreateClientWithVehicleMutation, useUpdateClientMutation } from '@/entities/client';
@@ -12,7 +12,7 @@ import {
   type RepairStatus,
 } from '@/entities/repair-order';
 import {
-  useLazyGetVehicleQuery,
+  useAdoptSharedVehicleMutation,
   useLazySearchVehiclesQuery,
   useUpdateVehicleMutation,
   type VehicleCard,
@@ -173,6 +173,11 @@ function assertMileageAllowed(
 
 export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromVehicleId =
+    typeof (location.state as { fromVehicleId?: string } | null)?.fromVehicleId === 'string'
+      ? (location.state as { fromVehicleId: string }).fromVehicleId.trim()
+      : '';
   const [isVehicleSearchLoading, setIsVehicleSearchLoading] = useState(false);
   const [vehicleSuggestions, setVehicleSuggestions] = useState<VehicleSearchResult[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleSearchResult | null>(null);
@@ -181,7 +186,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
   const vehicleSelectRequestIdRef = useRef(0);
 
   const [searchVehicles] = useLazySearchVehiclesQuery();
-  const [getVehicle] = useLazyGetVehicleQuery();
+  const [adoptSharedVehicle] = useAdoptSharedVehicleMutation();
   const [createClientWithVehicle, { isLoading: isCreatingClient }] =
     useCreateClientWithVehicleMutation();
   const [updateClient, { isLoading: isUpdatingClient }] = useUpdateClientMutation();
@@ -265,7 +270,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
 
     try {
       setIsVehicleSearchLoading(true);
-      const card = await getVehicle(vehicle.id).unwrap();
+      const card = await adoptSharedVehicle({ vehicleId: vehicle.id }).unwrap();
 
       if (requestId !== vehicleSelectRequestIdRef.current) {
         return;
@@ -508,7 +513,10 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
         transition: Bounce,
       });
       navigate(`/repairs/${created.id}`, {
-        state: { justCreated: true },
+        state: {
+          justCreated: true,
+          ...(fromVehicleId ? { fromVehicleId } : {}),
+        },
       });
     } catch (error) {
       applyApiFieldErrors(error, setError);

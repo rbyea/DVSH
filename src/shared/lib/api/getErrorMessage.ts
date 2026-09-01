@@ -26,7 +26,11 @@ function getLaravelErrors(error: unknown): Record<string, string[]> | null {
 }
 
 function humanizeServerMessage(message: string): string | null {
-  const normalized = message.toLowerCase();
+  const normalized = message.toLowerCase().trim().replace(/\.$/, '');
+
+  if (normalized === 'unauthorized' || normalized === 'unauthenticated') {
+    return 'Сессия истекла. Войдите снова';
+  }
 
   if (normalized.includes('доступ запрещ') || normalized.includes('access denied')) {
     return 'Банк отклонил доступ к шлюзу. Для логина r-* нужен https://payment.alfabank.ru/payment/rest, логин *-api и его пароль (часто сначала сменить в кабинете).';
@@ -130,6 +134,10 @@ export function getErrorMessage(error: unknown, fallback: string): string {
 
     const data = error.data;
 
+    if (typeof data === 'string' && data) {
+      return formatValidationMessage(undefined, data);
+    }
+
     if (
       typeof data === 'object' &&
       data !== null &&
@@ -138,6 +146,10 @@ export function getErrorMessage(error: unknown, fallback: string): string {
       data.message
     ) {
       return formatValidationMessage(undefined, data.message);
+    }
+
+    if (error.status === 401) {
+      return 'Сессия истекла. Войдите снова';
     }
   }
 
@@ -157,10 +169,14 @@ const apiFieldLabels: Record<string, string> = {
   chassis_number: 'Номер шасси',
   mileage: 'Пробег',
   name: 'Название СТО',
+  legal_name: 'ИП / ООО',
   phone: 'Телефон СТО',
   city: 'Город',
   address: 'Адрес',
+  map_url: 'Ссылка на карту',
   working_hours: 'График работы',
+  inn: 'ИНН',
+  ogrn: 'ОГРН',
   master_id: 'Мастер',
   amount: 'Сумма',
   occurred_on: 'Дата',
@@ -181,8 +197,12 @@ const apiFieldToFormField: Record<string, string> = {
   comment: 'comment',
   total: 'total',
   station_name: 'stationName',
+  legal_name: 'legalName',
   password_confirmation: 'passwordConfirmation',
   working_hours: 'workingHours',
+  map_url: 'mapUrl',
+  inn: 'inn',
+  ogrn: 'ogrn',
 };
 
 export function applyApiFieldErrors<TFieldValues extends FieldValues>(

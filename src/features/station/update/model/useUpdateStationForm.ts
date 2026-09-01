@@ -19,10 +19,14 @@ import { updateStationFormSchema, type UpdateStationFormValues } from './schema'
 function toFormValues(station: StationInfo): UpdateStationFormValues {
   return {
     name: station.name ?? '',
+    legalName: station.legal_name ?? '',
     phone: station.phone ? formatRuPhoneInput(station.phone) : '',
     city: station.city ?? '',
     address: station.address ?? '',
     workingHours: station.working_hours ?? '',
+    mapUrl: station.map_url ?? '',
+    inn: station.inn ?? '',
+    ogrn: station.ogrn ?? '',
   };
 }
 
@@ -46,10 +50,14 @@ export function useUpdateStationForm(onSaved?: () => void) {
     resolver: zodResolver(updateStationFormSchema),
     defaultValues: {
       name: '',
+      legalName: '',
       phone: '',
       city: '',
       address: '',
       workingHours: '',
+      mapUrl: '',
+      inn: '',
+      ogrn: '',
     },
   });
 
@@ -65,25 +73,40 @@ export function useUpdateStationForm(onSaved?: () => void) {
     }
 
     const contacts = {
+      legal_name: asOptional(values.legalName),
       phone: asOptional(values.phone),
       city: asOptional(values.city),
       address: asOptional(values.address),
       working_hours: asOptional(values.workingHours),
+      map_url: asOptional(values.mapUrl),
+      inn: asOptional(values.inn),
+      ogrn: asOptional(values.ogrn),
     };
     const core = {
       name: values.name.trim(),
       master_share_percent: station.master_share_percent ?? DEFAULT_MASTER_SHARE_PERCENT,
     };
 
+    writeLocalStationContacts(station.id, contacts);
+
     try {
-      await updateStation({ ...core, ...contacts }).unwrap();
-      writeLocalStationContacts(station.id, contacts);
+      try {
+        await updateStation({ ...core, ...contacts }).unwrap();
+      } catch {
+        const { map_url: _mapUrl, ...contactsWithoutMap } = contacts;
+        await updateStation({ ...core, ...contactsWithoutMap }).unwrap();
+      }
+
       reset({
         name: core.name,
+        legalName: contacts.legal_name ?? '',
         phone: contacts.phone ? formatRuPhoneInput(contacts.phone) : '',
         city: contacts.city ?? '',
         address: contacts.address ?? '',
         workingHours: contacts.working_hours ?? '',
+        mapUrl: contacts.map_url ?? '',
+        inn: contacts.inn ?? '',
+        ogrn: contacts.ogrn ?? '',
       });
       toast.success('Профиль станции сохранён', {
         position: 'top-right',

@@ -1,0 +1,147 @@
+.panel {
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plateInput {
+  font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace !important;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.plateFlag {
+  width: 18px;
+  height: 12px;
+}
+
+.idSwitchButton {
+  height: auto !important;
+  margin-top: 6px;
+  padding: 0 !important;
+  color: var(--dvsh-accent) !important;
+  font-weight: 600;
+}
+
+.form :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+.form :global(.ant-form-item-label) {
+  padding: 0 0 4px !important;
+}
+
+.form :global(.ant-form-item-label > label) {
+  height: auto;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.vehicleMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contactRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contactLabel {
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.contactValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dvsh-ink);
+  font-size: 16px;
+  word-break: break-word;
+}
+
+.publicLink {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dvsh-line);
+}
+
+.publicRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+}
+
+.publicEmpty {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .panel {
+    padding: 16px 14px;
+  }
+
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions :global(.ant-btn) {
+    flex: 1;
+  }
+
+  .publicRow {
+    grid-template-columns: 1fr;
+  }
+}

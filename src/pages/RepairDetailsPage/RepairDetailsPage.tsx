@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
+import { mergeStationProfile, useGetStationQuery } from '@/entities/master';
 import {
   estimateStatusColors,
   estimateStatusLabels,
@@ -40,7 +41,13 @@ import styles from './RepairDetailsPage.module.scss';
 
 type LocationState = {
   justCreated?: boolean;
+  fromVehicleId?: string;
 };
+
+function getFromVehicleId(state: unknown): string | undefined {
+  const fromVehicleId = (state as LocationState | null)?.fromVehicleId?.trim();
+  return fromVehicleId || undefined;
+}
 
 const statusClassName: Record<RepairStatus, string> = {
   new: styles.status_new,
@@ -101,6 +108,9 @@ export function RepairDetailsPage() {
   const { repairId = '' } = useParams<{ repairId: string }>();
   const location = useLocation();
   const justCreated = Boolean((location.state as LocationState | null)?.justCreated);
+  const fromVehicleId = getFromVehicleId(location.state);
+  const backTo = fromVehicleId ? `/vehicles/${fromVehicleId}` : '/dashboard';
+  const backLabel = fromVehicleId ? '← К машине' : '← К списку';
   const [highlightPublicLink, setHighlightPublicLink] = useState(justCreated);
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [commentDraft, setCommentDraft] = useState('');
@@ -118,6 +128,7 @@ export function RepairDetailsPage() {
   const { data: vehicleCard } = useGetVehicleQuery(activeHistoryVehicleId, {
     skip: !activeHistoryVehicleId,
   });
+  const { data: station } = useGetStationQuery();
   const [updateStatus, { isLoading: isStatusUpdating }] = useUpdateRepairStatusMutation();
   const [updateRepair, { isLoading: isRepairUpdating }] = useUpdateRepairMutation();
   const [updateWorkItem, { isLoading: isWorkUpdating }] = useUpdateWorkItemMutation();
@@ -152,8 +163,8 @@ export function RepairDetailsPage() {
           title="Ремонт не найден"
           subTitle="Проверьте ссылку или вернитесь к списку ремонтов."
           extra={
-            <Link to="/dashboard">
-              <Button type="primary">К списку ремонтов</Button>
+            <Link to={fromVehicleId ? `/vehicles/${fromVehicleId}` : '/dashboard'}>
+              <Button type="primary">{fromVehicleId ? 'К машине' : 'К списку ремонтов'}</Button>
             </Link>
           }
         />
@@ -334,7 +345,7 @@ export function RepairDetailsPage() {
   };
 
   const handlePrintWork = () => {
-    const printed = printRepairWork(repair);
+    const printed = printRepairWork(repair, station ? mergeStationProfile(station) : null);
 
     if (!printed) {
       toast.error('Не удалось открыть печать. Попробуйте ещё раз', {
@@ -347,8 +358,8 @@ export function RepairDetailsPage() {
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
-        <Link to="/dashboard">
-          <Button size="large">← К списку</Button>
+        <Link to={backTo}>
+          <Button size="large">{backLabel}</Button>
         </Link>
         {repair.status === 'done' || repair.status === 'completed' ? (
           <Button size="large" type="default" onClick={handlePrintWork}>

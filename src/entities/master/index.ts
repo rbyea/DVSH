@@ -26,7 +26,11 @@ export type {
   StationWorksStats,
   WorkTitleStat,
 } from './model/worksStats';
-export { mergeStationProfile, writeLocalStationContacts } from './model/stationProfile';
+export {
+  findLocalStationMapUrl,
+  mergeStationProfile,
+  writeLocalStationContacts,
+} from './model/stationProfile';
 export type { StationContacts } from './model/stationProfile';
 export type {
   CreateMasterRequest,

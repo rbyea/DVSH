@@ -1,13 +1,11 @@
+import { PUBLIC_APP_ORIGIN } from '@/shared/config';
+
 export function getPublicRepairPath(token: string): string {
   return `/public/vehicles/${token}`;
 }
 
 export function getPublicRepairAppUrl(token: string): string {
-  if (typeof window === 'undefined') {
-    return getPublicRepairPath(token);
-  }
-
-  return `${window.location.origin}${getPublicRepairPath(token)}`;
+  return `${PUBLIC_APP_ORIGIN}${getPublicRepairPath(token)}`;
 }
 
 export function extractPublicToken(

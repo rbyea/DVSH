@@ -1,0 +1,1 @@
+export { VehicleDetailsPage } from './VehicleDetailsPage';

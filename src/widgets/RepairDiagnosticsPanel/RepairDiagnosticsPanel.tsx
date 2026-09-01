@@ -203,7 +203,7 @@ export function RepairDiagnosticsPanel({
         <div className={styles.body}>
           {readOnly ? null : (
             <div className={styles.actions}>
-              {scan ? (
+              {scan && latestDiagnostic?.vehicle_id === vehicleId ? (
                 <Button
                   onClick={() => {
                     void remove()

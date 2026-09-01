@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import styles from './RegisterPage.module.scss';
 
 export function RegisterPage() {
-  const { control, errors, isLoading, onSubmit } = useRegisterForm();
+  const { control, errors, isInvited, isLoading, onSubmit } = useRegisterForm();
 
   return (
     <main className={styles.page}>
@@ -23,10 +23,13 @@ export function RegisterPage() {
 
         <div className={styles.header}>
           <p className={styles.eyebrow}>Регистрация СТО</p>
-          <h1 className={styles.title}>30 дней бесплатно</h1>
+          <h1 className={styles.title}>
+            {isInvited ? '60 дней бесплатно по приглашению' : '30 дней бесплатно'}
+          </h1>
           <p className={styles.subtitle}>
-            Создайте аккаунт станции. После пробного периода доступ можно продлить на странице
-            оплаты.
+            {isInvited
+              ? 'Создайте аккаунт станции. 30 дней как обычно плюс ещё 30 за приглашение. Дальше только тариф.'
+              : 'Создайте аккаунт станции. После пробного периода доступ можно продлить на странице оплаты.'}
           </p>
         </div>
 

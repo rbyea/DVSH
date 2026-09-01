@@ -51,7 +51,7 @@ html[data-theme='dark'] {
 
 body {
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   overflow-x: clip;
   background:
@@ -78,7 +78,7 @@ a {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .ant-card {

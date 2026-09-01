@@ -8,6 +8,8 @@ import { OfferPage, PersonalDataConsentPage, PrivacyPolicyPage } from '@/pages/l
 import { NotFoundPage } from '@/pages/NotFound';
 import { PublicRepairPage } from '@/pages/PublicRepairPage';
 import { StationProfilePage } from '@/pages/StationProfilePage';
+import { VehiclesPage } from '@/pages/VehiclesPage';
+import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';
 import { RepairCreatePage } from '@/pages/RepairCreatePage';
 import { RepairDetailsPage } from '@/pages/RepairDetailsPage';
 import { hasAccessToken } from '@/shared/lib/auth';
@@ -87,6 +89,14 @@ export const appRouter = createBrowserRouter([
                   {
                     path: '/station',
                     Component: StationProfilePage,
+                  },
+                  {
+                    path: '/vehicles',
+                    Component: VehiclesPage,
+                  },
+                  {
+                    path: '/vehicles/:vehicleId',
+                    Component: VehicleDetailsPage,
                   },
                   {
                     path: '/repairs/new',

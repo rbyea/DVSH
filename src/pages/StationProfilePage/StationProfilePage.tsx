@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAppSelector } from '@/app/store';
 import { isSubscriptionBlocked } from '@/entities/session';
+import { StationReferralCard } from '@/features/station/referral';
 import { StationProfileForm } from '@/features/station/update';
 import { BillingPaymentHistory } from '@/widgets/BillingPaymentHistory';
 import { StationCompletedWorksPanel } from '@/widgets/StationCompletedWorksPanel';
@@ -79,8 +80,8 @@ export function StationProfilePage() {
       <aside className={styles.sidebar}>
         {visibleStation.length > 0 ? (
           <>
-            <p className={styles.navLabel}>Профиль СТО</p>
-            <nav className={styles.nav} aria-label="Профиль станции">
+            <p className={styles.navLabel}>Профиль</p>
+            <nav className={styles.nav} aria-label="Профиль">
               {visibleStation.map((item) => (
                 <button
                   className={clsx(
@@ -120,13 +121,14 @@ export function StationProfilePage() {
 
       <div className={styles.content}>
         <header className={styles.contentHead}>
-          <p className={styles.eyebrow}>Профиль СТО</p>
+          <p className={styles.eyebrow}>Профиль</p>
           <h1 className={styles.pageTitle}>{sectionTitle}</h1>
         </header>
 
         {activeSection === 'station' ? (
           <>
             <StationProfileForm />
+            <StationReferralCard />
             {user ? (
               <section className={styles.card}>
                 <div className={styles.cardHead}>

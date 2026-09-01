@@ -25,7 +25,7 @@ export const SearchVInNumber = () => {
         1. Найдите авто
       </Typography.Title>
 
-      <Form.Item label="Введите гос номер или VIN. Если машина уже есть в базе, данные подтянутся автоматически.">
+      <Form.Item label="Госномер или VIN — ищем по всем СТО в Автовидно. Если машина уже есть, данные подтянутся.">
         <Controller
           control={control}
           name="vehicleSearch"
@@ -51,7 +51,7 @@ export const SearchVInNumber = () => {
           {isVehicleSearchLoading ? (
             <div className={styles.vehicleLoading}>
               <Spin spinning={isVehicleSearchLoading} />
-              <span>Ищем машину в базе...</span>
+              <span>Ищем машину в общей базе...</span>
             </div>
           ) : vehicleSuggestions.length > 0 ? (
             vehicleSuggestions.map((vehicle) => (
@@ -66,7 +66,12 @@ export const SearchVInNumber = () => {
                 <span className={styles.vehicleResultPlate}>{vehicle.license_plate}</span>
                 <span>{vehicle.car_model}</span>
                 <span>{vehicle.vin?.trim() || vehicle.chassis_number?.trim() || '—'}</span>
-                <span>{vehicle.client_name}</span>
+                <span>
+                  {vehicle.client_name}
+                  {vehicle.is_own_station === false ? (
+                    <span className={styles.vehicleResultShared}> · общая база</span>
+                  ) : null}
+                </span>
               </button>
             ))
           ) : (

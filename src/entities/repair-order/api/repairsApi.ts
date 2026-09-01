@@ -138,7 +138,11 @@ export const repairsApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiDataResponse<RepairCreated>) => response.data,
-      invalidatesTags: [{ type: 'Repair', id: 'LIST' }, ...workTitleTags],
+      invalidatesTags: [
+        { type: 'Repair', id: 'LIST' },
+        { type: 'Vehicle', id: 'LIST' },
+        ...workTitleTags,
+      ],
     }),
     updateRepair: build.mutation<RepairDetail, { repairId: string; body: UpdateRepairRequest }>({
       query: ({ repairId, body }) => ({

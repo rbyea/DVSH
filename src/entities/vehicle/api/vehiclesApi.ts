@@ -2,8 +2,10 @@ import { baseApi } from '@/shared/api';
 import type { CreateVehicleDiagnosticRequest, VehicleDiagnostic } from '@/shared/lib/diagnostics';
 
 import type {
+  GetVehiclesParams,
   UpdateVehicleRequest,
   VehicleCard,
+  VehicleListResponse,
   VehicleModelSuggestion,
   VehicleSearchResult,
 } from '../model/types';
@@ -14,6 +16,25 @@ type ApiDataResponse<T> = {
 
 export const vehiclesApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    getVehicles: build.query<VehicleListResponse, GetVehiclesParams | void>({
+      query: (params) => ({
+        url: '/vehicles',
+        params: params
+          ? {
+              search: params.search || undefined,
+              page: params.page,
+              per_page: params.per_page,
+            }
+          : undefined,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map(({ id }) => ({ type: 'Vehicle' as const, id })),
+              { type: 'Vehicle' as const, id: 'LIST' },
+            ]
+          : [{ type: 'Vehicle' as const, id: 'LIST' }],
+    }),
     searchVehicles: build.query<VehicleSearchResult[], string>({
       query: (q) => ({
         url: '/vehicles/search',
@@ -21,6 +42,19 @@ export const vehiclesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiDataResponse<VehicleSearchResult[]>) => response.data,
       providesTags: [{ type: 'Vehicle', id: 'SEARCH' }],
+    }),
+    adoptSharedVehicle: build.mutation<VehicleCard, { vehicleId: string }>({
+      query: ({ vehicleId }) => ({
+        url: '/vehicles/adopt',
+        method: 'POST',
+        body: { vehicle_id: Number(vehicleId) },
+      }),
+      transformResponse: (response: ApiDataResponse<VehicleCard>) => response.data,
+      invalidatesTags: [
+        { type: 'Vehicle', id: 'LIST' },
+        { type: 'Vehicle', id: 'SEARCH' },
+        { type: 'Client', id: 'LIST' },
+      ],
     }),
     getVehicleModelSuggestions: build.query<VehicleModelSuggestion[], { q?: string } | void>({
       query: (params) => ({
@@ -54,6 +88,7 @@ export const vehiclesApi = baseApi.injectEndpoints({
         { type: 'Vehicle', id: vehicleId },
         { type: 'Vehicle', id: `diagnostics-${vehicleId}` },
         { type: 'Vehicle', id: 'SEARCH' },
+        { type: 'Vehicle', id: 'LIST' },
         ...(body.repair_id
           ? [
               { type: 'Repair' as const, id: String(body.repair_id) },
@@ -82,6 +117,7 @@ export const vehiclesApi = baseApi.injectEndpoints({
         { type: 'Vehicle', id: vehicleId },
         { type: 'Vehicle', id: `diagnostics-${vehicleId}` },
         { type: 'Vehicle', id: 'SEARCH' },
+        { type: 'Vehicle', id: 'LIST' },
         ...(repairId
           ? [
               { type: 'Repair' as const, id: repairId },
@@ -102,15 +138,18 @@ export const vehiclesApi = baseApi.injectEndpoints({
         { type: 'Vehicle', id },
         { type: 'Vehicle', id: 'SEARCH' },
         { type: 'Vehicle', id: 'MODELS' },
+        { type: 'Vehicle', id: 'LIST' },
       ],
     }),
   }),
 });
 
 export const {
+  useGetVehiclesQuery,
   useGetVehicleQuery,
   useLazyGetVehicleQuery,
   useLazySearchVehiclesQuery,
+  useAdoptSharedVehicleMutation,
   useGetVehicleModelSuggestionsQuery,
   useCreateVehicleDiagnosticMutation,
   useDeleteVehicleDiagnosticMutation,

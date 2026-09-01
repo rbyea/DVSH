@@ -22,9 +22,12 @@ import {
   type PublicVehicle,
   type RepairStatus,
 } from '@/entities/repair-order';
+import { findLocalStationMapUrl, useGetStationQuery } from '@/entities/master';
 import { getErrorMessage } from '@/shared/lib/api';
+import { hasAccessToken } from '@/shared/lib/auth';
 import { parseMoney } from '@/shared/lib/money';
 import { acceptPublicPdnNotice, hasAcceptedPublicPdnNotice } from '@/shared/lib/legal';
+import { isHttpUrl } from '@/shared/lib/maps';
 import { formatMileageKm } from '@/shared/lib/vehicle';
 import { MAX_BOT_URL } from '@/shared/config';
 import { BrandMark } from '@/shared/ui/BrandMark';
@@ -58,6 +61,27 @@ function getVehicleFingerprint(vehicle: PublicVehicle): string {
   });
 }
 
+function stationMapHref(station?: Pick<PublicStationContacts, 'map_url'> | null): string | null {
+  const mapUrl = station?.map_url?.trim();
+
+  return mapUrl && isHttpUrl(mapUrl) ? mapUrl : null;
+}
+
+function isSamePublicStation(
+  station: PublicStationContacts | null | undefined,
+  profile: { name?: string | null; phone?: string | null; address?: string | null },
+): boolean {
+  if (!station) {
+    return false;
+  }
+
+  return (
+    (Boolean(station.name) && station.name === profile.name) ||
+    (Boolean(station.phone?.trim()) && station.phone === profile.phone) ||
+    (Boolean(station.address?.trim()) && station.address === profile.address)
+  );
+}
+
 function hasStationContacts(station?: PublicStationContacts | null): boolean {
   if (!station) {
     return false;
@@ -67,7 +91,11 @@ function hasStationContacts(station?: PublicStationContacts | null): boolean {
     station.phone?.trim() ||
     station.city?.trim() ||
     station.address?.trim() ||
-    station.working_hours?.trim(),
+    station.map_url?.trim() ||
+    station.working_hours?.trim() ||
+    station.legal_name?.trim() ||
+    station.inn?.trim() ||
+    station.ogrn?.trim(),
   );
 }
 
@@ -209,6 +237,9 @@ export function PublicRepairPage() {
     pollingInterval: 15_000,
     refetchOnFocus: true,
     refetchOnReconnect: true,
+  });
+  const { data: myStation } = useGetStationQuery(undefined, {
+    skip: !hasAccessToken(),
   });
   const [approveEstimate, { isLoading: isSubmittingEstimate }] = useApprovePublicEstimateMutation();
   const [confirmRepair, { isLoading: isSubmittingConfirm }] = useConfirmPublicRepairMutation();
@@ -381,6 +412,12 @@ export function PublicRepairPage() {
     .join(' · ');
   const showPrices = needsEstimateDecision || needsClientConfirm;
   const latestHistory = previousRepairs[0];
+  const mapHref =
+    stationMapHref(vehicle.station) ??
+    (myStation && isSamePublicStation(vehicle.station, myStation)
+      ? stationMapHref({ map_url: myStation.map_url })
+      : null) ??
+    findLocalStationMapUrl(vehicle.station ?? {});
 
   const handleDecision = async (decision: EstimateDecision) => {
     const comment = decision === 'declined' ? declineComment.trim() : '';
@@ -506,6 +543,24 @@ export function PublicRepairPage() {
                   <dd>{vehicle.station.name}</dd>
                 </>
               ) : null}
+              {vehicle.station?.legal_name ? (
+                <>
+                  <dt>ИП / ООО</dt>
+                  <dd>{vehicle.station.legal_name}</dd>
+                </>
+              ) : null}
+              {vehicle.station?.inn ? (
+                <>
+                  <dt>ИНН</dt>
+                  <dd>{vehicle.station.inn}</dd>
+                </>
+              ) : null}
+              {vehicle.station?.ogrn ? (
+                <>
+                  <dt>{vehicle.station.ogrn.length === 15 ? 'ОГРНИП' : 'ОГРН'}</dt>
+                  <dd>{vehicle.station.ogrn}</dd>
+                </>
+              ) : null}
               {vehicle.station?.phone ? (
                 <>
                   <dt>Телефон</dt>
@@ -521,7 +576,20 @@ export function PublicRepairPage() {
               {vehicle.station?.address ? (
                 <>
                   <dt>Адрес</dt>
-                  <dd>{vehicle.station.address}</dd>
+                  <dd>
+                    {mapHref ? (
+                      <a
+                        className={styles.stationLink}
+                        href={mapHref}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {vehicle.station.address}
+                      </a>
+                    ) : (
+                      vehicle.station.address
+                    )}
+                  </dd>
                 </>
               ) : null}
               {vehicle.station?.working_hours ? (
@@ -531,6 +599,11 @@ export function PublicRepairPage() {
                 </>
               ) : null}
             </dl>
+            {mapHref ? (
+              <a className={styles.mapButton} href={mapHref} rel="noreferrer" target="_blank">
+                Оставить отзыв
+              </a>
+            ) : null}
           </section>
         ) : null}
 

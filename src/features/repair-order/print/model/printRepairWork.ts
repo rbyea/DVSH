@@ -1,13 +1,19 @@
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
+import type { StationInfo } from '@/entities/master';
 import {
   getRepairCostBreakdown,
   isExtraWorkItem,
-  repairStatusLabels,
   type RepairDetail,
   type RepairWorkItem,
 } from '@/entities/repair-order';
+
+const AVTOVIDNO_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="36" height="36" aria-hidden="true">
+  <rect width="32" height="32" rx="8" fill="#111"/>
+  <path fill="#fff" d="M16 6.5L6.8 25h4.1l1.7-3.7h7l1.7 3.7h4.1L16 6.5zm0 6.2l2.4 5.3h-4.8L16 12.7z"/>
+  <path fill="#111" d="M12.8 20.2h6.4v2.2h-6.4z"/>
+</svg>`;
 
 function escapeHtml(value: string): string {
   return value
@@ -64,8 +70,37 @@ function vehicleIdLabel(repair: RepairDetail): string {
   return 'Не указан';
 }
 
+function stationHeaderHtml(station?: StationInfo | null): string {
+  const legalName = station?.legal_name?.trim() || station?.name?.trim() || 'СТО';
+  const phone = station?.phone?.trim();
+  const address = [station?.city, station?.address].filter((part) => part?.trim()).join(', ');
+  const hours = station?.working_hours?.trim();
+
+  const lines = [
+    escapeHtml(legalName),
+    address ? escapeHtml(address) : null,
+    hours ? escapeHtml(hours) : null,
+    phone ? `тел. ${escapeHtml(phone)}` : null,
+  ].filter((line): line is string => Boolean(line));
+
+  return `
+  <div class="brand">
+    <div class="brand-mark">
+      ${AVTOVIDNO_MARK_SVG}
+      <div>
+        <div class="brand-name">Автовидно</div>
+        <div class="brand-sub">учёт ремонтов</div>
+      </div>
+    </div>
+    <div class="station-block">${lines.join('<br />')}</div>
+  </div>`;
+}
+
 /** HTML-документ акта выполненных работ для window.print(). */
-export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
+export function buildRepairWorkPrintHtml(
+  repair: RepairDetail,
+  station?: StationInfo | null,
+): string {
   const works = repair.work_items ?? [];
   const regularWorks = works.filter((item) => !isExtraWorkItem(item));
   const extraWorks = works.filter((item) => isExtraWorkItem(item));
@@ -151,11 +186,13 @@ export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
     <tbody>${partRows}</tbody>
   </table>`;
 
+  const payTotal = calculatedTotal > 0 ? formatMoney(calculatedTotal) : formatMoney(repair.total);
+
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Акт работ ${escapeHtml(repair.order_number)}</title>
+  <title>Акт выполненных работ</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -164,9 +201,22 @@ export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
       color: #111;
       font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     }
-    h1 { margin: 0 0 4px; font-size: 20px; }
+    h1 { margin: 0 0 2px; font-size: 22px; text-align: center; letter-spacing: -0.02em; }
+    .doc-number { margin: 0 0 16px; text-align: center; color: #333; font-size: 14px; }
     h2 { margin: 20px 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .muted { color: #555; margin: 0 0 16px; }
+    .brand {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #111;
+    }
+    .brand-mark { display: flex; align-items: center; gap: 10px; }
+    .brand-name { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-sub { color: #555; font-size: 11px; }
+    .station-block { text-align: right; font-size: 12px; line-height: 1.45; }
     .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 16px; }
     .meta div { border-bottom: 1px solid #ddd; padding: 6px 0; }
     .label { display: block; color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -183,8 +233,9 @@ export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
   </style>
 </head>
 <body>
+  ${stationHeaderHtml(station)}
   <h1>Акт выполненных работ</h1>
-  <p class="muted">Заказ-наряд ${escapeHtml(repair.order_number)} · ${escapeHtml(repairStatusLabels[repair.status])}</p>
+  <p class="doc-number">№ ${escapeHtml(repair.order_number)}</p>
 
   <div class="meta">
     <div><span class="label">Клиент</span>${escapeHtml(repair.client.name)}</div>
@@ -201,7 +252,7 @@ export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
 
   <div class="totals">
     ${parts.length > 0 ? `<div>Запчасти: <strong>${partsTotal > 0 ? formatMoney(partsTotal) : '—'}</strong></div>` : ''}
-    <div>К оплате: <strong>${calculatedTotal > 0 ? formatMoney(calculatedTotal) : formatMoney(repair.total)}</strong></div>
+    <div>К оплате: <strong>${payTotal}</strong></div>
   </div>
 
   ${repair.comment?.trim() ? `<h2>Комментарий</h2><p>${escapeHtml(repair.comment.trim())}</p>` : ''}
@@ -214,10 +265,10 @@ export function buildRepairWorkPrintHtml(repair: RepairDetail): string {
 </html>`;
 }
 
-export function printRepairWork(repair: RepairDetail): boolean {
+export function printRepairWork(repair: RepairDetail, station?: StationInfo | null): boolean {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
-  iframe.setAttribute('title', 'Печать акта работ');
+  iframe.setAttribute('title', 'Акт выполненных работ');
   iframe.style.position = 'fixed';
   iframe.style.right = '0';
   iframe.style.bottom = '0';
@@ -237,15 +288,18 @@ export function printRepairWork(repair: RepairDetail): boolean {
     return false;
   }
 
+  const previousTitle = document.title;
+  document.title = 'Акт выполненных работ';
+
   frameDocument.open();
-  frameDocument.write(buildRepairWorkPrintHtml(repair));
+  frameDocument.write(buildRepairWorkPrintHtml(repair, station));
   frameDocument.close();
 
   frameWindow.focus();
   frameWindow.print();
 
-  // Remove after the print dialog has a chance to open.
   window.setTimeout(() => {
+    document.title = previousTitle;
     iframe.remove();
   }, 1000);
 

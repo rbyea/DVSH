@@ -16,8 +16,9 @@ export const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
+    const requestUrl = String(config.url ?? '');
 
-    if (token) {
+    if (token && !requestUrl.includes('/public/')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 

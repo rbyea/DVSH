@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Автовидно — схема сервиса</title>
+    <style>
+      :root {
+        --ink: #111827;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --soft: #f3f4f6;
+        --card: #ffffff;
+        --bg: #eef1f6;
+        --accent: #2563eb;
+        --accent-soft: #eff6ff;
+        --mark: #ff5a1f;
+        --ok: #15803d;
+        --warn: #b45309;
+        --radius: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 500px at 10% -10%, rgb(37 99 235 / 8%), transparent 55%),
+          radial-gradient(900px 420px at 100% 0%, rgb(15 118 110 / 7%), transparent 50%),
+          var(--bg);
+        font-family:
+          Manrope,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.45;
+      }
+
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 28px 24px 64px;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo {
+        width: 40px;
+        height: 40px;
+        flex: none;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.03em;
+      }
+
+      .lead {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 24px;
+      }
+
+      .tabs button {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .tabs button[aria-selected='true'] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      section {
+        display: none;
+      }
+
+      section.active {
+        display: block;
+      }
+
+      h2 {
+        margin: 0 0 8px;
+        font-size: 22px;
+        letter-spacing: -0.03em;
+      }
+
+      h3 {
+        margin: 24px 0 8px;
+        font-size: 16px;
+      }
+
+      .sub {
+        margin: 0 0 16px;
+        color: var(--muted);
+      }
+
+      .callout {
+        padding: 14px 16px;
+        border-radius: var(--radius);
+        border: 1px solid #bfdbfe;
+        background: var(--accent-soft);
+        margin-bottom: 16px;
+      }
+
+      .callout.warn {
+        border-color: #fde68a;
+        background: #fffbeb;
+      }
+
+      .callout strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .callout p {
+        margin: 0;
+      }
+
+      .plans {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 0 0 16px;
+      }
+
+      .plan {
+        position: relative;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px 16px 16px;
+      }
+
+      .plan.best {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .plan-badge {
+        position: absolute;
+        top: -10px;
+        left: 14px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .plan-period {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .plan-price {
+        display: block;
+        margin: 4px 0 2px;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+
+      .plan-hint {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .plan-save {
+        display: block;
+        margin-top: 6px;
+        color: var(--ok);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .includes {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px 18px 8px;
+        margin: 0 0 24px;
+      }
+
+      .includes h2 {
+        margin-bottom: 4px;
+      }
+
+      .includes-groups {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px 28px;
+        margin-top: 12px;
+      }
+
+      .includes-group h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+
+      .includes-group ul {
+        margin: 0 0 16px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .includes-group li {
+        position: relative;
+        padding: 0 0 8px 18px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .includes-group li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 7px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .includes-note {
+        margin: 4px 0 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .cards {
+        display: grid;
+        gap: 12px;
+        margin: 0 0 20px;
+      }
+
+      .cards.three {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .cards.two {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      article {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+      }
+
+      article h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+
+      article p {
+        margin: 0;
+        color: var(--ink);
+        font-size: 14px;
+      }
+
+      article p.muted {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .diagram {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 12px 8px 4px;
+        margin: 0 0 16px;
+      }
+
+      .diagram svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--soft);
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 20px;
+      }
+
+      .pill {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .pill.end {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .arrow {
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .tag {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: var(--soft);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        vertical-align: middle;
+      }
+
+      @media (max-width: 860px) {
+        .plans,
+        .includes-groups,
+        .cards.three,
+        .cards.two {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media print {
+        .tabs {
+          display: none;
+        }
+
+        section {
+          display: block !important;
+          break-after: page;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="brand">
+          <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#070a0f" />
+            <path
+              fill="#f4f7fb"
+              d="M16 6.5L6.8 25h4.1l1.7-3.7h7l1.7 3.7h4.1L16 6.5zm0 6.2l2.4 5.3h-4.8L16 12.7z"
+            />
+            <path fill="#ff5a1f" d="M12.8 20.2h6.4v2.2h-6.4z" />
+          </svg>
+          <div>
+            <h1>Автовидно</h1>
+            <p class="lead">Как устроен сервис: две двери, одна база, ссылка на автомобиль</p>
+          </div>
+        </div>
+      </header>
+
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-tab="pitch">1. Зачем</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="system">2. Как устроено</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="db">3. Что в базе</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="flow">4. Жизнь заказа</button>
+      </nav>
+
+      <section id="pitch" class="active" role="tabpanel">
+        <div class="callout">
+          <p>
+            Автовидно — цифровая карточка автомобиля на СТО: мастер ведёт заказ, клиент по ссылке
+            видит статус, согласует работы и подтверждает выдачу. Без приложения и без «ну что там с
+            машиной?» по десять раз в день.
+          </p>
+        </div>
+
+        <h2>Тарифы</h2>
+        <p class="sub">
+          30 дней бесплатно, без карты. Потом оплачивается срок — набор функций один и тот же, без
+          автосписания.
+        </p>
+
+        <div class="plans">
+          <div class="plan">
+            <span class="plan-period">1 месяц</span>
+            <b class="plan-price">1 200 ₽</b>
+            <span class="plan-hint">1 200 ₽/мес</span>
+          </div>
+          <div class="plan best">
+            <span class="plan-badge">Выгодно</span>
+            <span class="plan-period">3 месяца</span>
+            <b class="plan-price">3 300 ₽</b>
+            <span class="plan-hint">~1 100 ₽/мес</span>
+            <span class="plan-save">экономия 300 ₽</span>
+          </div>
+          <div class="plan">
+            <span class="plan-period">12 месяцев</span>
+            <b class="plan-price">12 000 ₽</b>
+            <span class="plan-hint">1 000 ₽/мес</span>
+            <span class="plan-save">экономия 2 400 ₽</span>
+          </div>
+        </div>
+
+        <div class="includes">
+          <h2>Что входит</h2>
+          <p class="sub">Одинаково во всех тарифах — отличается только срок.</p>
+          <div class="includes-groups">
+            <div class="includes-group">
+              <h3>Учёт на станции</h3>
+              <ul>
+                <li>Заказ-наряды без лимита: приёмка, статусы, поиск</li>
+                <li>Клиенты и несколько авто на клиента — госномер, VIN или шасси, пробег</li>
+                <li>Работы: цена, часы, доп. работы, назначение мастера</li>
+                <li>Диагностика сканера: CSV с кодами ошибок, сверка VIN, карточка авто</li>
+              </ul>
+            </div>
+            <div class="includes-group">
+              <h3>Клиенту</h3>
+              <ul>
+                <li>Публичная ссылка без приложения и регистрации</li>
+                <li>Согласование работ и подтверждение после выдачи</li>
+                <li>История ремонтов по автомобилю</li>
+                <li>Диагностика сканера на карточке авто</li>
+                <li>Уведомления о статусе в MAX</li>
+              </ul>
+            </div>
+            <div class="includes-group">
+              <h3>Станция</h3>
+              <ul>
+                <li>Справочник мастеров</li>
+                <li>Сводка выполненных работ и доля мастера</li>
+                <li>Профиль станции: название, телефон, адрес, график</li>
+              </ul>
+            </div>
+          </div>
+          <p class="includes-note">
+            Аккаунт — одна станция. Без автопродления: следующий период оплачиваете сами.
+          </p>
+        </div>
+
+        <h2>Боль, которую продаём — не «учёт»</h2>
+        <div class="cards three">
+          <article>
+            <h3>Звонки «когда готово?»</h3>
+            <p>
+              Клиент не видит статус. Мастер отвечает из ямы. Ссылка закрывает этот разговор: статус,
+              дата, список работ — в телефоне.
+            </p>
+          </article>
+          <article>
+            <h3>«Я это не заказывал»</h3>
+            <p>
+              Смета уходит на согласование. Клиент жмёт «ок» или «переделать». После выдачи ещё раз
+              подтверждает, что всё так. История не переписывается.
+            </p>
+          </article>
+          <article>
+            <h3>Тетрадка и память</h3>
+            <p>
+              Повторный визит — поиск по госномеру. Видно, что уже делали, какой был пробег, какие
+              работы. Не «кажется, масло меняли весной».
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="system" role="tabpanel">
+        <h2>Две двери в одну систему</h2>
+        <p class="sub">
+          СТО входит с логином. Клиент — по ссылке, без регистрации. Оба смотрят одни и те же данные.
+        </p>
+
+        <div class="diagram">
+          <svg viewBox="0 0 920 420" role="img" aria-label="Схема системы Автовидно">
+            <rect x="24" y="16" width="400" height="88" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="44" y="52" fill="#111827" font-size="16" font-weight="700" font-family="system-ui">
+              Владелец / мастер СТО
+            </text>
+            <text x="44" y="76" fill="#6b7280" font-size="13" font-family="system-ui">
+              Логин в кабинет · ведёт заказы
+            </text>
+
+            <rect x="496" y="16" width="400" height="88" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="516" y="52" fill="#111827" font-size="16" font-weight="700" font-family="system-ui">
+              Клиент автовладелец
+            </text>
+            <text x="516" y="76" fill="#6b7280" font-size="13" font-family="system-ui">
+              Без логина · открывает ссылку на авто
+            </text>
+
+            <line x1="224" y1="104" x2="224" y2="132" stroke="#9ca3af" />
+            <line x1="696" y1="104" x2="696" y2="132" stroke="#9ca3af" />
+
+            <rect x="24" y="132" width="400" height="88" rx="10" fill="#eff6ff" stroke="#2563eb" />
+            <text x="44" y="168" fill="#111827" font-size="16" font-weight="700" font-family="system-ui">
+              Кабинет Автовидно
+            </text>
+            <text x="44" y="192" fill="#6b7280" font-size="13" font-family="system-ui">
+              Ремонты · гараж · профиль · печать
+            </text>
+
+            <rect x="496" y="132" width="400" height="88" rx="10" fill="#eff6ff" stroke="#2563eb" />
+            <text x="516" y="168" fill="#111827" font-size="16" font-weight="700" font-family="system-ui">
+              Публичная страница авто
+            </text>
+            <text x="516" y="192" fill="#6b7280" font-size="13" font-family="system-ui">
+              Статус · смета · история · MAX
+            </text>
+
+            <line x1="224" y1="220" x2="224" y2="248" stroke="#9ca3af" />
+            <line x1="696" y1="220" x2="696" y2="248" stroke="#9ca3af" />
+            <line x1="224" y1="248" x2="696" y2="248" stroke="#9ca3af" />
+            <line x1="460" y1="248" x2="460" y2="268" stroke="#9ca3af" />
+
+            <rect x="260" y="268" width="400" height="56" rx="10" fill="#f3f4f6" stroke="#d1d5db" />
+            <text
+              x="460"
+              y="302"
+              text-anchor="middle"
+              fill="#111827"
+              font-size="15"
+              font-weight="700"
+              font-family="system-ui"
+            >
+              Сервер Автовидно (API)
+            </text>
+
+            <line x1="460" y1="324" x2="460" y2="344" stroke="#9ca3af" />
+
+            <rect x="310" y="344" width="300" height="56" rx="10" fill="#fff" stroke="#2563eb" />
+            <text
+              x="460"
+              y="366"
+              text-anchor="middle"
+              fill="#111827"
+              font-size="14"
+              font-weight="700"
+              font-family="system-ui"
+            >
+              База данных станции
+            </text>
+            <text
+              x="460"
+              y="386"
+              text-anchor="middle"
+              fill="#6b7280"
+              font-size="12"
+              font-family="system-ui"
+            >
+              клиенты · авто · заказы · работы
+            </text>
+
+            <rect x="24" y="344" width="220" height="56" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text
+              x="134"
+              y="366"
+              text-anchor="middle"
+              fill="#111827"
+              font-size="13"
+              font-weight="700"
+              font-family="system-ui"
+            >
+              Альфа-Банк
+            </text>
+            <text x="134" y="386" text-anchor="middle" fill="#6b7280" font-size="12" font-family="system-ui">
+              оплата подписки СТО
+            </text>
+
+            <rect x="676" y="344" width="220" height="56" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text
+              x="786"
+              y="366"
+              text-anchor="middle"
+              fill="#111827"
+              font-size="13"
+              font-weight="700"
+              font-family="system-ui"
+            >
+              Бот MAX
+            </text>
+            <text x="786" y="386" text-anchor="middle" fill="#6b7280" font-size="12" font-family="system-ui">
+              «машина в работе / готова»
+            </text>
+
+            <line x1="244" y1="372" x2="310" y2="372" stroke="#9ca3af" />
+            <line x1="610" y1="372" x2="676" y2="372" stroke="#9ca3af" />
+          </svg>
+        </div>
+
+        <div class="cards two">
+          <article>
+            <h3>Кабинет СТО</h3>
+            <p>Ремонты, новый заказ, гараж, профиль станции, мастера, подписка.</p>
+            <p class="muted">
+              Вход по email. Если пробный период или оплата кончились — кабинет закрывается, пока не
+              оплатят. Публичные ссылки клиентов при этом живут.
+            </p>
+          </article>
+          <article>
+            <h3>Публичная карточка авто</h3>
+            <p>
+              Статус, работы, сумма, контакты СТО, история. Можно согласовать смету и подтвердить
+              выдачу.
+            </p>
+            <p class="muted">Токен привязан к автомобилю, не к одному заказу. Второй ремонт — та же ссылка.</p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <p>
+            «Мы не ставим программу на компьютер СТО. Браузер, телефон, ссылка клиенту. Данные станции
+            изолированы: чужая СТО чужие машины не видит.»
+          </p>
+        </div>
+      </section>
+
+      <section id="db" role="tabpanel">
+        <h2>Данные крутятся вокруг автомобиля</h2>
+        <p class="sub">
+          Станция — контейнер. У клиента может быть несколько машин. У каждой машины — вечная ссылка
+          и лента ремонтов.
+        </p>
+
+        <div class="diagram">
+          <svg viewBox="0 0 920 280" role="img" aria-label="Схема базы данных">
+            <rect x="20" y="20" width="180" height="72" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="36" y="50" fill="#111827" font-size="15" font-weight="700" font-family="system-ui">
+              Станция
+            </text>
+            <text x="36" y="70" fill="#6b7280" font-size="12" font-family="system-ui">+ мастера, подписка</text>
+
+            <line x1="200" y1="56" x2="248" y2="56" stroke="#9ca3af" />
+
+            <rect x="248" y="20" width="180" height="72" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="264" y="50" fill="#111827" font-size="15" font-weight="700" font-family="system-ui">
+              Клиент
+            </text>
+            <text x="264" y="70" fill="#6b7280" font-size="12" font-family="system-ui">имя, телефон</text>
+
+            <line x1="428" y1="56" x2="476" y2="56" stroke="#9ca3af" />
+
+            <rect x="476" y="12" width="220" height="88" rx="10" fill="#eff6ff" stroke="#2563eb" />
+            <text x="492" y="42" fill="#111827" font-size="15" font-weight="700" font-family="system-ui">
+              Автомобиль
+            </text>
+            <text x="492" y="62" fill="#6b7280" font-size="12" font-family="system-ui">госномер · VIN · пробег</text>
+            <text x="492" y="82" fill="#2563eb" font-size="12" font-weight="700" font-family="system-ui">
+              публичная ссылка
+            </text>
+
+            <line x1="586" y1="100" x2="586" y2="132" stroke="#9ca3af" />
+
+            <rect x="476" y="132" width="220" height="72" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="492" y="162" fill="#111827" font-size="15" font-weight="700" font-family="system-ui">
+              Заказ-наряд
+            </text>
+            <text x="492" y="182" fill="#6b7280" font-size="12" font-family="system-ui">статус · смета · выдача</text>
+
+            <line x1="696" y1="168" x2="744" y2="168" stroke="#9ca3af" />
+
+            <rect x="744" y="96" width="156" height="56" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="760" y="130" fill="#111827" font-size="14" font-weight="700" font-family="system-ui">
+              Работы
+            </text>
+
+            <rect x="744" y="168" width="156" height="56" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="760" y="202" fill="#111827" font-size="14" font-weight="700" font-family="system-ui">
+              Запчасти
+            </text>
+
+            <rect x="248" y="188" width="180" height="56" rx="10" fill="#fff" stroke="#d1d5db" />
+            <text x="264" y="222" fill="#111827" font-size="14" font-weight="700" font-family="system-ui">
+              Уведомления MAX
+            </text>
+
+            <line x1="338" y1="188" x2="338" y2="92" stroke="#9ca3af" />
+            <line x1="338" y1="92" x2="476" y2="56" stroke="#9ca3af" />
+
+            <text x="20" y="262" fill="#6b7280" font-size="13" font-family="system-ui">
+              Один клиент — несколько авто. Одно авто — много заказов. Ссылка всегда на авто.
+            </text>
+          </svg>
+        </div>
+
+        <div class="cards two">
+          <article>
+            <h3>Изоляция</h3>
+            <p>
+              Каждая станция видит только своих клиентов и авто. Поиск по госномеру не показывает
+              чужой сервис.
+            </p>
+          </article>
+          <article>
+            <h3>Пробег</h3>
+            <p>
+              После «Выдан» система запоминает пробег. Следующий заказ нельзя завести с меньшим —
+              защита от перезаписи истории.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="flow" role="tabpanel">
+        <h2>Заказ как конвейер, не как чат</h2>
+        <p class="sub">
+          СТО двигает статус. Клиент вмешивается в двух местах: согласование работ и подтверждение
+          после выдачи. «Ждём запчасти» можно пропустить.
+        </p>
+
+        <div class="flow">
+          <span class="pill">Новый</span>
+          <span class="arrow">→</span>
+          <span class="pill">На согласовании</span>
+          <span class="arrow">→</span>
+          <span class="pill">В работе</span>
+          <span class="arrow">→</span>
+          <span class="pill">Ждём запчасти</span>
+          <span class="arrow">→</span>
+          <span class="pill">Готово</span>
+          <span class="arrow">→</span>
+          <span class="pill end">Выдан</span>
+        </div>
+
+        <div class="cards two">
+          <article>
+            <h3>Согласование сметы <span class="tag">клиент</span></h3>
+            <p>
+              СТО жмёт «на согласование». Клиент по ссылке видит список работ и отвечает: принять или
+              вернуть на правку.
+            </p>
+            <p class="muted">Пока клиент не ответил, заказ нельзя закрыть и выдать.</p>
+          </article>
+          <article>
+            <h3>Подтверждение выдачи <span class="tag">клиент</span></h3>
+            <p>
+              Статус «Выдан» — СТО больше не правит заказ. Клиент подтверждает или пишет, что есть
+              ошибка. После «ок» карточка навсегда только для чтения.
+            </p>
+            <p class="muted">Если спор — мастер правит и снова отправляет на подтверждение.</p>
+          </article>
+        </div>
+
+        <h3>Сценарий на сайте — ровно этот путь</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Шаг</th>
+              <th>Где кликать</th>
+              <th>Что сказать</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Новый ремонт</td>
+              <td>Приёмка: госномер, клиент, что делать. 30 секунд, не анкета банка.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Карточка заказа</td>
+              <td>Работы, цена, мастер. Можно печатать заказ-наряд.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Скопировать ссылку</td>
+              <td>Клиенту в MAX / WhatsApp. Приложение ставить не надо.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Инкогнито / телефон друга</td>
+              <td>Вот что видит автовладелец: статус, работы, история.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Согласовать на публичке</td>
+              <td>Больше нет «я это не заказывал».</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Гараж</td>
+              <td>Повторный визит: нашли авто по номеру, видна вся история.</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>Профиль → подписка</td>
+              <td>1 200 ₽/мес. Квартал и год дешевле. Без автосписания.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+
+    <script>
+      const tabs = [...document.querySelectorAll('[data-tab]')];
+      const panels = [...document.querySelectorAll('section[role="tabpanel"]')];
+
+      function show(id) {
+        tabs.forEach((tab) => {
+          tab.setAttribute('aria-selected', String(tab.dataset.tab === id));
+        });
+        panels.forEach((panel) => {
+          panel.classList.toggle('active', panel.id === id);
+        });
+      }
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => show(tab.dataset.tab));
+      });
+
+      document.addEventListener('keydown', (event) => {
+        const ids = tabs.map((tab) => tab.dataset.tab);
+        const current = panels.find((panel) => panel.classList.contains('active'))?.id;
+        const index = ids.indexOf(current);
+
+        if (event.key >= '1' && event.key <= '4') {
+          show(ids[Number(event.key) - 1]);
+        }
+        if (event.key === 'ArrowRight' || event.key === 'PageDown') {
+          show(ids[Math.min(ids.length - 1, index + 1)]);
+        }
+        if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+          show(ids[Math.max(0, index - 1)]);
+        }
+      });
+    </script>
+  </body>
+</html>

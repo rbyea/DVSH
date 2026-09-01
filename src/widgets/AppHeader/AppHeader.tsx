@@ -14,13 +14,15 @@ import styles from './AppHeader.module.scss';
 const navItems = [
   { key: 'dashboard', label: 'Ремонты' },
   { key: 'new-repair', label: 'Новый ремонт' },
-  { key: 'station', label: 'Профиль СТО' },
+  { key: 'vehicles', label: 'Гараж' },
+  { key: 'station', label: 'Профиль' },
 ] as const;
 
 const paywallPath = '/station#subscription';
 
 const routesByKey: Record<string, string> = {
   dashboard: '/dashboard',
+  vehicles: '/vehicles',
   'new-repair': '/repairs/new',
   station: '/station',
   tariffs: '/station#subscription',
@@ -29,6 +31,10 @@ const routesByKey: Record<string, string> = {
 function getSelectedKey(pathname: string, hash: string): string {
   if (pathname === '/station' && hash.replace('#', '') === 'subscription') {
     return 'tariffs';
+  }
+
+  if (pathname.startsWith('/vehicles')) {
+    return 'vehicles';
   }
 
   if (pathname.startsWith('/repairs/') && pathname !== '/repairs/new') {

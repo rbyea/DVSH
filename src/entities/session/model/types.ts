@@ -28,6 +28,7 @@ export type RegisterRequest = {
   password: string;
   password_confirmation: string;
   station_name: string;
+  referral_code?: string;
 };
 
 export type TokenPayload = {

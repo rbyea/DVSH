@@ -7,7 +7,7 @@ import { Bounce, toast } from 'react-toastify';
 import { useAppDispatch } from '@/app/store';
 import { setSession, useLoginMutation, getPostAuthPath } from '@/entities/session';
 import { setAccessToken } from '@/shared/lib/auth';
-import { hasStoredEmployeePdnConsent, storeEmployeePdnConsent } from '@/shared/lib/legal';
+import { storeEmployeePdnConsent } from '@/shared/lib/legal';
 
 import { loginFormSchema, type LoginFormValues } from './schema';
 
@@ -23,9 +23,24 @@ function getLoginErrorMessage(error: unknown): string {
       typeof data === 'object' &&
       data !== null &&
       'message' in data &&
-      typeof data.message === 'string'
+      typeof data.message === 'string' &&
+      data.message
     ) {
+      const normalized = data.message.toLowerCase().trim().replace(/\.$/, '');
+
+      if (normalized === 'unauthorized' || normalized === 'unauthenticated') {
+        return 'Неверный email или пароль';
+      }
+
       return data.message;
+    }
+
+    if (typeof data === 'string' && data) {
+      const normalized = data.toLowerCase().trim().replace(/\.$/, '');
+
+      if (normalized === 'unauthorized' || normalized === 'unauthenticated') {
+        return 'Неверный email или пароль';
+      }
     }
 
     if (error.status === 401) {
@@ -58,7 +73,7 @@ export function useLoginForm() {
     defaultValues: {
       email: '',
       password: '',
-      acceptPersonalData: hasStoredEmployeePdnConsent(),
+      acceptPersonalData: false,
     },
   });
 

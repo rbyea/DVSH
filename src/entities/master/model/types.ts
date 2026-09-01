@@ -12,6 +12,7 @@ export type Master = {
 export type StationInfo = {
   id: string;
   name: string;
+  legal_name?: string | null;
   /**
    * Доля мастера от стоимости назначенной работы, %.
    * Например 50 → мастер 50%, СТО 50%.
@@ -21,8 +22,14 @@ export type StationInfo = {
   phone?: string | null;
   city?: string | null;
   address?: string | null;
+  /** Ссылка на карточку СТО в Яндекс.Картах или 2ГИС. */
+  map_url?: string | null;
   /** Свободная строка, например «пн–сб 9:00–20:00». */
   working_hours?: string | null;
+  inn?: string | null;
+  ogrn?: string | null;
+  /** Код приглашения: регистрация по ссылке даёт 60 дней триала вместо 30. */
+  referral_code?: string | null;
 };
 
 export type CreateMasterRequest = {
@@ -42,11 +49,15 @@ export type UpdateMasterRequest = {
 
 export type UpdateStationRequest = {
   name?: string;
+  legal_name?: string | null;
   master_share_percent?: number | null;
   phone?: string | null;
   city?: string | null;
   address?: string | null;
+  map_url?: string | null;
   working_hours?: string | null;
+  inn?: string | null;
+  ogrn?: string | null;
 };
 
 /** Snapshot on a work item (may stay after master is deactivated). */
