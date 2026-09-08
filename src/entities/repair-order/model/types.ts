@@ -294,6 +294,7 @@ export type PublicInspectionItem = {
   action: 'replace' | 'repair' | 'check';
   urgency: 'now' | 'recommended' | 'later';
   note?: string | null;
+  price?: number | null;
 };
 
 export type PublicVehicle = {

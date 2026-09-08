@@ -1,61 +1,45 @@
 import axios from 'axios';
 
 import { API_BASE_URL } from '@/shared/config';
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/shared/lib/auth';
+import { clearAccessToken, hasAccessToken, setAccessToken } from '@/shared/lib/auth';
 
 import type { ApiDataResponse, TokenPayload } from '@/entities/session/model/types';
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   },
 });
 
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
-    const requestUrl = String(config.url ?? '');
-
-    if (token && !requestUrl.includes('/public/')) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
-
 type RetriableConfig = {
   _isRetry?: boolean;
 };
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
-async function refreshAccessToken(): Promise<string | null> {
-  const currentToken = getAccessToken();
-
-  if (!currentToken) {
-    return null;
+async function refreshAccessToken(): Promise<boolean> {
+  if (!hasAccessToken()) {
+    return false;
   }
 
   if (!refreshPromise) {
     refreshPromise = axios
       .post<ApiDataResponse<TokenPayload>>(`${API_BASE_URL}/auth/refresh`, undefined, {
+        withCredentials: true,
         headers: {
           Accept: 'application/json',
-          Authorization: `Bearer ${currentToken}`,
         },
       })
-      .then((response) => {
-        const accessToken = response.data.data.access_token;
-        setAccessToken(accessToken);
-        return accessToken;
+      .then(() => {
+        setAccessToken();
+        return true;
       })
       .catch(() => {
         clearAccessToken();
-        return null;
+        return false;
       })
       .finally(() => {
         refreshPromise = null;
@@ -86,13 +70,12 @@ axiosInstance.interceptors.response.use(
 
     originalRequest._isRetry = true;
 
-    const accessToken = await refreshAccessToken();
+    const refreshed = await refreshAccessToken();
 
-    if (!accessToken) {
+    if (!refreshed) {
       return Promise.reject(error);
     }
 
-    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
     return axiosInstance(originalRequest);
   },
 );

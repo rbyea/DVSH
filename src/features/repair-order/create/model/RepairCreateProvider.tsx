@@ -46,14 +46,43 @@ type RepairCreateProviderProps = {
   children: ReactNode;
 };
 
+type InspectionWorkDraft = {
+  title: string;
+  price?: number | null;
+};
+
 type CreateLocationState = {
   fromVehicleId?: string;
   inspectionWorkTitles?: string[];
+  inspectionWorks?: InspectionWorkDraft[];
   inspectionItemIds?: string[];
 };
 
-function readInspectionWorkTitles(state: unknown): string[] {
-  const titles = (state as CreateLocationState | null)?.inspectionWorkTitles;
+function readInspectionWorks(state: unknown): InspectionWorkDraft[] {
+  const payload = state as CreateLocationState | null;
+  const works = payload?.inspectionWorks;
+
+  if (Array.isArray(works) && works.length > 0) {
+    const mapped: InspectionWorkDraft[] = [];
+
+    for (const work of works) {
+      const title = typeof work?.title === 'string' ? work.title.trim() : '';
+
+      if (!title) {
+        continue;
+      }
+
+      mapped.push({
+        title,
+        price:
+          typeof work.price === 'number' && Number.isFinite(work.price) ? work.price : undefined,
+      });
+    }
+
+    return mapped;
+  }
+
+  const titles = payload?.inspectionWorkTitles;
 
   if (!Array.isArray(titles)) {
     return [];
@@ -62,7 +91,18 @@ function readInspectionWorkTitles(state: unknown): string[] {
   return titles
     .filter((title): title is string => typeof title === 'string')
     .map((title) => title.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((title) => ({ title, price: undefined }));
+}
+
+function mapInspectionWorksToForm(works: InspectionWorkDraft[]) {
+  return works.map((work) => ({
+    title: work.title,
+    masterId: undefined as string | undefined,
+    price: typeof work.price === 'number' ? work.price : undefined,
+    hours: undefined as number | undefined,
+    isExtra: false,
+  }));
 }
 
 function readInspectionItemIds(state: unknown): string[] {
@@ -76,16 +116,6 @@ function readInspectionItemIds(state: unknown): string[] {
     .filter((id): id is string => typeof id === 'string')
     .map((id) => id.trim())
     .filter(Boolean);
-}
-
-function mapInspectionWorksToForm(titles: string[]) {
-  return titles.map((title) => ({
-    title,
-    masterId: undefined as string | undefined,
-    price: undefined as number | undefined,
-    hours: undefined as number | undefined,
-    isExtra: false,
-  }));
 }
 
 function mapVehicleCardToFormValues(vehicle: VehicleCard): Partial<RepairCreateFormValues> {
@@ -220,7 +250,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
   const locationState = location.state as CreateLocationState | null;
   const fromVehicleId =
     typeof locationState?.fromVehicleId === 'string' ? locationState.fromVehicleId.trim() : '';
-  const inspectionWorkTitles = readInspectionWorkTitles(location.state);
+  const inspectionWorks = readInspectionWorks(location.state);
   const inspectionItemIds = readInspectionItemIds(location.state);
   const [isVehicleSearchLoading, setIsVehicleSearchLoading] = useState(false);
   const [vehicleSuggestions, setVehicleSuggestions] = useState<VehicleSearchResult[]>([]);
@@ -326,9 +356,9 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
       setIsManualMode(false);
 
       const shouldApplyInspectionWorks =
-        !inspectionWorksAppliedRef.current && inspectionWorkTitles.length > 0;
+        !inspectionWorksAppliedRef.current && inspectionWorks.length > 0;
       const nextWorkItems = shouldApplyInspectionWorks
-        ? mapInspectionWorksToForm(inspectionWorkTitles)
+        ? mapInspectionWorksToForm(inspectionWorks)
         : (getValues('workItems') ?? []);
 
       if (shouldApplyInspectionWorks) {

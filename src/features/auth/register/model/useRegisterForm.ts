@@ -46,7 +46,7 @@ export function useRegisterForm() {
         ...(referralCode ? { referral_code: referralCode } : {}),
       }).unwrap();
 
-      setAccessToken(data.access_token);
+      setAccessToken();
       dispatch(setSession(data.user));
       storeEmployeePdnConsent();
       toast.success('Аккаунт создан. 30 дней бесплатно', {

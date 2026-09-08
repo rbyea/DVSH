@@ -67,8 +67,12 @@
 
 .formRow {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr minmax(140px, 0.7fr);
   gap: 12px;
+}
+
+.priceInput {
+  width: 100%;
 }
 
 .field {
@@ -135,6 +139,13 @@
   color: var(--dvsh-muted);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.itemPrice {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .tags {

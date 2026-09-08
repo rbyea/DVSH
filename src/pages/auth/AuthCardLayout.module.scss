@@ -1,0 +1,139 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(900px 420px at 15% 0%, rgb(37 99 235 / 12%), transparent 55%),
+    radial-gradient(700px 360px at 100% 10%, rgb(15 118 110 / 10%), transparent 50%), var(--dvsh-bg);
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  border: 1px solid var(--dvsh-line) !important;
+  border-radius: 24px !important;
+  box-shadow: var(--dvsh-shadow);
+}
+
+.card :global(.ant-card-body) {
+  padding: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.themeToggle {
+  margin-left: auto;
+}
+
+.brandMark {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.brandName {
+  color: var(--dvsh-ink);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0 0 8px !important;
+  color: var(--dvsh-ink);
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em;
+  line-height: 1.15 !important;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+}
+
+.footer a {
+  color: var(--dvsh-accent);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 12px;
+  }
+
+  .card :global(.ant-card-body) {
+    padding: 24px 18px;
+  }
+
+  .title {
+    font-size: 24px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding: 12px 8px;
+  }
+
+  .card {
+    border-radius: 18px !important;
+  }
+
+  .card :global(.ant-card-body) {
+    padding: 18px 14px;
+  }
+
+  .brand {
+    margin-bottom: 16px;
+  }
+
+  .title {
+    font-size: 22px !important;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+}

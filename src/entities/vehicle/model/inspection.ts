@@ -14,6 +14,7 @@ export type VehicleInspectionItem = {
   action: InspectionAction;
   urgency: InspectionUrgency;
   note?: string | null;
+  price?: number | null;
   status: InspectionItemStatus;
   created_at: string;
   updated_at: string;
@@ -25,10 +26,14 @@ export type CreateVehicleInspectionRequest = {
   action: InspectionAction;
   urgency: InspectionUrgency;
   note?: string | null;
+  price?: number | null;
 };
 
 export type UpdateVehicleInspectionRequest = Partial<
-  Pick<VehicleInspectionItem, 'finding' | 'title' | 'action' | 'urgency' | 'note' | 'status'>
+  Pick<
+    VehicleInspectionItem,
+    'finding' | 'title' | 'action' | 'urgency' | 'note' | 'price' | 'status'
+  >
 >;
 
 export const inspectionActionLabels: Record<InspectionAction, string> = {

@@ -52,6 +52,7 @@ export function LoginPage() {
             </Form.Item>
 
             <Form.Item
+              className={styles.passwordItem}
               help={errors.password?.message}
               label="Пароль"
               validateStatus={getAntdValidateStatus(Boolean(errors.password))}
@@ -62,6 +63,12 @@ export function LoginPage() {
                 render={({ field }) => <Input.Password {...field} size="large" />}
               />
             </Form.Item>
+
+            <div className={styles.forgotRow}>
+              <Link className={styles.forgotLink} to="/forgot-password">
+                Забыли пароль?
+              </Link>
+            </div>
 
             <Form.Item
               className={styles.consentItem}

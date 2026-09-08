@@ -56,7 +56,12 @@ export const clientsApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiDataResponse<Client>) => response.data,
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Client', id: String(id) }],
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'Client', id: String(id) },
+        { type: 'Client', id: 'LIST' },
+        { type: 'Vehicle' },
+        { type: 'Repair' },
+      ],
     }),
     createVehicleForClient: build.mutation<IntakeVehicle, CreateVehicleForClientRequest>({
       async queryFn(body, _api, _extraOptions, baseQuery) {

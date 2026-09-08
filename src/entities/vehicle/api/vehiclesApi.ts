@@ -164,7 +164,9 @@ export const vehiclesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiDataResponse<VehicleInspectionItem>) => response.data,
       invalidatesTags: (_result, _error, { vehicleId }) => [
+        { type: 'Vehicle', id: vehicleId },
         { type: 'Vehicle', id: `inspections-${vehicleId}` },
+        { type: 'PublicRepair' },
       ],
     }),
     updateVehicleInspectionItem: build.mutation<

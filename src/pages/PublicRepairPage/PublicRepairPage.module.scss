@@ -368,6 +368,13 @@
   line-height: 1.4;
 }
 
+.inspectionPrice {
+  margin: 4px 0 0;
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .inspectionTags {
   display: flex;
   flex-wrap: wrap;

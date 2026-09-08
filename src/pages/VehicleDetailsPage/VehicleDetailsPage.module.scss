@@ -41,30 +41,27 @@
   gap: 16px;
 }
 
-.facts {
-  display: grid;
-  gap: 12px 20px;
-  margin: 0;
+.missingClient {
   border: 1px solid var(--dvsh-line);
-  border-radius: var(--dvsh-radius-lg);
+  border-radius: 18px;
   padding: 22px;
   background: var(--dvsh-card);
   box-shadow: var(--dvsh-shadow);
 }
 
-.facts dt {
-  color: var(--dvsh-muted);
-  font-size: 12px;
-  font-weight: 700;
+.missingClientTitle {
+  margin: 0 0 16px;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.facts dd {
-  margin: 4px 0 0;
-  color: var(--dvsh-ink);
+.missingClientText {
+  margin: 0;
+  color: var(--dvsh-muted);
   font-size: 16px;
-  font-weight: 700;
 }
 
 .history {
@@ -136,9 +133,5 @@
 @media (max-width: 720px) {
   .hero {
     grid-template-columns: 1fr;
-  }
-
-  .facts {
-    width: 100%;
   }
 }

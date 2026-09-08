@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store';
 import { clearSession, setSession, useMeQuery } from '@/entities/session';
 import { baseApi } from '@/shared/api';
 import { clearAccessToken, hasAccessToken } from '@/shared/lib/auth';
+import { WhatsNewCard } from '@/widgets/WhatsNewCard';
 
 import styles from './RequireAuth.module.scss';
 
@@ -55,5 +56,10 @@ export function RequireAuth() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <WhatsNewCard />
+    </>
+  );
 }

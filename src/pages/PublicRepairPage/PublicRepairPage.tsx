@@ -191,13 +191,14 @@ function formatPickupDate(value: string | null | undefined): string | null {
 
 function getClientStatusPhrase(options: {
   hasCurrent: boolean;
+  hasDiagnostics?: boolean;
   status?: RepairStatus;
   estimatePending: boolean;
   confirmPending: boolean;
   confirmDisputed: boolean;
 }): string {
   if (!options.hasCurrent) {
-    return 'Нет активного ремонта';
+    return options.hasDiagnostics ? 'Результаты диагностики' : 'Нет активного ремонта';
   }
 
   if (options.confirmPending) {
@@ -420,6 +421,7 @@ export function PublicRepairPage() {
   const pickupDate = formatPickupDate(currentRepair?.planned_ready_at);
   const statusPhrase = getClientStatusPhrase({
     hasCurrent: Boolean(currentRepair),
+    hasDiagnostics: Boolean(vehicle.latest_diagnostic || (vehicle.inspections?.length ?? 0) > 0),
     status: currentRepair?.status,
     estimatePending: needsEstimateDecision,
     confirmPending: needsClientConfirm,
@@ -967,21 +969,28 @@ export function PublicRepairPage() {
                 </div>
                 {inspections.length > 0 ? (
                   <ul className={styles.inspectionList}>
-                    {inspections.map((item, index) => (
-                      <li
-                        className={styles.inspectionItem}
-                        key={`${item.action}-${item.title}-${index}`}
-                      >
-                        <p className={styles.inspectionTitle}>{buildInspectionWorkTitle(item)}</p>
-                        {item.note ? <p className={styles.inspectionNote}>{item.note}</p> : null}
-                        <div className={styles.inspectionTags}>
-                          <Tag color={inspectionUrgencyColor(item.urgency)}>
-                            {inspectionUrgencyLabels[item.urgency]}
-                          </Tag>
-                          <Tag>{inspectionActionLabels[item.action]}</Tag>
-                        </div>
-                      </li>
-                    ))}
+                    {inspections.map((item, index) => {
+                      const inspectionPrice = parseMoney(item.price);
+
+                      return (
+                        <li
+                          className={styles.inspectionItem}
+                          key={`${item.action}-${item.title}-${index}`}
+                        >
+                          <p className={styles.inspectionTitle}>{buildInspectionWorkTitle(item)}</p>
+                          {item.note ? <p className={styles.inspectionNote}>{item.note}</p> : null}
+                          {inspectionPrice != null ? (
+                            <p className={styles.inspectionPrice}>{formatMoney(inspectionPrice)}</p>
+                          ) : null}
+                          <div className={styles.inspectionTags}>
+                            <Tag color={inspectionUrgencyColor(item.urgency)}>
+                              {inspectionUrgencyLabels[item.urgency]}
+                            </Tag>
+                            <Tag>{inspectionActionLabels[item.action]}</Tag>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p className={styles.panelEmpty}>

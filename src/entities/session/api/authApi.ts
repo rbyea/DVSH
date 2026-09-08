@@ -2,10 +2,14 @@ import { baseApi } from '@/shared/api';
 
 import type {
   ApiDataResponse,
+  ForgotPasswordRequest,
   LoginRequest,
   LoginResponseData,
+  MessageResponse,
   RegisterRequest,
+  ResetPasswordRequest,
   TokenPayload,
+  UpdatePasswordRequest,
   User,
 } from '../model/types';
 
@@ -55,14 +59,56 @@ export const authApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiDataResponse<TokenPayload>) => response.data,
     }),
+    updatePassword: build.mutation<TokenPayload, UpdatePasswordRequest>({
+      query: (body) => ({
+        url: '/auth/password',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<TokenPayload>) => response.data,
+    }),
+    forgotPassword: build.mutation<MessageResponse, ForgotPasswordRequest>({
+      query: (body) => ({
+        url: '/auth/password/forgot',
+        method: 'POST',
+        body,
+      }),
+    }),
+    resetPassword: build.mutation<MessageResponse, ResetPasswordRequest>({
+      query: (body) => ({
+        url: '/auth/password/reset',
+        method: 'POST',
+        body,
+      }),
+    }),
+    sendEmailVerification: build.mutation<MessageResponse, void>({
+      query: () => ({
+        url: '/auth/email/verification',
+        method: 'POST',
+      }),
+    }),
+    acknowledgeWhatsNew: build.mutation<User, { id: string }>({
+      query: (body) => ({
+        url: '/auth/whats-new/seen',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<User>) => response.data,
+      invalidatesTags: ['Session'],
+    }),
   }),
 });
 
 export const {
+  useAcknowledgeWhatsNewMutation,
+  useForgotPasswordMutation,
   useLoginMutation,
   useLogoutMutation,
   useMeQuery,
   useLazyMeQuery,
   useRefreshMutation,
   useRegisterMutation,
+  useResetPasswordMutation,
+  useSendEmailVerificationMutation,
+  useUpdatePasswordMutation,
 } = authApi;

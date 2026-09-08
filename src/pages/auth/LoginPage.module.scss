@@ -92,6 +92,22 @@
   font-weight: 600;
 }
 
+.passwordItem {
+  margin-bottom: 8px !important;
+}
+
+.forgotRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.forgotLink {
+  color: var(--dvsh-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .consentItem {
   margin-bottom: 8px !important;
 }

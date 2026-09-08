@@ -1,12 +1,14 @@
 import { Button, Result, Spin, Tag } from 'antd';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { repairStatusColors, repairStatusLabels, type RepairStatus } from '@/entities/repair-order';
 import { useGetVehicleQuery } from '@/entities/vehicle';
+import { ClientCardForm } from '@/features/client/update';
 import { VehicleCardForm } from '@/features/vehicle/update';
 import { pickLatestDiagnostic } from '@/shared/lib/diagnostics';
+import { ClientVehiclesPanel } from '@/widgets/ClientVehiclesPanel';
 import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
 import { VehicleInspectionPanel } from '@/widgets/VehicleInspectionPanel';
 
@@ -40,6 +42,7 @@ function formatMoney(value: number | null | undefined): string {
 
 export function VehicleDetailsPage() {
   const { vehicleId = '' } = useParams<{ vehicleId: string }>();
+  const navigate = useNavigate();
   const {
     data: vehicle,
     isLoading,
@@ -90,17 +93,43 @@ export function VehicleDetailsPage() {
 
       <section className={styles.hero}>
         <VehicleCardForm vehicle={vehicle} />
-        <dl className={styles.facts}>
-          <div>
-            <dt>Клиент</dt>
-            <dd>{vehicle.client?.name || '—'}</dd>
-          </div>
-          <div>
-            <dt>Заказов</dt>
-            <dd>{vehicle.repairs.length}</dd>
-          </div>
-        </dl>
+        {vehicle.client?.id ? (
+          <ClientCardForm client={vehicle.client} repairsCount={vehicle.repairs.length} />
+        ) : (
+          <article className={styles.missingClient}>
+            <h2 className={styles.missingClientTitle}>Клиент</h2>
+            <p className={styles.missingClientText}>Клиент не указан</p>
+          </article>
+        )}
       </section>
+
+      {vehicle.client?.id ? (
+        <ClientVehiclesPanel
+          bordered
+          clientId={vehicle.client.id}
+          clientName={vehicle.client.name}
+          currentBadge="Это авто"
+          currentVehicleId={vehicle.id}
+          hint="Нажмите на авто, чтобы открыть карточку"
+          knownVehicles={[
+            {
+              id: vehicle.id,
+              car_model: vehicle.car_model,
+              license_plate: vehicle.license_plate,
+              vin: vehicle.vin,
+              chassis_number: vehicle.chassis_number,
+              mileage: vehicle.mileage,
+            },
+          ]}
+          readOnly
+          selectedVehicleId={vehicle.id}
+          onSelectVehicle={(item) => {
+            if (item.id !== vehicle.id) {
+              navigate(`/vehicles/${item.id}`);
+            }
+          }}
+        />
+      ) : null}
 
       <VehicleInspectionPanel vehicleId={vehicle.id} />
 

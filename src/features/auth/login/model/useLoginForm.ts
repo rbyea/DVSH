@@ -84,7 +84,7 @@ export function useLoginForm() {
         password: values.password,
       }).unwrap();
 
-      setAccessToken(data.access_token);
+      setAccessToken();
       dispatch(setSession(data.user));
       storeEmployeePdnConsent();
       navigate(getPostAuthPath(data.user), { replace: true });

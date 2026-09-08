@@ -179,6 +179,7 @@ const apiFieldLabels: Record<string, string> = {
   ogrn: 'ОГРН',
   master_id: 'Мастер',
   amount: 'Сумма',
+  price: 'Цена',
   occurred_on: 'Дата',
   comment: 'Комментарий',
 };
@@ -198,6 +199,7 @@ const apiFieldToFormField: Record<string, string> = {
   total: 'total',
   station_name: 'stationName',
   legal_name: 'legalName',
+  current_password: 'currentPassword',
   password_confirmation: 'passwordConfirmation',
   working_hours: 'workingHours',
   map_url: 'mapUrl',

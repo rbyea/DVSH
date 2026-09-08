@@ -1,7 +1,13 @@
 import { createBrowserRouter, redirect } from 'react-router-dom';
 
 import { RepairCreateProvider } from '@/features/repair-order/create';
-import { LoginPage, RegisterPage } from '@/pages/auth';
+import {
+  ForgotPasswordPage,
+  LoginPage,
+  RegisterPage,
+  ResetPasswordPage,
+  VerifyEmailPage,
+} from '@/pages/auth';
 import { BillingPage } from '@/pages/BillingPage';
 import { DashboardPage } from '@/pages/Dashboard';
 import { OfferPage, PersonalDataConsentPage, PrivacyPolicyPage } from '@/pages/legal';
@@ -55,6 +61,20 @@ export const appRouter = createBrowserRouter([
       {
         path: '/legal/offer',
         Component: OfferPage,
+      },
+      // Восстановление и подтверждение почты намеренно вне гардов: по ссылке
+      // из письма человек может прийти и с живой сессией, и без неё.
+      {
+        path: '/forgot-password',
+        Component: ForgotPasswordPage,
+      },
+      {
+        path: '/reset-password',
+        Component: ResetPasswordPage,
+      },
+      {
+        path: '/verify-email',
+        Component: VerifyEmailPage,
       },
       {
         element: <RedirectIfAuthenticated />,

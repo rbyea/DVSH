@@ -1,4 +1,4 @@
-import { Button, Checkbox, Input, Modal, Select, Tag } from 'antd';
+import { Button, Checkbox, Input, InputNumber, Modal, Select, Tag } from 'antd';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
@@ -16,6 +16,7 @@ import {
   type VehicleInspectionItem,
 } from '@/entities/vehicle';
 import { getErrorMessage } from '@/shared/lib/api';
+import { parseMoney } from '@/shared/lib/money';
 
 import styles from './VehicleInspectionPanel.module.scss';
 
@@ -30,6 +31,7 @@ type DraftForm = {
   action: InspectionAction;
   urgency: InspectionUrgency;
   note: string;
+  price: number | null;
 };
 
 const emptyDraft: DraftForm = {
@@ -37,6 +39,7 @@ const emptyDraft: DraftForm = {
   action: 'replace',
   urgency: 'now',
   note: '',
+  price: null,
 };
 
 const actionOptions = (Object.keys(inspectionActionLabels) as InspectionAction[]).map((value) => ({
@@ -50,6 +53,20 @@ const urgencyOptions = (Object.keys(inspectionUrgencyLabels) as InspectionUrgenc
     label: inspectionUrgencyLabels[value],
   }),
 );
+
+function formatInspectionPrice(value: number | string | null | undefined): string | null {
+  const amount = parseMoney(value);
+
+  if (amount == null) {
+    return null;
+  }
+
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 function urgencyColor(urgency: InspectionUrgency): string {
   if (urgency === 'now') {
@@ -102,6 +119,7 @@ export function VehicleInspectionPanel({
           action: draft.action,
           urgency: draft.urgency,
           note: draft.note.trim() || null,
+          price: typeof draft.price === 'number' ? draft.price : null,
         },
       }).unwrap();
       setDraft(emptyDraft);
@@ -155,6 +173,10 @@ export function VehicleInspectionPanel({
       state: {
         fromVehicleId: vehicleId,
         inspectionWorkTitles: selected.map((item) => buildInspectionWorkTitle(item)),
+        inspectionWorks: selected.map((item) => ({
+          title: buildInspectionWorkTitle(item),
+          price: parseMoney(item.price),
+        })),
         inspectionItemIds: selected.map((item) => item.id),
       },
     });
@@ -162,6 +184,7 @@ export function VehicleInspectionPanel({
 
   const renderItem = (item: VehicleInspectionItem, selectable: boolean) => {
     const checked = selectedIds.includes(item.id);
+    const priceLabel = formatInspectionPrice(item.price);
 
     return (
       <li className={styles.item} key={item.id}>
@@ -177,6 +200,7 @@ export function VehicleInspectionPanel({
           <div className={styles.itemMain}>
             <p className={styles.itemTitle}>{buildInspectionWorkTitle(item)}</p>
             {item.note ? <p className={styles.itemNote}>{item.note}</p> : null}
+            {priceLabel ? <p className={styles.itemPrice}>{priceLabel}</p> : null}
             <div className={styles.tags}>
               <Tag color={urgencyColor(item.urgency)}>{inspectionUrgencyLabels[item.urgency]}</Tag>
               <Tag>{inspectionActionLabels[item.action]}</Tag>
@@ -254,6 +278,20 @@ export function VehicleInspectionPanel({
                 size="large"
                 value={draft.urgency}
                 onChange={(value) => setDraft((prev) => ({ ...prev, urgency: value }))}
+              />
+            </label>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Цена, ₽</span>
+              <InputNumber
+                className={styles.priceInput}
+                min={0}
+                placeholder="0"
+                size="large"
+                step={100}
+                value={draft.price ?? undefined}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, price: typeof value === 'number' ? value : null }))
+                }
               />
             </label>
           </div>

@@ -8,7 +8,7 @@ import {
 import { clearSession } from '@/entities/session/model/sessionSlice';
 import type { ApiDataResponse, TokenPayload } from '@/entities/session/model/types';
 import { API_BASE_URL } from '@/shared/config';
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/shared/lib/auth';
+import { clearAccessToken, hasAccessToken, setAccessToken } from '@/shared/lib/auth';
 
 function isPublicApiUrl(url: string): boolean {
   return url.includes('/public/');
@@ -16,14 +16,8 @@ function isPublicApiUrl(url: string): boolean {
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  prepareHeaders: (headers, api) => {
-    const requestUrl = typeof api.arg === 'string' ? api.arg : (api.arg?.url ?? '');
-    const token = getAccessToken();
-
-    if (token && !isPublicApiUrl(requestUrl)) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
-
+  credentials: 'include',
+  prepareHeaders: (headers) => {
     headers.set('Accept', 'application/json');
     headers.set('Content-Type', 'application/json');
 
@@ -53,7 +47,7 @@ async function tryRefreshAccessToken(
   api: Parameters<BaseQueryFn>[1],
   extraOptions: Parameters<BaseQueryFn>[2],
 ): Promise<boolean> {
-  if (!getAccessToken()) {
+  if (!hasAccessToken()) {
     return false;
   }
 
@@ -67,10 +61,9 @@ async function tryRefreshAccessToken(
 
       if (refreshResult.data && typeof refreshResult.data === 'object') {
         const payload = refreshResult.data as RefreshResponse;
-        const accessToken = payload.data?.access_token;
 
-        if (accessToken) {
-          setAccessToken(accessToken);
+        if (payload.data?.token_type) {
+          setAccessToken();
           return true;
         }
       }

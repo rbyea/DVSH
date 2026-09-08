@@ -7,6 +7,7 @@ import { isSubscriptionBlocked } from '@/entities/session';
 import { StationReferralCard } from '@/features/station/referral';
 import { StationProfileForm } from '@/features/station/update';
 import { BillingPaymentHistory } from '@/widgets/BillingPaymentHistory';
+import { StationAccountPanel } from '@/widgets/StationAccountPanel';
 import { StationCompletedWorksPanel } from '@/widgets/StationCompletedWorksPanel';
 import { StationMastersPanel } from '@/widgets/StationMastersPanel';
 import { StationPayoutsPanel } from '@/widgets/StationPayoutsPanel';
@@ -129,18 +130,7 @@ export function StationProfilePage() {
           <>
             <StationProfileForm />
             <StationReferralCard />
-            {user ? (
-              <section className={styles.card}>
-                <div className={styles.cardHead}>
-                  <div>
-                    <h2 className={styles.cardTitle}>Аккаунт</h2>
-                    <p className={styles.cardHint}>Владелец станции в Автовидно</p>
-                  </div>
-                </div>
-                <p className={styles.accountName}>{user.name}</p>
-                <p className={styles.accountEmail}>{user.email}</p>
-              </section>
-            ) : null}
+            <StationAccountPanel />
           </>
         ) : null}
 
