@@ -59,48 +59,102 @@
 .shareCard {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
   border: 1px solid var(--dvsh-line);
   border-radius: 16px;
-  padding: 16px;
-  background: var(--dvsh-soft);
+  padding: 18px 20px;
+  background: var(--dvsh-card);
+}
+
+.shareIntro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .shareLabel {
-  color: var(--dvsh-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.shareValueRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 12px;
-}
-
-.shareValue {
+  margin: 0;
   color: var(--dvsh-ink);
-  font-size: 28px;
+  font-size: 15px;
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
 }
 
-.shareHint {
+.shareLead {
+  margin: 4px 0 0;
+  max-width: 48ch;
   color: var(--dvsh-muted);
   font-size: 14px;
+  line-height: 1.45;
 }
 
-.shareEdit {
+.shareActions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 8px;
 }
 
-.shareInput {
-  width: 140px;
+.shareSides {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.shareSide {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shareSideSto {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.shareCaption {
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sharePercent {
+  color: var(--dvsh-ink);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.shareTrack {
+  display: flex;
+  overflow: hidden;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--dvsh-soft);
+}
+
+.shareFillMaster {
+  height: 100%;
+  background: #14b8a6;
+}
+
+.shareFillSto {
+  height: 100%;
+  background: var(--dvsh-accent);
+}
+
+.shareSlider {
+  margin: 0 6px;
+}
+
+.shareSlider :global(.ant-slider-track) {
+  background: #14b8a6;
+}
+
+.shareSlider :global(.ant-slider-handle)::after {
+  box-shadow: 0 0 0 2px #14b8a6;
 }
 
 .loading,

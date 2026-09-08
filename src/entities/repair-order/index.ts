@@ -49,6 +49,7 @@ export type {
   GetRepairsParams,
   PaginationMeta,
   PublicCurrentRepair,
+  PublicInspectionItem,
   PublicLinkResponse,
   PublicRepair,
   PublicRepairHistoryItem,

@@ -107,12 +107,6 @@
   line-height: 1.15;
 }
 
-.charts {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 12px;
-}
-
 .chartCard {
   border: 1px solid var(--dvsh-line);
   border-radius: 16px;
@@ -121,122 +115,26 @@
 }
 
 .chartTitle {
-  margin: 0 0 12px;
+  margin: 0;
   color: var(--dvsh-ink);
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 800;
 }
 
-.doughnutWrap {
-  height: 240px;
+.chartHint {
+  margin: 6px 0 0;
+  color: var(--dvsh-muted);
+  font-size: 15px;
 }
 
 .barWrap {
-  height: 260px;
+  margin-top: 8px;
+  min-height: 160px;
 }
 
-.rankList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rankItem {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--dvsh-line);
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: var(--dvsh-card);
-}
-
-.rankIndex {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  background: var(--dvsh-soft);
-  color: var(--dvsh-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.rankMain {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.rankTitle {
-  color: var(--dvsh-ink);
-  font-size: 15px;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-.rankMeta {
-  color: var(--dvsh-muted);
-  font-size: 13px;
-}
-
-.rankAside {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.rankCount {
-  color: #0f766e;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.rankAmount {
-  color: var(--dvsh-muted);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.listToolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.listSearch {
-  flex: 1 1 220px;
-  min-width: 0;
-}
-
-.pager {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.pagerPages {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  min-width: 0;
-}
-
-.pageSizeSelect {
-  flex-shrink: 0;
-  width: 72px;
-  margin-left: auto;
+.trendWrap {
+  margin-top: 8px;
+  height: 280px;
 }
 
 .emptyBox {
@@ -274,10 +172,6 @@
   .summary {
     grid-template-columns: 1fr 1fr;
   }
-
-  .charts {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 720px) {
@@ -291,16 +185,5 @@
 
   .summary {
     grid-template-columns: 1fr;
-  }
-
-  .rankItem {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .rankAside {
-    grid-column: 2;
-    flex-direction: row;
-    align-items: baseline;
-    gap: 10px;
   }
 }

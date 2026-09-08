@@ -14,6 +14,7 @@ import {
 import {
   useAdoptSharedVehicleMutation,
   useLazySearchVehiclesQuery,
+  useMarkVehicleInspectionsInOrderMutation,
   useUpdateVehicleMutation,
   type VehicleCard,
   type VehicleRepairHistory,
@@ -44,6 +45,48 @@ import type { RepairCreateContextValue } from './types';
 type RepairCreateProviderProps = {
   children: ReactNode;
 };
+
+type CreateLocationState = {
+  fromVehicleId?: string;
+  inspectionWorkTitles?: string[];
+  inspectionItemIds?: string[];
+};
+
+function readInspectionWorkTitles(state: unknown): string[] {
+  const titles = (state as CreateLocationState | null)?.inspectionWorkTitles;
+
+  if (!Array.isArray(titles)) {
+    return [];
+  }
+
+  return titles
+    .filter((title): title is string => typeof title === 'string')
+    .map((title) => title.trim())
+    .filter(Boolean);
+}
+
+function readInspectionItemIds(state: unknown): string[] {
+  const ids = (state as CreateLocationState | null)?.inspectionItemIds;
+
+  if (!Array.isArray(ids)) {
+    return [];
+  }
+
+  return ids
+    .filter((id): id is string => typeof id === 'string')
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
+function mapInspectionWorksToForm(titles: string[]) {
+  return titles.map((title) => ({
+    title,
+    masterId: undefined as string | undefined,
+    price: undefined as number | undefined,
+    hours: undefined as number | undefined,
+    isExtra: false,
+  }));
+}
 
 function mapVehicleCardToFormValues(vehicle: VehicleCard): Partial<RepairCreateFormValues> {
   return {
@@ -174,16 +217,18 @@ function assertMileageAllowed(
 export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const locationState = location.state as CreateLocationState | null;
   const fromVehicleId =
-    typeof (location.state as { fromVehicleId?: string } | null)?.fromVehicleId === 'string'
-      ? (location.state as { fromVehicleId: string }).fromVehicleId.trim()
-      : '';
+    typeof locationState?.fromVehicleId === 'string' ? locationState.fromVehicleId.trim() : '';
+  const inspectionWorkTitles = readInspectionWorkTitles(location.state);
+  const inspectionItemIds = readInspectionItemIds(location.state);
   const [isVehicleSearchLoading, setIsVehicleSearchLoading] = useState(false);
   const [vehicleSuggestions, setVehicleSuggestions] = useState<VehicleSearchResult[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleSearchResult | null>(null);
   const [isManualMode, setIsManualMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const vehicleSelectRequestIdRef = useRef(0);
+  const inspectionWorksAppliedRef = useRef(false);
 
   const [searchVehicles] = useLazySearchVehiclesQuery();
   const [adoptSharedVehicle] = useAdoptSharedVehicleMutation();
@@ -192,6 +237,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
   const [updateClient, { isLoading: isUpdatingClient }] = useUpdateClientMutation();
   const [updateVehicle, { isLoading: isUpdatingVehicle }] = useUpdateVehicleMutation();
   const [createRepair, { isLoading: isCreatingRepair }] = useCreateRepairMutation();
+  const [markInspectionsInOrder] = useMarkVehicleInspectionsInOrderMutation();
 
   const {
     clearErrors,
@@ -278,12 +324,24 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
 
       setSelectedVehicle(mapVehicleCardToSearchResult(card, vehicle));
       setIsManualMode(false);
+
+      const shouldApplyInspectionWorks =
+        !inspectionWorksAppliedRef.current && inspectionWorkTitles.length > 0;
+      const nextWorkItems = shouldApplyInspectionWorks
+        ? mapInspectionWorksToForm(inspectionWorkTitles)
+        : (getValues('workItems') ?? []);
+
+      if (shouldApplyInspectionWorks) {
+        inspectionWorksAppliedRef.current = true;
+      }
+
       reset({
         ...getValues(),
         ...mapVehicleCardToFormValues(card),
         vehicleSearch: vehicleSearch ?? '',
         status: getValues('status') || 'new',
         clientPersonalDataConsent: true,
+        workItems: nextWorkItems,
       });
       clearErrors([
         'clientName',
@@ -507,6 +565,17 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
             price: typeof part.price === 'number' ? part.price : null,
           })),
       }).unwrap();
+
+      if (vehicleIdValue && inspectionItemIds.length > 0) {
+        try {
+          await markInspectionsInOrder({
+            vehicleId: vehicleIdValue,
+            itemIds: inspectionItemIds,
+          }).unwrap();
+        } catch {
+          // Ремонт уже создан — дефектовку обновим при следующем заходе
+        }
+      }
 
       toast.success('Ремонт создан', {
         position: 'top-right',

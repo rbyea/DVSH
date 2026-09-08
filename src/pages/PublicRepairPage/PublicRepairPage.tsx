@@ -22,6 +22,12 @@ import {
   type PublicVehicle,
   type RepairStatus,
 } from '@/entities/repair-order';
+import {
+  buildInspectionWorkTitle,
+  inspectionActionLabels,
+  inspectionUrgencyLabels,
+  type InspectionUrgency,
+} from '@/entities/vehicle';
 import { findLocalStationMapUrl, useGetStationQuery } from '@/entities/master';
 import { getErrorMessage } from '@/shared/lib/api';
 import { hasAccessToken } from '@/shared/lib/auth';
@@ -38,6 +44,8 @@ import { PublicMileageChart } from '@/widgets/PublicMileageChart';
 import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
 
 import styles from './PublicRepairPage.module.scss';
+
+type PublicNavTab = 'works' | 'diagnostics' | 'history';
 
 const statusClassName: Record<RepairStatus, string> = {
   new: styles.status_new,
@@ -58,7 +66,20 @@ function getVehicleFingerprint(vehicle: PublicVehicle): string {
     clientName: vehicle.client_name,
     station: vehicle.station,
     latestDiagnostic: vehicle.latest_diagnostic,
+    inspections: vehicle.inspections,
   });
+}
+
+function inspectionUrgencyColor(urgency: InspectionUrgency): string {
+  if (urgency === 'now') {
+    return 'error';
+  }
+
+  if (urgency === 'recommended') {
+    return 'warning';
+  }
+
+  return 'default';
 }
 
 function stationMapHref(station?: Pick<PublicStationContacts, 'map_url'> | null): string | null {
@@ -221,9 +242,9 @@ export function PublicRepairPage() {
   const [noticeAccepted, setNoticeAccepted] = useState(() =>
     publicToken ? hasAcceptedPublicPdnNotice(publicToken) : false,
   );
-  const [historyOpen, setHistoryOpen] = useState(true);
+  const [navTab, setNavTab] = useState<PublicNavTab>('history');
   const [openHistoryOrder, setOpenHistoryOrder] = useState<string | null>(null);
-  const historyInitedRef = useRef(false);
+  const navTabInitedRef = useRef<string | null>(null);
   const previousFingerprintRef = useRef<string | null>(null);
   const ignoreUpdatesUntilRef = useRef(0);
 
@@ -248,20 +269,24 @@ export function PublicRepairPage() {
   useEffect(() => {
     setNoticeAccepted(publicToken ? hasAcceptedPublicPdnNotice(publicToken) : false);
     previousFingerprintRef.current = null;
-    historyInitedRef.current = false;
-    setHistoryOpen(true);
+    navTabInitedRef.current = null;
     setOpenHistoryOrder(null);
   }, [publicToken]);
 
   useEffect(() => {
-    if (historyInitedRef.current || !vehicle?.previous_repairs?.[0]) {
+    if (!vehicle || !publicToken || navTabInitedRef.current === publicToken) {
       return;
     }
 
-    historyInitedRef.current = true;
-    setHistoryOpen(true);
-    setOpenHistoryOrder(vehicle.previous_repairs[0].order_number);
-  }, [vehicle]);
+    navTabInitedRef.current = publicToken;
+    setNavTab(
+      vehicle.current_repair
+        ? 'works'
+        : vehicle.previous_repairs.length > 0
+          ? 'history'
+          : 'diagnostics',
+    );
+  }, [publicToken, vehicle]);
 
   useEffect(() => {
     if (!vehicle) {
@@ -366,6 +391,7 @@ export function PublicRepairPage() {
   const previousRepairs = vehicle.previous_repairs ?? [];
   const clientVehicles = vehicle.client_vehicles ?? [];
   const clientVehiclesCount = clientVehicles.length;
+  const inspections = vehicle.inspections ?? [];
   const shellStatusClass = currentRepair
     ? statusClassName[currentRepair.status]
     : statusClassName.completed;
@@ -411,7 +437,6 @@ export function PublicRepairPage() {
     .filter(Boolean)
     .join(' · ');
   const showPrices = needsEstimateDecision || needsClientConfirm;
-  const latestHistory = previousRepairs[0];
   const mapHref =
     stationMapHref(vehicle.station) ??
     (myStation && isSamePublicStation(vehicle.station, myStation)
@@ -528,8 +553,9 @@ export function PublicRepairPage() {
           </h1>
           <p className={styles.statusLine}>{statusLine}</p>
           {heroMeta ? <p className={styles.heroMeta}>{heroMeta}</p> : null}
-          <PublicMileageChart currentRepair={currentRepair} previousRepairs={previousRepairs} />
         </section>
+
+        <PublicMileageChart currentRepair={currentRepair} previousRepairs={previousRepairs} />
 
         {hasStationContacts(vehicle.station) ? (
           <section className={styles.panel}>
@@ -838,77 +864,296 @@ export function PublicRepairPage() {
           </section>
         ) : null}
 
-        {showCurrentRepair && currentRepair ? (
-          <section className={styles.panel}>
-            <div className={styles.panelHead}>
-              <h2 className={styles.panelTitle}>
-                {needsEstimateDecision ? 'Согласование работ' : 'Работы'}
-              </h2>
-              <span className={styles.progressBadge}>
-                {totalCount > 0 ? `${doneCount} из ${totalCount}` : 'Список появится'}
-              </span>
-            </div>
+        <section className={styles.panel}>
+          <nav className={styles.tabs} aria-label="Разделы карточки">
+            {(
+              [
+                { id: 'history' as const, label: 'История' },
+                { id: 'diagnostics' as const, label: 'Диагностика' },
+                { id: 'works' as const, label: 'Работы' },
+              ] as const
+            ).map((item) => (
+              <button
+                aria-current={navTab === item.id ? 'page' : undefined}
+                className={clsx(styles.tab, navTab === item.id && styles.tabActive)}
+                key={item.id}
+                type="button"
+                onClick={() => setNavTab(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
-            {workItems.length > 0 ? (
-              <ul className={styles.worksList}>
-                {workItems.map((item, index) => {
-                  const workPrice = parseMoney(item.price);
+          {navTab === 'works' ? (
+            showCurrentRepair && currentRepair ? (
+              <>
+                <div className={styles.panelHead}>
+                  <h2 className={styles.panelTitle}>
+                    {needsEstimateDecision ? 'Согласование работ' : 'Текущий заказ'}
+                  </h2>
+                  <span className={styles.progressBadge}>
+                    {totalCount > 0 ? `${doneCount} из ${totalCount}` : 'Список появится'}
+                  </span>
+                </div>
 
-                  return (
-                    <li
-                      className={clsx(
-                        styles.workItem,
-                        !showPrices && styles.workItemCompact,
-                        item.is_done && styles.workItemDone,
-                      )}
-                      key={`current-${item.title}-${index}`}
-                    >
-                      <span className={styles.workCheck} aria-hidden>
-                        {item.is_done ? '✓' : ''}
-                      </span>
-                      <span className={styles.workTitle}>{item.title}</span>
-                      {showPrices && workPrice != null ? (
-                        <span className={styles.workPrice}>{formatMoney(workPrice)}</span>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
+                {workItems.length > 0 ? (
+                  <ul className={styles.worksList}>
+                    {workItems.map((item, index) => {
+                      const workPrice = parseMoney(item.price);
+
+                      return (
+                        <li
+                          className={clsx(
+                            styles.workItem,
+                            !showPrices && styles.workItemCompact,
+                            item.is_done && styles.workItemDone,
+                          )}
+                          key={`current-${item.title}-${index}`}
+                        >
+                          <span className={styles.workCheck} aria-hidden>
+                            {item.is_done ? '✓' : ''}
+                          </span>
+                          <span className={styles.workTitle}>{item.title}</span>
+                          {showPrices && workPrice != null ? (
+                            <span className={styles.workPrice}>{formatMoney(workPrice)}</span>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className={styles.panelEmpty}>
+                    Список работ появится после диагностики на СТО
+                  </p>
+                )}
+
+                {currentRepair.comment?.trim() ? (
+                  <div className={styles.masterComment}>
+                    <span className={styles.masterCommentLabel}>Комментарий мастера</span>
+                    <p className={styles.masterCommentText}>{currentRepair.comment.trim()}</p>
+                  </div>
+                ) : null}
+
+                {estimateStatus === 'approved' ? (
+                  <p className={styles.estimateMessage}>
+                    Работы согласованы
+                    {currentRepair.estimate_decided_at
+                      ? ` · ${formatDateTime(currentRepair.estimate_decided_at)}`
+                      : ''}
+                  </p>
+                ) : null}
+
+                {estimateStatus === 'declined' ? (
+                  <p className={styles.estimateMessage}>
+                    Нужно уточнение с сервисом
+                    {currentRepair.estimate_comment ? `: «${currentRepair.estimate_comment}»` : '.'}
+                  </p>
+                ) : null}
+              </>
             ) : (
-              <p className={styles.panelEmpty}>Список работ появится после диагностики на СТО</p>
-            )}
+              <p className={styles.panelEmpty}>Сейчас нет активного заказа — работы в «Истории»</p>
+            )
+          ) : null}
 
-            {currentRepair.comment?.trim() ? (
-              <div className={styles.masterComment}>
-                <span className={styles.masterCommentLabel}>Комментарий мастера</span>
-                <p className={styles.masterCommentText}>{currentRepair.comment.trim()}</p>
-              </div>
-            ) : null}
+          {navTab === 'diagnostics' ? (
+            <div className={styles.diagnosticsSplit}>
+              <section className={styles.diagnosticsSection}>
+                <div className={styles.panelHead}>
+                  <div>
+                    <h2 className={styles.panelTitle}>Технический осмотр</h2>
+                    <p className={styles.panelHint}>Что сервис отметил на осмотре</p>
+                  </div>
+                </div>
+                {inspections.length > 0 ? (
+                  <ul className={styles.inspectionList}>
+                    {inspections.map((item, index) => (
+                      <li
+                        className={styles.inspectionItem}
+                        key={`${item.action}-${item.title}-${index}`}
+                      >
+                        <p className={styles.inspectionTitle}>{buildInspectionWorkTitle(item)}</p>
+                        {item.note ? <p className={styles.inspectionNote}>{item.note}</p> : null}
+                        <div className={styles.inspectionTags}>
+                          <Tag color={inspectionUrgencyColor(item.urgency)}>
+                            {inspectionUrgencyLabels[item.urgency]}
+                          </Tag>
+                          <Tag>{inspectionActionLabels[item.action]}</Tag>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.panelEmpty}>
+                    Пока нет пунктов — сервис отметит, что нужно сделать
+                  </p>
+                )}
+              </section>
 
-            {estimateStatus === 'approved' ? (
-              <p className={styles.estimateMessage}>
-                Работы согласованы
-                {currentRepair.estimate_decided_at
-                  ? ` · ${formatDateTime(currentRepair.estimate_decided_at)}`
-                  : ''}
-              </p>
-            ) : null}
+              <section className={styles.diagnosticsSection}>
+                <div className={styles.panelHead}>
+                  <div>
+                    <h2 className={styles.panelTitle}>Компьютерная диагностика</h2>
+                    <p className={styles.panelHint}>Скан с прибора, коды ошибок</p>
+                  </div>
+                </div>
+                <RepairDiagnosticsPanel
+                  embedded
+                  latestDiagnostic={vehicle.latest_diagnostic}
+                  readOnly
+                  repairId={currentRepair?.order_number ?? 'public'}
+                  vehicleVin={vehicle.vin}
+                />
+              </section>
+            </div>
+          ) : null}
 
-            {estimateStatus === 'declined' ? (
-              <p className={styles.estimateMessage}>
-                Нужно уточнение с сервисом
-                {currentRepair.estimate_comment ? `: «${currentRepair.estimate_comment}»` : '.'}
-              </p>
-            ) : null}
-          </section>
-        ) : null}
+          {navTab === 'history' ? (
+            previousRepairs.length > 0 ? (
+              <>
+                <p className={styles.historyHint}>Нажмите визит — откроются работы и запчасти.</p>
+                <div className={styles.historyList}>
+                  {previousRepairs.map((pastRepair) => {
+                    const rawWorks = pastRepair.work_items ?? [];
+                    const doneWorks = rawWorks.filter((item) => item.is_done === true);
+                    const pastWorks = doneWorks.length > 0 ? doneWorks : rawWorks;
+                    const pastParts = pastRepair.ordered_parts ?? [];
+                    const pastAmount =
+                      getRepairCostBreakdown({
+                        workItems: rawWorks,
+                        orderedParts: pastParts,
+                      }).calculatedTotal || parseMoney(pastRepair.total);
+                    const pastTotal =
+                      (pastAmount != null && pastAmount > 0 ? formatMoney(pastAmount) : null) ||
+                      pastRepair.total_formatted ||
+                      null;
+                    const pastDate = pastRepair.completed_at || pastRepair.updated_at;
+                    const isVisitOpen = openHistoryOrder === pastRepair.order_number;
+                    const previewWorks = pastWorks.slice(0, 3);
+                    const extraWorks = pastWorks.length - previewWorks.length;
 
-        <RepairDiagnosticsPanel
-          latestDiagnostic={vehicle.latest_diagnostic}
-          readOnly
-          repairId={currentRepair?.order_number ?? 'public'}
-          vehicleVin={vehicle.vin}
-        />
+                    return (
+                      <article
+                        className={clsx(styles.historyCard, isVisitOpen && styles.historyCardOpen)}
+                        key={pastRepair.order_number}
+                      >
+                        <button
+                          aria-expanded={isVisitOpen}
+                          className={styles.historyToggle}
+                          type="button"
+                          onClick={() => {
+                            setOpenHistoryOrder((current) =>
+                              current === pastRepair.order_number ? null : pastRepair.order_number,
+                            );
+                          }}
+                        >
+                          <span className={styles.historyWhen}>
+                            <span className={styles.historyDate}>
+                              {pastDate ? formatDate(pastDate) : 'Дата не указана'}
+                            </span>
+                            <span className={styles.historyMeta}>
+                              {typeof pastRepair.mileage === 'number'
+                                ? formatMileageKm(pastRepair.mileage)
+                                : null}
+                              {typeof pastRepair.mileage === 'number' ? ' · ' : ''}
+                              {pastRepair.order_number}
+                            </span>
+                          </span>
+                          <span className={styles.historySum}>{pastTotal || '—'}</span>
+                          <span
+                            aria-hidden
+                            className={clsx(styles.chevron, isVisitOpen && styles.chevronOpen)}
+                          >
+                            ▾
+                          </span>
+
+                          {!isVisitOpen ? (
+                            previewWorks.length > 0 ? (
+                              <span className={styles.historyPreview}>
+                                {previewWorks.map((item, index) => (
+                                  <span
+                                    className={styles.historyChip}
+                                    key={`${pastRepair.order_number}-preview-${item.title}-${index}`}
+                                  >
+                                    {item.title}
+                                  </span>
+                                ))}
+                                {extraWorks > 0 ? (
+                                  <span className={styles.historyMore}>ещё {extraWorks}</span>
+                                ) : null}
+                              </span>
+                            ) : (
+                              <span className={styles.historyPreviewEmpty}>
+                                Работы не сохранены
+                              </span>
+                            )
+                          ) : null}
+                        </button>
+
+                        {isVisitOpen ? (
+                          <div className={styles.historyBody}>
+                            <p className={styles.historySectionLabel}>Работы</p>
+                            {pastWorks.length > 0 ? (
+                              <ul className={styles.historyWorks}>
+                                {pastWorks.map((item, index) => {
+                                  const workPrice = parseMoney(item.price);
+
+                                  return (
+                                    <li
+                                      className={styles.historyWorkItem}
+                                      key={`${pastRepair.order_number}-${item.title}-${index}`}
+                                    >
+                                      <span className={styles.historyWorkTitle}>{item.title}</span>
+                                      {workPrice != null && workPrice > 0 ? (
+                                        <span className={styles.historyWorkPrice}>
+                                          {formatMoney(workPrice)}
+                                        </span>
+                                      ) : null}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            ) : (
+                              <p className={styles.panelEmpty}>Не указаны</p>
+                            )}
+
+                            {pastParts.length > 0 ? (
+                              <>
+                                <p className={styles.historySectionLabel}>Запчасти</p>
+                                <ul className={styles.historyParts}>
+                                  {pastParts.map((part, index) => {
+                                    const lineTotal = getPartLineTotal(part);
+
+                                    return (
+                                      <li
+                                        className={styles.historyPartItem}
+                                        key={`${pastRepair.order_number}-part-${part.name}-${index}`}
+                                      >
+                                        <span className={styles.partName}>{part.name}</span>
+                                        {part.quantity > 0 ? (
+                                          <span className={styles.partQty}>× {part.quantity}</span>
+                                        ) : null}
+                                        <span className={styles.partPrice}>
+                                          {lineTotal > 0 ? formatMoney(lineTotal) : ''}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <p className={styles.panelEmpty}>Пока нет завершённых визитов</p>
+            )
+          ) : null}
+        </section>
 
         {clientVehiclesCount > 1 ? (
           <section className={clsx(styles.panel, styles.vehiclesPanel)}>
@@ -946,121 +1191,6 @@ export function PublicRepairPage() {
                 );
               })}
             </ul>
-          </section>
-        ) : null}
-
-        {previousRepairs.length > 0 ? (
-          <section className={clsx(styles.panel, styles.historyPanel)}>
-            <button
-              aria-expanded={historyOpen}
-              className={styles.disclosure}
-              type="button"
-              onClick={() => setHistoryOpen((open) => !open)}
-            >
-              <span className={styles.toggleMain}>
-                <span className={styles.panelTitle}>История</span>
-                <span className={styles.panelHint}>
-                  {latestHistory
-                    ? `${previousRepairs.length} · последний ${latestHistory.order_number}`
-                    : `${previousRepairs.length} визитов`}
-                </span>
-              </span>
-              <span aria-hidden className={clsx(styles.chevron, historyOpen && styles.chevronOpen)}>
-                ▾
-              </span>
-            </button>
-
-            <div className={clsx(styles.accordion, historyOpen && styles.accordionOpen)}>
-              <div className={styles.accordionInner}>
-                <div className={styles.historyList}>
-                  {previousRepairs.map((pastRepair) => {
-                    const rawWorks = pastRepair.work_items ?? [];
-                    const doneWorks = rawWorks.filter((item) => item.is_done === true);
-                    const pastWorks = doneWorks.length > 0 ? doneWorks : rawWorks;
-                    const pastParts = pastRepair.ordered_parts ?? [];
-                    const pastAmount =
-                      getRepairCostBreakdown({
-                        workItems: rawWorks,
-                        orderedParts: pastParts,
-                      }).calculatedTotal || parseMoney(pastRepair.total);
-                    const pastTotal =
-                      (pastAmount != null && pastAmount > 0 ? formatMoney(pastAmount) : null) ||
-                      pastRepair.total_formatted ||
-                      null;
-                    const pastDate = pastRepair.completed_at || pastRepair.updated_at;
-                    const isVisitOpen = openHistoryOrder === pastRepair.order_number;
-
-                    return (
-                      <article className={styles.historyCard} key={pastRepair.order_number}>
-                        <button
-                          aria-expanded={isVisitOpen}
-                          className={styles.historyRow}
-                          type="button"
-                          onClick={() => {
-                            setOpenHistoryOrder((current) =>
-                              current === pastRepair.order_number ? null : pastRepair.order_number,
-                            );
-                          }}
-                        >
-                          <span className={styles.historyOrder}>{pastRepair.order_number}</span>
-                          <span className={styles.historyDate}>
-                            {pastDate ? formatDate(pastDate) : 'Дата не указана'}
-                            {typeof pastRepair.mileage === 'number'
-                              ? ` · ${formatMileageKm(pastRepair.mileage)}`
-                              : ''}
-                          </span>
-                          <span className={styles.historyTotal}>{pastTotal || '—'}</span>
-                        </button>
-
-                        <div
-                          className={clsx(styles.accordion, isVisitOpen && styles.accordionOpen)}
-                        >
-                          <div className={styles.accordionInner}>
-                            {pastWorks.length > 0 ? (
-                              <ul className={styles.historyWorks}>
-                                {pastWorks.map((item, index) => (
-                                  <li
-                                    className={styles.historyWorkItem}
-                                    key={`${pastRepair.order_number}-${item.title}-${index}`}
-                                  >
-                                    {item.title}
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className={styles.panelEmpty}>Работы не сохранены</p>
-                            )}
-
-                            {pastParts.length > 0 ? (
-                              <ul className={styles.historyParts}>
-                                {pastParts.map((part, index) => {
-                                  const lineTotal = getPartLineTotal(part);
-
-                                  return (
-                                    <li
-                                      className={styles.historyPartItem}
-                                      key={`${pastRepair.order_number}-part-${part.name}-${index}`}
-                                    >
-                                      <span className={styles.partName}>{part.name}</span>
-                                      {part.quantity > 0 ? (
-                                        <span className={styles.partQty}>× {part.quantity}</span>
-                                      ) : null}
-                                      <span className={styles.partPrice}>
-                                        {lineTotal > 0 ? formatMoney(lineTotal) : ''}
-                                      </span>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            ) : null}
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
           </section>
         ) : null}
 

@@ -8,6 +8,7 @@ import { useGetVehicleQuery } from '@/entities/vehicle';
 import { VehicleCardForm } from '@/features/vehicle/update';
 import { pickLatestDiagnostic } from '@/shared/lib/diagnostics';
 import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
+import { VehicleInspectionPanel } from '@/widgets/VehicleInspectionPanel';
 
 import styles from './VehicleDetailsPage.module.scss';
 
@@ -100,6 +101,8 @@ export function VehicleDetailsPage() {
           </div>
         </dl>
       </section>
+
+      <VehicleInspectionPanel vehicleId={vehicle.id} />
 
       <RepairDiagnosticsPanel
         latestDiagnostic={latestDiagnostic}

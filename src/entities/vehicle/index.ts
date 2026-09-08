@@ -9,6 +9,11 @@ export {
   useLazySearchVehiclesQuery,
   useAdoptSharedVehicleMutation,
   useUpdateVehicleMutation,
+  useGetVehicleInspectionsQuery,
+  useCreateVehicleInspectionItemMutation,
+  useUpdateVehicleInspectionItemMutation,
+  useDeleteVehicleInspectionItemMutation,
+  useMarkVehicleInspectionsInOrderMutation,
   vehiclesApi,
 } from './api/vehiclesApi';
 export type {
@@ -29,4 +34,18 @@ export type {
   VehicleSuggestion,
   VehicleModelSuggestion,
 } from './model/types';
+export type {
+  CreateVehicleInspectionRequest,
+  InspectionAction,
+  InspectionItemStatus,
+  InspectionUrgency,
+  UpdateVehicleInspectionRequest,
+  VehicleInspectionItem,
+} from './model/inspection';
+export {
+  buildInspectionWorkTitle,
+  inspectionActionLabels,
+  inspectionStatusLabels,
+  inspectionUrgencyLabels,
+} from './model/inspection';
 export { CarModelAutoComplete } from './ui/CarModelAutoComplete';

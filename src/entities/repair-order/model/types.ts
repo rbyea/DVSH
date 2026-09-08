@@ -289,6 +289,13 @@ export type PublicClientVehicleSummary = {
   chassis_number?: string | null;
 };
 
+export type PublicInspectionItem = {
+  title: string;
+  action: 'replace' | 'repair' | 'check';
+  urgency: 'now' | 'recommended' | 'later';
+  note?: string | null;
+};
+
 export type PublicVehicle = {
   car_model: string;
   license_plate: string;
@@ -298,6 +305,8 @@ export type PublicVehicle = {
   client_name?: string | null;
   station?: PublicStationContacts | null;
   latest_diagnostic?: VehicleDiagnostic | null;
+  /** Open defect-list items from the station. */
+  inspections?: PublicInspectionItem[];
   current_repair: PublicCurrentRepair | null;
   previous_repairs: PublicRepairHistoryItem[];
   /**

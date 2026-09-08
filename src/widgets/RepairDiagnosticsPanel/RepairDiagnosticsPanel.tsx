@@ -23,6 +23,8 @@ type RepairDiagnosticsPanelProps = {
   vehicleVin?: string | null;
   latestDiagnostic?: VehicleDiagnostic | null;
   readOnly?: boolean;
+  /** Без своей шапки — для вкладки на публичной карточке. */
+  embedded?: boolean;
 };
 
 const matchLabels: Record<DiagnosticVinMatch, string> = {
@@ -117,9 +119,10 @@ export function RepairDiagnosticsPanel({
   vehicleVin,
   latestDiagnostic,
   readOnly = false,
+  embedded = false,
 }: RepairDiagnosticsPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(embedded);
   const [isFaultsOpen, setIsFaultsOpen] = useState(false);
   const { scan, preview, importFile, remove, dismissPreview, vinMatchMessages } =
     useRepairDiagnostics(repairId, vehicleVin, vehicleId, latestDiagnostic);
@@ -180,26 +183,34 @@ export function RepairDiagnosticsPanel({
       : 'CSV со сканера, сверка VIN с авто';
 
   return (
-    <section className={clsx(styles.root, isOpen && styles.rootOpen)}>
-      <button
-        aria-expanded={isOpen}
-        className={styles.toggle}
-        type="button"
-        onClick={() => setIsOpen((open) => !open)}
-      >
-        <span className={styles.toggleMain}>
-          <span className={styles.title}>Диагностика</span>
-          <span className={styles.hint}>{collapsedHint}</span>
-        </span>
-        <span className={styles.toggleMeta}>
-          {shown ? <span className={styles.count}>{faultCount}</span> : null}
-          <span aria-hidden className={clsx(styles.chevron, isOpen && styles.chevronOpen)}>
-            ▾
+    <section
+      className={clsx(
+        styles.root,
+        (isOpen || embedded) && styles.rootOpen,
+        embedded && styles.embedded,
+      )}
+    >
+      {embedded ? null : (
+        <button
+          aria-expanded={isOpen}
+          className={styles.toggle}
+          type="button"
+          onClick={() => setIsOpen((open) => !open)}
+        >
+          <span className={styles.toggleMain}>
+            <span className={styles.title}>Компьютерная диагностика</span>
+            <span className={styles.hint}>{collapsedHint}</span>
           </span>
-        </span>
-      </button>
+          <span className={styles.toggleMeta}>
+            {shown ? <span className={styles.count}>{faultCount}</span> : null}
+            <span aria-hidden className={clsx(styles.chevron, isOpen && styles.chevronOpen)}>
+              ▾
+            </span>
+          </span>
+        </button>
+      )}
 
-      {isOpen ? (
+      {isOpen || embedded ? (
         <div className={styles.body}>
           {readOnly ? null : (
             <div className={styles.actions}>

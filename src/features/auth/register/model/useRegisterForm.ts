@@ -49,15 +49,10 @@ export function useRegisterForm() {
       setAccessToken(data.access_token);
       dispatch(setSession(data.user));
       storeEmployeePdnConsent();
-      toast.success(
-        referralCode
-          ? 'Аккаунт создан. 60 дней бесплатно по приглашению'
-          : 'Аккаунт создан. 30 дней бесплатно',
-        {
-          position: 'top-right',
-          transition: Bounce,
-        },
-      );
+      toast.success('Аккаунт создан. 30 дней бесплатно', {
+        position: 'top-right',
+        transition: Bounce,
+      });
       navigate(getPostAuthPath(data.user), { replace: true });
     } catch (error) {
       applyApiFieldErrors(error, setError);

@@ -36,24 +36,25 @@ export function StationReferralCard() {
     );
   }
 
+  if (!link) {
+    return null;
+  }
+
   return (
     <section className={styles.card}>
       <div className={styles.head}>
         <h2 className={styles.title}>Пригласить СТО</h2>
         <p className={styles.hint}>
-          {link
-            ? 'Кто зарегистрируется по ссылке, получит 60 дней бесплатно: 30 обычных и ещё 30 за приглашение.'
-            : 'Ссылка появится после обновления сервера. Обновите страницу чуть позже.'}
+          Отправьте ссылку другому СТО. Когда он зарегистрируется, вам добавят 30 дней бесплатной
+          версии. Ссылкой можно воспользоваться один раз.
         </p>
       </div>
-      {link ? (
-        <div className={styles.row}>
-          <Input readOnly size="large" value={link} />
-          <Button size="large" type="primary" onClick={() => void handleCopy()}>
-            Копировать
-          </Button>
-        </div>
-      ) : null}
+      <div className={styles.row}>
+        <Input readOnly size="large" value={link} />
+        <Button size="large" type="primary" onClick={() => void handleCopy()}>
+          Копировать
+        </Button>
+      </div>
     </section>
   );
 }

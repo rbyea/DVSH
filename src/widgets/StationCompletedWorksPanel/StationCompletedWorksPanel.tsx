@@ -1,27 +1,45 @@
-import { Button, DatePicker, Input, Pagination, Segmented, Select, Spin } from 'antd';
+import { Button, DatePicker, Segmented, Spin } from 'antd';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
 import {
-  ArcElement,
+  BarController,
   BarElement,
   CategoryScale,
   Chart as ChartJS,
+  Filler,
   Legend,
   LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
   Tooltip,
   type ChartData,
   type ChartOptions,
+  type Plugin,
 } from 'chart.js';
-import { useEffect, useMemo, useState } from 'react';
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { useMemo, useState } from 'react';
+import { Bar, Chart } from 'react-chartjs-2';
 import {
   useStationCompletedWorks,
   type CompletedWorksPeriod,
 } from '@/features/station/completed-works';
+import { useTheme } from '@/shared/lib/theme';
 
+import { buildWorksTrend } from './buildWorksTrend';
 import styles from './StationCompletedWorksPanel.module.scss';
 
-ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(
+  BarController,
+  BarElement,
+  CategoryScale,
+  Filler,
+  Legend,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+  Tooltip,
+);
 
 type ViewMode = 'works' | 'masters';
 
@@ -33,9 +51,8 @@ const PERIOD_OPTIONS: Array<{ id: CompletedWorksPeriod; label: string }> = [
   { id: 'custom', label: 'Свой' },
 ];
 
-const PAGE_SIZE_OPTIONS = [5, 20, 50, 100] as const;
-
-const CHART_COLORS = ['#0f766e', '#2563eb', '#111827', '#64748b', '#b45309', '#7c3aed', '#be185d'];
+const CHART_TOP = 12;
+const BAR_ROW_PX = 44;
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat('ru-RU', {
@@ -43,10 +60,6 @@ function formatMoney(value: number): string {
     currency: 'RUB',
     maximumFractionDigits: 0,
   }).format(value);
-}
-
-function formatMoneyTooltip(value: number, label: string): string {
-  return `${label}: ${formatMoney(value)}`;
 }
 
 function formatWorksCount(value: number): string {
@@ -68,164 +81,331 @@ function formatWorksCount(value: number): string {
   return `${value} работ`;
 }
 
-function formatHours(value: number): string | null {
-  if (value <= 0) {
-    return null;
+function withAlpha(color: string, alpha: number): string {
+  const hex = color.trim();
+
+  if (!hex.startsWith('#') || (hex.length !== 7 && hex.length !== 4)) {
+    return color;
   }
 
-  return `${value.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} ч`;
+  const raw =
+    hex.length === 4 ? `${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex.slice(1);
+  const value = Number.parseInt(raw, 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+
+  return `rgb(${r} ${g} ${b} / ${alpha})`;
 }
 
-const doughnutOptions: ChartOptions<'doughnut'> = {
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'bottom',
-      labels: { boxWidth: 12, font: { size: 12 } },
-    },
-    tooltip: {
-      callbacks: {
-        label: (item) => formatMoneyTooltip(Number(item.parsed), item.label),
-      },
-    },
-  },
-};
+function wrapTick(label: string, max = 24): string | string[] {
+  if (label.length <= max) {
+    return label;
+  }
 
-const barOptions: ChartOptions<'bar'> = {
-  indexAxis: 'y',
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      callbacks: {
-        label: (item) => `${item.parsed.x} шт.`,
-      },
-    },
-  },
-  scales: {
-    x: {
-      beginAtZero: true,
-      ticks: {
-        stepSize: 1,
-        font: { size: 11 },
-      },
-      grid: { color: '#e5e7eb' },
-    },
-    y: {
-      ticks: { font: { size: 11 } },
-      grid: { display: false },
-    },
-  },
-};
+  const cut = label.lastIndexOf(' ', max);
+  const at = cut > 10 ? cut : max;
+  const first = label.slice(0, at).trim();
+  let second = label.slice(at).trim();
 
-const moneyBarOptions: ChartOptions<'bar'> = {
-  ...barOptions,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      callbacks: {
-        label: (item) => formatMoneyTooltip(Number(item.parsed.x), item.label),
-      },
+  if (second.length > max) {
+    second = `${second.slice(0, max - 1)}…`;
+  }
+
+  return [first, second];
+}
+
+function readCssVar(name: string, fallback: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  return value || fallback;
+}
+
+function readChartPalette(_theme: string) {
+  return {
+    ink: readCssVar('--dvsh-ink', '#111827'),
+    muted: readCssVar('--dvsh-muted', '#6b7280'),
+    line: readCssVar('--dvsh-line', '#e5e7eb'),
+    accent: readCssVar('--dvsh-accent', '#2563eb'),
+  };
+}
+
+function barLabelPlugin(formatValue: (value: number) => string, ink: string): Plugin<'bar'> {
+  return {
+    id: 'barEndLabels',
+    afterDatasetsDraw(chart) {
+      const meta = chart.getDatasetMeta(0);
+      const dataset = chart.data.datasets[0];
+      const { ctx } = chart;
+
+      ctx.save();
+      ctx.font = '600 12px Manrope, system-ui, sans-serif';
+      ctx.fillStyle = ink;
+      ctx.textBaseline = 'middle';
+
+      meta.data.forEach((element, index) => {
+        const raw = Number(dataset.data[index] ?? 0);
+        const label = formatValue(raw);
+        const { x, y } = element;
+        const area = chart.chartArea;
+        const fitsInside = x + ctx.measureText(label).width + 16 < area.right;
+        ctx.textAlign = fitsInside ? 'left' : 'right';
+        ctx.fillText(label, fitsInside ? x + 8 : x - 8, y);
+      });
+
+      ctx.restore();
     },
-  },
-  scales: {
-    x: {
-      beginAtZero: true,
-      ticks: {
-        callback: (value) => formatMoney(Number(value)),
-        font: { size: 11 },
-      },
-      grid: { color: '#e5e7eb' },
-    },
-    y: {
-      ticks: { font: { size: 11 } },
-      grid: { display: false },
-    },
-  },
-};
+  };
+}
 
 export function StationCompletedWorksPanel() {
+  const { theme } = useTheme();
   const [view, setView] = useState<ViewMode>('works');
-  const [worksSearch, setWorksSearch] = useState('');
-  const [worksPage, setWorksPage] = useState(1);
-  const [worksPageSize, setWorksPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(5);
-
   const { stats, period, setPeriod, customRange, setCustomRange, isLoading, isError, refetch } =
     useStationCompletedWorks();
 
-  const masterAmountData = useMemo<ChartData<'doughnut'>>(
-    () => ({
-      labels: stats.byMaster.map((item) => item.fullName),
-      datasets: [
-        {
-          data: stats.byMaster.map((item) => item.amount),
-          backgroundColor: stats.byMaster.map(
-            (_, index) => CHART_COLORS[index % CHART_COLORS.length],
-          ),
-          borderWidth: 0,
-        },
-      ],
-    }),
-    [stats.byMaster],
+  const palette = useMemo(() => readChartPalette(theme), [theme]);
+
+  const masterRows = stats.byMaster.slice(0, CHART_TOP);
+  const trend = useMemo(
+    () => buildWorksTrend(stats.works, period, customRange),
+    [customRange, period, stats.works],
   );
+  const moneyColor = '#14b8a6';
 
   const masterBarData = useMemo<ChartData<'bar'>>(
     () => ({
-      labels: stats.byMaster.map((item) => item.fullName),
+      labels: masterRows.map((item) => item.fullName),
       datasets: [
         {
           label: 'Сумма работ',
-          data: stats.byMaster.map((item) => item.amount),
-          backgroundColor: '#0f766e',
-          borderRadius: 6,
+          data: masterRows.map((item) => item.amount),
+          backgroundColor: palette.accent,
+          borderRadius: 8,
+          borderSkipped: false,
+          maxBarThickness: 28,
         },
       ],
     }),
-    [stats.byMaster],
+    [masterRows, palette.accent],
   );
 
-  const titleBarData = useMemo<ChartData<'bar'>>(() => {
-    const rows = stats.byTitle.slice(0, 10);
-    return {
-      labels: rows.map((item) =>
-        item.title.length > 32 ? `${item.title.slice(0, 32)}…` : item.title,
-      ),
+  const moneyBarOptions = useMemo<ChartOptions<'bar'>>(
+    () => ({
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      layout: { padding: { right: 12 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => String(items[0]?.label ?? ''),
+            label: (item) => {
+              const row = masterRows[item.dataIndex];
+
+              if (!row) {
+                return formatMoney(Number(item.parsed.x));
+              }
+
+              return [
+                formatMoney(row.amount),
+                formatWorksCount(row.worksCount),
+                `мастер ${formatMoney(row.masterShare)}`,
+                `СТО ${formatMoney(row.stationShare)}`,
+              ];
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: (value) => formatMoney(Number(value)),
+            color: palette.muted,
+            font: { size: 11 },
+            maxTicksLimit: 5,
+          },
+          grid: { color: palette.line },
+          border: { display: false },
+        },
+        y: {
+          ticks: {
+            color: palette.ink,
+            font: { size: 12, weight: 600 },
+            autoSkip: false,
+            callback(_value, index) {
+              return wrapTick(String(masterRows[index]?.fullName ?? ''), 20);
+            },
+          },
+          grid: { display: false },
+          border: { display: false },
+        },
+      },
+    }),
+    [masterRows, palette.ink, palette.line, palette.muted],
+  );
+
+  const moneyPlugins = useMemo(
+    () => [barLabelPlugin((value) => formatMoney(value), palette.ink)],
+    [palette.ink],
+  );
+
+  const worksTrendData = useMemo<ChartData<'bar' | 'line', number[], string>>(
+    () => ({
+      labels: trend.map((point) => point.label),
       datasets: [
         {
-          label: 'Количество',
-          data: rows.map((item) => item.worksCount),
-          backgroundColor: '#2563eb',
-          borderRadius: 6,
+          type: 'bar',
+          label: 'Работы',
+          data: trend.map((point) => point.count),
+          yAxisID: 'yCount',
+          borderRadius: 8,
+          maxBarThickness: 28,
+          backgroundColor: withAlpha(palette.accent, 0.28),
+          hoverBackgroundColor: withAlpha(palette.accent, 0.42),
+        },
+        {
+          type: 'line',
+          label: 'Сумма',
+          data: trend.map((point) => point.amount),
+          yAxisID: 'yMoney',
+          borderColor: moneyColor,
+          backgroundColor: withAlpha(moneyColor, 0.12),
+          fill: true,
+          tension: 0.35,
+          pointRadius: trend.length > 20 ? 0 : 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: moneyColor,
+          borderWidth: 2,
         },
       ],
-    };
-  }, [stats.byTitle]);
-
-  const filteredTitles = useMemo(() => {
-    const query = worksSearch.trim().toLowerCase();
-
-    if (!query) {
-      return stats.byTitle;
-    }
-
-    return stats.byTitle.filter((item) => item.title.toLowerCase().includes(query));
-  }, [stats.byTitle, worksSearch]);
-
-  const worksPageCount = Math.max(1, Math.ceil(filteredTitles.length / worksPageSize));
-  const pagedTitles = filteredTitles.slice(
-    (worksPage - 1) * worksPageSize,
-    worksPage * worksPageSize,
+    }),
+    [palette.accent, trend],
   );
 
-  useEffect(() => {
-    setWorksPage(1);
-  }, [period, customRange, worksSearch, worksPageSize, view]);
+  const mastersTrendData = useMemo<ChartData<'line', number[], string>>(
+    () => ({
+      labels: trend.map((point) => point.label),
+      datasets: [
+        {
+          label: 'СТО',
+          data: trend.map((point) => point.stationShare),
+          borderColor: moneyColor,
+          backgroundColor: withAlpha(moneyColor, 0.14),
+          fill: true,
+          tension: 0.35,
+          pointRadius: trend.length > 20 ? 0 : 3,
+          borderWidth: 2,
+        },
+        {
+          label: 'Мастерам',
+          data: trend.map((point) => point.masterShare),
+          borderColor: palette.accent,
+          backgroundColor: withAlpha(palette.accent, 0.1),
+          fill: true,
+          tension: 0.35,
+          pointRadius: trend.length > 20 ? 0 : 3,
+          borderWidth: 2,
+        },
+      ],
+    }),
+    [palette.accent, trend],
+  );
 
-  useEffect(() => {
-    if (worksPage > worksPageCount) {
-      setWorksPage(worksPageCount);
-    }
-  }, [worksPage, worksPageCount]);
+  const worksTrendOptions = useMemo<ChartOptions<'bar' | 'line'>>(
+    () => ({
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, color: palette.ink, font: { size: 14 } },
+        },
+        tooltip: {
+          titleFont: { size: 14 },
+          bodyFont: { size: 14 },
+          callbacks: {
+            label: (item) => {
+              if (item.dataset.yAxisID === 'yMoney') {
+                return `Сумма ${formatMoney(Number(item.parsed.y ?? 0))}`;
+              }
+
+              return formatWorksCount(Number(item.parsed.y ?? 0));
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: palette.muted, font: { size: 13 }, maxRotation: 0, autoSkip: true },
+          border: { display: false },
+        },
+        yCount: {
+          position: 'left',
+          beginAtZero: true,
+          ticks: { stepSize: 1, color: palette.muted, font: { size: 13 } },
+          grid: { color: palette.line },
+          border: { display: false },
+        },
+        yMoney: {
+          position: 'right',
+          beginAtZero: true,
+          ticks: {
+            color: palette.muted,
+            font: { size: 13 },
+            callback: (value) => formatMoney(Number(value)),
+            maxTicksLimit: 5,
+          },
+          grid: { display: false },
+          border: { display: false },
+        },
+      },
+    }),
+    [palette.ink, palette.line, palette.muted],
+  );
+
+  const mastersTrendOptions = useMemo<ChartOptions<'line'>>(
+    () => ({
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, color: palette.ink, font: { size: 14 } },
+        },
+        tooltip: {
+          titleFont: { size: 14 },
+          bodyFont: { size: 14 },
+          callbacks: {
+            label: (item) => `${item.dataset.label}: ${formatMoney(Number(item.parsed.y ?? 0))}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: palette.muted, font: { size: 13 }, maxRotation: 0, autoSkip: true },
+          border: { display: false },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: palette.muted,
+            font: { size: 13 },
+            callback: (value) => formatMoney(Number(value)),
+            maxTicksLimit: 5,
+          },
+          grid: { color: palette.line },
+          border: { display: false },
+        },
+      },
+    }),
+    [palette.ink, palette.line, palette.muted],
+  );
+
+  const mastersHidden = stats.byMaster.length - masterRows.length;
 
   return (
     <section className={styles.panel}>
@@ -312,93 +492,34 @@ export function StationCompletedWorksPanel() {
             </div>
           </div>
 
+          {stats.worksCount === 0 ? null : view === 'works' ? (
+            <article className={styles.chartCard}>
+              <h3 className={styles.chartTitle}>Динамика</h3>
+              <p className={styles.chartHint}>Сумма и число работ за период</p>
+              <div className={styles.trendWrap}>
+                <Chart data={worksTrendData} options={worksTrendOptions} type="bar" />
+              </div>
+            </article>
+          ) : (
+            <article className={styles.chartCard}>
+              <h3 className={styles.chartTitle}>Динамика долей</h3>
+              <p className={styles.chartHint}>Как делилась сумма между СТО и мастерами</p>
+              <div className={styles.trendWrap}>
+                <Chart data={mastersTrendData} options={mastersTrendOptions} type="line" />
+              </div>
+            </article>
+          )}
+
           {view === 'works' ? (
-            stats.byTitle.length === 0 ? (
+            stats.worksCount === 0 ? (
               <div className={styles.emptyBox}>
                 <p className={styles.emptyTitle}>Выполненных работ пока нет</p>
                 <p className={styles.emptyText}>
                   Когда заказ-наряд станет «Готово» или «Выдан», работы появятся здесь.
                 </p>
               </div>
-            ) : (
-              <>
-                {stats.byTitle.length > 1 ? (
-                  <article className={styles.chartCard}>
-                    <h3 className={styles.chartTitle}>Сколько раз делали</h3>
-                    <div className={styles.barWrap}>
-                      <Bar data={titleBarData} options={barOptions} />
-                    </div>
-                  </article>
-                ) : null}
-
-                <div className={styles.listToolbar}>
-                  <Input
-                    allowClear
-                    className={styles.listSearch}
-                    placeholder="Найти работу"
-                    size="large"
-                    value={worksSearch}
-                    onChange={(event) => setWorksSearch(event.target.value)}
-                  />
-                </div>
-
-                {filteredTitles.length === 0 ? (
-                  <div className={styles.emptyBox}>
-                    <p className={styles.emptyTitle}>Ничего не нашлось</p>
-                    <p className={styles.emptyText}>Попробуйте другое название работы.</p>
-                  </div>
-                ) : (
-                  <>
-                    <ul className={styles.rankList}>
-                      {pagedTitles.map((item, index) => {
-                        const rank = (worksPage - 1) * worksPageSize + index + 1;
-
-                        return (
-                          <li className={styles.rankItem} key={`${item.title}-${rank}`}>
-                            <span className={styles.rankIndex}>{rank}</span>
-                            <div className={styles.rankMain}>
-                              <span className={styles.rankTitle}>{item.title}</span>
-                              <span className={styles.rankMeta}>
-                                {formatWorksCount(item.worksCount)}
-                                {formatHours(item.hours) ? ` · ${formatHours(item.hours)}` : ''}
-                                {` · мастер ${formatMoney(item.masterShare)} · СТО ${formatMoney(item.stationShare)}`}
-                              </span>
-                            </div>
-                            <div className={styles.rankAside}>
-                              <span className={styles.rankCount}>{item.worksCount}</span>
-                              <span className={styles.rankAmount}>{formatMoney(item.amount)}</span>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    <div className={styles.pager}>
-                      <div className={styles.pagerPages}>
-                        {filteredTitles.length > worksPageSize ? (
-                          <Pagination
-                            current={worksPage}
-                            pageSize={worksPageSize}
-                            showSizeChanger={false}
-                            total={filteredTitles.length}
-                            onChange={setWorksPage}
-                          />
-                        ) : null}
-                      </div>
-                      <Select
-                        className={styles.pageSizeSelect}
-                        options={PAGE_SIZE_OPTIONS.map((value) => ({
-                          value,
-                          label: String(value),
-                        }))}
-                        value={worksPageSize}
-                        onChange={(value) => setWorksPageSize(value)}
-                      />
-                    </div>
-                  </>
-                )}
-              </>
-            )
-          ) : stats.byMaster.length === 0 ? (
+            ) : null
+          ) : masterRows.length === 0 ? (
             <div className={styles.emptyBox}>
               <p className={styles.emptyTitle}>Выполненных работ пока нет</p>
               <p className={styles.emptyText}>
@@ -407,41 +528,18 @@ export function StationCompletedWorksPanel() {
               </p>
             </div>
           ) : (
-            <>
-              <div className={styles.charts}>
-                <article className={styles.chartCard}>
-                  <h3 className={styles.chartTitle}>Сумма по мастерам</h3>
-                  <div className={styles.doughnutWrap}>
-                    <Doughnut data={masterAmountData} options={doughnutOptions} />
-                  </div>
-                </article>
-                <article className={styles.chartCard}>
-                  <h3 className={styles.chartTitle}>Сравнение сумм</h3>
-                  <div className={styles.barWrap}>
-                    <Bar data={masterBarData} options={moneyBarOptions} />
-                  </div>
-                </article>
+            <article className={styles.chartCard}>
+              <h3 className={styles.chartTitle}>Сумма по мастерам</h3>
+              {mastersHidden > 0 ? (
+                <p className={styles.chartHint}>Показаны топ-{CHART_TOP} мастеров</p>
+              ) : null}
+              <div
+                className={styles.barWrap}
+                style={{ height: Math.max(160, masterRows.length * BAR_ROW_PX) }}
+              >
+                <Bar data={masterBarData} options={moneyBarOptions} plugins={moneyPlugins} />
               </div>
-              <ul className={styles.rankList}>
-                {stats.byMaster.map((item, index) => (
-                  <li className={styles.rankItem} key={item.masterId}>
-                    <span className={styles.rankIndex}>{index + 1}</span>
-                    <div className={styles.rankMain}>
-                      <span className={styles.rankTitle}>{item.fullName}</span>
-                      <span className={styles.rankMeta}>
-                        {item.specialty ? `${item.specialty} · ` : ''}
-                        {formatWorksCount(item.worksCount)}
-                        {` · мастер ${formatMoney(item.masterShare)} · СТО ${formatMoney(item.stationShare)}`}
-                      </span>
-                    </div>
-                    <div className={styles.rankAside}>
-                      <span className={styles.rankCount}>{item.worksCount}</span>
-                      <span className={styles.rankAmount}>{formatMoney(item.amount)}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </>
+            </article>
           )}
         </>
       )}

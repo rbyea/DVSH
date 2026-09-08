@@ -28,7 +28,7 @@ export type StationInfo = {
   working_hours?: string | null;
   inn?: string | null;
   ogrn?: string | null;
-  /** Код приглашения: регистрация по ссылке даёт 60 дней триала вместо 30. */
+  /** Код приглашения: за регистрацию по ссылке пригласившему +30 дней. */
   referral_code?: string | null;
 };
 

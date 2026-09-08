@@ -1,5 +1,5 @@
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
-import { Button, DatePicker, Input, InputNumber, Select, Spin } from 'antd';
+import { Button, DatePicker, Input, InputNumber, Select, Slider, Spin } from 'antd';
 import clsx from 'clsx';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -48,6 +48,12 @@ const YEAR_OPTIONS = Array.from({ length: 8 }, (_, index) => {
   const year = currentYear - 5 + index;
   return { value: year, label: String(year) };
 });
+
+function formatShareTooltip(value: number | undefined) {
+  return `${value ?? 0}% мастерам`;
+}
+
+const SHARE_SLIDER_TOOLTIP = { formatter: formatShareTooltip };
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat('ru-RU', {
@@ -133,8 +139,6 @@ export function StationPayoutsPanel() {
   const [amount, setAmount] = useState<number | null>(null);
   const [extraDate, setExtraDate] = useState<Dayjs>(() => dayjs());
   const [comment, setComment] = useState('');
-  const [isEditingShare, setIsEditingShare] = useState(false);
-  const [shareDraft, setShareDraft] = useState(50);
 
   const from = month.startOf('month').format('YYYY-MM-DD');
   const to = month.endOf('month').format('YYYY-MM-DD');
@@ -150,6 +154,10 @@ export function StationPayoutsPanel() {
   const [toggleSettlement] = useTogglePayoutSettlementMutation();
   const [toggleExtraSettle] = useTogglePayoutExtraSettleMutation();
   const sharePercent = getStationMasterSharePercent(station);
+  const [shareDraft, setShareDraft] = useState<number | null>(null);
+  const shownShare = shareDraft ?? sharePercent;
+  const shareDirty = shareDraft != null && shareDraft !== sharePercent;
+  const stationShareDraft = 100 - shownShare;
 
   const daysByDate = useMemo(() => {
     const map = new Map<string, PayoutDay>();
@@ -270,13 +278,8 @@ export function StationPayoutsPanel() {
     }
   };
 
-  const handleStartEditShare = () => {
-    setShareDraft(sharePercent);
-    setIsEditingShare(true);
-  };
-
   const handleSaveShare = async () => {
-    const next = normalizeMasterSharePercent(shareDraft);
+    const next = normalizeMasterSharePercent(shownShare);
     writeLocalMasterSharePercent(next);
 
     try {
@@ -293,9 +296,9 @@ export function StationPayoutsPanel() {
         position: 'top-right',
         transition: Bounce,
       });
-    } finally {
-      setIsEditingShare(false);
     }
+
+    setShareDraft(null);
   };
 
   return (
@@ -323,36 +326,55 @@ export function StationPayoutsPanel() {
       </div>
 
       <div className={styles.shareCard}>
-        <span className={styles.shareLabel}>Доля мастерам</span>
-        {isEditingShare ? (
-          <div className={styles.shareEdit}>
-            <InputNumber
-              addonAfter="%"
-              className={styles.shareInput}
-              max={100}
-              min={0}
-              size="large"
-              value={shareDraft}
-              onChange={(value) => setShareDraft(typeof value === 'number' ? value : sharePercent)}
-            />
-            <Button disabled={isSavingShare} onClick={() => setIsEditingShare(false)}>
-              Отмена
-            </Button>
-            <Button loading={isSavingShare} type="primary" onClick={() => void handleSaveShare()}>
-              Сохранить
-            </Button>
+        <div className={styles.shareIntro}>
+          <div>
+            <p className={styles.shareLabel}>Как делим работы</p>
+            <p className={styles.shareLead}>
+              От готовых заказ-нарядов и сумм без наряда. Сдвигайте ползунок — мастерам слева, СТО
+              справа.
+            </p>
           </div>
-        ) : (
-          <div className={styles.shareValueRow}>
-            <strong className={styles.shareValue}>{sharePercent}%</strong>
-            <span className={styles.shareHint}>
-              мастер {sharePercent}% · СТО {100 - sharePercent}%
-            </span>
-            <Button size="small" type="link" onClick={handleStartEditShare}>
-              Изменить
-            </Button>
+          {shareDirty ? (
+            <div className={styles.shareActions}>
+              <Button onClick={() => setShareDraft(null)}>Сбросить</Button>
+              <Button loading={isSavingShare} type="primary" onClick={() => void handleSaveShare()}>
+                Сохранить
+              </Button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className={styles.shareSides}>
+          <div className={styles.shareSide}>
+            <span className={styles.shareCaption}>Мастерам</span>
+            <strong className={styles.sharePercent}>{shownShare}%</strong>
           </div>
-        )}
+          <div className={clsx(styles.shareSide, styles.shareSideSto)}>
+            <span className={styles.shareCaption}>СТО</span>
+            <strong className={styles.sharePercent}>{stationShareDraft}%</strong>
+          </div>
+        </div>
+
+        <div className={styles.shareTrack} aria-hidden>
+          <span className={styles.shareFillMaster} style={{ width: `${shownShare}%` }} />
+          <span className={styles.shareFillSto} style={{ width: `${stationShareDraft}%` }} />
+        </div>
+
+        <Slider
+          className={styles.shareSlider}
+          max={100}
+          min={0}
+          step={1}
+          tooltip={SHARE_SLIDER_TOOLTIP}
+          value={shownShare}
+          onChange={(value) => {
+            const next =
+              typeof value === 'number'
+                ? Math.min(100, Math.max(0, Math.round(value)))
+                : sharePercent;
+            setShareDraft((current) => (current === next ? current : next));
+          }}
+        />
       </div>
 
       {isLoading ? (

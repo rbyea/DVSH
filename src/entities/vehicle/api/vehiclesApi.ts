@@ -2,6 +2,11 @@ import { baseApi } from '@/shared/api';
 import type { CreateVehicleDiagnosticRequest, VehicleDiagnostic } from '@/shared/lib/diagnostics';
 
 import type {
+  CreateVehicleInspectionRequest,
+  UpdateVehicleInspectionRequest,
+  VehicleInspectionItem,
+} from '../model/inspection';
+import type {
   GetVehiclesParams,
   UpdateVehicleRequest,
   VehicleCard,
@@ -141,6 +146,71 @@ export const vehiclesApi = baseApi.injectEndpoints({
         { type: 'Vehicle', id: 'LIST' },
       ],
     }),
+    getVehicleInspections: build.query<VehicleInspectionItem[], string>({
+      query: (vehicleId) => `/vehicles/${vehicleId}/inspections`,
+      transformResponse: (response: ApiDataResponse<VehicleInspectionItem[]>) => response.data,
+      providesTags: (_result, _error, vehicleId) => [
+        { type: 'Vehicle', id: `inspections-${vehicleId}` },
+      ],
+    }),
+    createVehicleInspectionItem: build.mutation<
+      VehicleInspectionItem,
+      { vehicleId: string; body: CreateVehicleInspectionRequest }
+    >({
+      query: ({ vehicleId, body }) => ({
+        url: `/vehicles/${vehicleId}/inspections`,
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<VehicleInspectionItem>) => response.data,
+      invalidatesTags: (_result, _error, { vehicleId }) => [
+        { type: 'Vehicle', id: `inspections-${vehicleId}` },
+      ],
+    }),
+    updateVehicleInspectionItem: build.mutation<
+      VehicleInspectionItem,
+      { vehicleId: string; itemId: string; body: UpdateVehicleInspectionRequest }
+    >({
+      query: ({ vehicleId, itemId, body }) => ({
+        url: `/vehicles/${vehicleId}/inspections/${itemId}`,
+        method: 'PATCH',
+        body,
+      }),
+      transformResponse: (response: ApiDataResponse<VehicleInspectionItem>) => response.data,
+      invalidatesTags: (_result, _error, { vehicleId }) => [
+        { type: 'Vehicle', id: `inspections-${vehicleId}` },
+      ],
+    }),
+    deleteVehicleInspectionItem: build.mutation<void, { vehicleId: string; itemId: string }>({
+      query: ({ vehicleId, itemId }) => ({
+        url: `/vehicles/${vehicleId}/inspections/${itemId}`,
+        method: 'DELETE',
+        responseHandler: async (response) => {
+          if (response.status === 204 || response.status === 200) {
+            return undefined;
+          }
+
+          return response.json();
+        },
+      }),
+      invalidatesTags: (_result, _error, { vehicleId }) => [
+        { type: 'Vehicle', id: `inspections-${vehicleId}` },
+      ],
+    }),
+    markVehicleInspectionsInOrder: build.mutation<
+      VehicleInspectionItem[],
+      { vehicleId: string; itemIds: string[] }
+    >({
+      query: ({ vehicleId, itemIds }) => ({
+        url: `/vehicles/${vehicleId}/inspections/mark-in-order`,
+        method: 'POST',
+        body: { item_ids: itemIds },
+      }),
+      transformResponse: (response: ApiDataResponse<VehicleInspectionItem[]>) => response.data,
+      invalidatesTags: (_result, _error, { vehicleId }) => [
+        { type: 'Vehicle', id: `inspections-${vehicleId}` },
+      ],
+    }),
   }),
 });
 
@@ -155,4 +225,9 @@ export const {
   useDeleteVehicleDiagnosticMutation,
   useGetVehicleDiagnosticsQuery,
   useUpdateVehicleMutation,
+  useGetVehicleInspectionsQuery,
+  useCreateVehicleInspectionItemMutation,
+  useUpdateVehicleInspectionItemMutation,
+  useDeleteVehicleInspectionItemMutation,
+  useMarkVehicleInspectionsInOrderMutation,
 } = vehiclesApi;
