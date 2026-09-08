@@ -302,7 +302,7 @@ export function RepairCreateProvider({ children }: RepairCreateProviderProps) {
   useEffect(() => {
     const searchQuery = vehicleSearch?.trim() || '';
 
-    if (searchQuery.length < 2) {
+    if (searchQuery.length < 4) {
       setVehicleSuggestions([]);
       setIsVehicleSearchLoading(false);
       return;

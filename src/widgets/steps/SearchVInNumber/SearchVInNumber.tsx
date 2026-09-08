@@ -2,6 +2,7 @@ import { Button, Card, Form, Input, Spin, Typography } from 'antd';
 import { Controller } from 'react-hook-form';
 
 import { useRepairCreateContext } from '@/features/repair-order/create';
+import { RuLicensePlate } from '@/shared/ui/RuLicensePlate';
 import { SelectedCar } from '@/widgets/SelectedCar';
 
 import styles from './SearchVInNumber.module.scss';
@@ -46,7 +47,7 @@ export const SearchVInNumber = () => {
         />
       </Form.Item>
 
-      {vehicleSearch && vehicleSearch.trim().length >= 2 && !selectedVehicle && (
+      {vehicleSearch && vehicleSearch.trim().length >= 4 && !selectedVehicle && (
         <div className={styles.vehicleResults}>
           {isVehicleSearchLoading ? (
             <div className={styles.vehicleLoading}>
@@ -63,7 +64,9 @@ export const SearchVInNumber = () => {
                   void applyVehicleSuggestion(vehicle);
                 }}
               >
-                <span className={styles.vehicleResultPlate}>{vehicle.license_plate}</span>
+                <span className={styles.vehicleResultPlate}>
+                  <RuLicensePlate value={vehicle.license_plate} />
+                </span>
                 <span>{vehicle.car_model}</span>
                 <span>{vehicle.vin?.trim() || vehicle.chassis_number?.trim() || '—'}</span>
                 <span>

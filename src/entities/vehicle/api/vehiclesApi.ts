@@ -221,6 +221,7 @@ export const {
   useGetVehicleQuery,
   useLazyGetVehicleQuery,
   useLazySearchVehiclesQuery,
+  useSearchVehiclesQuery,
   useAdoptSharedVehicleMutation,
   useGetVehicleModelSuggestionsQuery,
   useCreateVehicleDiagnosticMutation,

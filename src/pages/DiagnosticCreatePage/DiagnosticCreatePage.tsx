@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 
 import { useGetVehiclesQuery } from '@/entities/vehicle';
 import {
+  DiagnosticVehicleResults,
   getDiagnosticVehiclePath,
   NewVehicleDiagnosticForm,
+  usePickDiagnosticVehicle,
 } from '@/features/vehicle/start-diagnostic';
-import { AppInfo } from '@/widgets/AppInfo';
 import { StationVehiclesList } from '@/widgets/StationVehiclesList';
 
 import styles from './DiagnosticCreatePage.module.scss';
@@ -16,48 +17,56 @@ const PAGE_SIZE = 8;
 
 export function DiagnosticCreatePage() {
   const [mode, setMode] = useState<'pick' | 'new'>('pick');
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
+  const {
+    search,
+    setSearch,
+    hasQuery,
+    isShortQuery,
+    shortQueryLeft,
+    results,
+    isSearching,
+    isError: isSearchError,
+    refetch: refetchSearch,
+    adoptingId,
+    pickVehicle,
+  } = usePickDiagnosticVehicle();
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedSearch(search.trim());
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [search]);
+  const { data, isFetching, isError, refetch } = useGetVehiclesQuery(
+    {
+      page,
+      per_page: PAGE_SIZE,
+    },
+    { skip: mode !== 'pick' || hasQuery },
+  );
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
-
-  const { data, isFetching, isError, refetch } = useGetVehiclesQuery({
-    search: debouncedSearch || undefined,
-    page,
-    per_page: PAGE_SIZE,
-  });
+  }, [hasQuery]);
 
   const vehicles = data?.data ?? [];
   const total = data?.meta.total ?? 0;
-  const isEmpty = !isFetching && !isError && vehicles.length === 0;
-  const hasSearch = Boolean(debouncedSearch);
+  const isGarageEmpty = !isFetching && !isError && vehicles.length === 0;
 
   if (mode === 'new') {
     return (
       <main className={styles.page}>
-        <div className={styles.toolbar}>
-          <Button type="link" onClick={() => setMode('pick')}>
-            ← К выбору авто
-          </Button>
-        </div>
-        <AppInfo
-          eyebrow="Диагностика"
-          subtitle="Заведите клиента и машину — сразу откроется список работ. Заказ-наряд не создаётся."
-          title="Этого авто ещё нет"
-        />
+        <section className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>Приёмка</p>
+            <h1 className={styles.title}>
+              Создание диагностики <span className={styles.titleHint}>(Ручная диагностика)</span>
+            </h1>
+            <p className={styles.subtitle}>
+              Заведите клиента и машину — сразу откроется список работ. Заказ-наряд не создаётся.
+            </p>
+          </div>
+          <div className={styles.heroActions}>
+            <Button size="large" onClick={() => setMode('pick')}>
+              ← К выбору авто
+            </Button>
+          </div>
+        </section>
         <NewVehicleDiagnosticForm />
       </main>
     );
@@ -65,22 +74,29 @@ export function DiagnosticCreatePage() {
 
   return (
     <main className={styles.page}>
-      <div className={styles.toolbar}>
-        <Link className={styles.back} to="/dashboard">
-          ← К ремонтам
-        </Link>
-      </div>
-
-      <AppInfo
-        eyebrow="Диагностика"
-        subtitle="Выберите машину из гаража по госномеру или клиенту. VIN нужен только если авто ещё нет в базе."
-        title="Какая машина?"
-      />
+      <section className={styles.hero}>
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow}>Приёмка</p>
+          <h1 className={styles.title}>
+            Создание диагностики <span className={styles.titleHint}>(Ручная диагностика)</span>
+          </h1>
+          <p className={styles.subtitle}>
+            Найдите авто по госномеру или VIN — ищем по всем СТО. Затем список работ, без
+            заказ-наряда.
+          </p>
+        </div>
+        <div className={styles.heroActions}>
+          <Link to="/dashboard">
+            <Button size="large">← К ремонтам</Button>
+          </Link>
+        </div>
+      </section>
 
       <section className={styles.controls} aria-label="Поиск автомобиля">
         <Input
           allowClear
-          placeholder="Госномер или клиент"
+          placeholder="Госномер, VIN или клиент — по всем СТО"
+          prefix={isSearching ? <Spin size="small" /> : undefined}
           size="large"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -95,7 +111,37 @@ export function DiagnosticCreatePage() {
         </Button>
       </section>
 
-      {isError ? (
+      {isShortQuery ? (
+        <p className={styles.hint}>
+          {shortQueryLeft === 1
+            ? 'Введите ещё 1 символ — ищем по всей базе'
+            : `Введите ещё ${shortQueryLeft} символа — ищем по всей базе`}
+        </p>
+      ) : null}
+
+      {hasQuery ? (
+        isSearchError && !isSearching ? (
+          <Card className={styles.block} variant="borderless">
+            <Result
+              extra={
+                <Button type="primary" onClick={() => void refetchSearch()}>
+                  Повторить
+                </Button>
+              }
+              status="error"
+              subTitle="Проверьте соединение и попробуйте ещё раз."
+              title="Не удалось найти автомобиль"
+            />
+          </Card>
+        ) : (
+          <DiagnosticVehicleResults
+            adoptingId={adoptingId}
+            isSearching={isSearching}
+            results={results}
+            onPick={(vehicle) => void pickVehicle(vehicle)}
+          />
+        )
+      ) : isError ? (
         <Card className={styles.block} variant="borderless">
           <Result
             extra={
@@ -112,12 +158,10 @@ export function DiagnosticCreatePage() {
         <div className={styles.loading}>
           <Spin />
         </div>
-      ) : isEmpty ? (
+      ) : isGarageEmpty ? (
         <Card className={styles.block} variant="borderless">
           <Empty
-            description={
-              hasSearch ? 'По запросу ничего не найдено' : 'В гараже пока нет автомобилей'
-            }
+            description="В гараже пока нет автомобилей — найдите в общей базе или заведите новое"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
             <Button type="primary" onClick={() => setMode('new')}>
@@ -136,7 +180,15 @@ export function DiagnosticCreatePage() {
         />
       )}
 
-      {isEmpty ? null : (
+      {hasQuery ? (
+        results.length === 0 && !isSearching ? (
+          <div className={styles.footer}>
+            <Button size="large" type="primary" onClick={() => setMode('new')}>
+              Этого авто ещё нет
+            </Button>
+          </div>
+        ) : null
+      ) : isGarageEmpty ? null : (
         <div className={styles.footer}>
           <Button size="large" type="link" onClick={() => setMode('new')}>
             Этого авто ещё нет

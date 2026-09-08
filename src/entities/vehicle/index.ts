@@ -7,6 +7,7 @@ export {
   useGetVehicleModelSuggestionsQuery,
   useLazyGetVehicleQuery,
   useLazySearchVehiclesQuery,
+  useSearchVehiclesQuery,
   useAdoptSharedVehicleMutation,
   useUpdateVehicleMutation,
   useGetVehicleInspectionsQuery,

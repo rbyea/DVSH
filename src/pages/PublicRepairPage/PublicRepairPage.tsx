@@ -1,4 +1,4 @@
-﻿import { Button, Input, Result, Spin, Tag } from 'antd';
+import { Button, Input, Result, Spin, Tag } from 'antd';
 import clsx from 'clsx';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -46,6 +46,21 @@ import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
 import styles from './PublicRepairPage.module.scss';
 
 type PublicNavTab = 'works' | 'diagnostics' | 'history';
+
+function defaultPublicNavTab(vehicle: PublicVehicle): PublicNavTab {
+  const hasWorks = (vehicle.current_repair?.work_items?.length ?? 0) > 0;
+  const hasHistory = (vehicle.previous_repairs?.length ?? 0) > 0;
+
+  if (hasWorks) {
+    return 'works';
+  }
+
+  if (hasHistory) {
+    return 'history';
+  }
+
+  return 'diagnostics';
+}
 
 const statusClassName: Record<RepairStatus, string> = {
   new: styles.status_new,
@@ -243,9 +258,9 @@ export function PublicRepairPage() {
   const [noticeAccepted, setNoticeAccepted] = useState(() =>
     publicToken ? hasAcceptedPublicPdnNotice(publicToken) : false,
   );
-  const [navTab, setNavTab] = useState<PublicNavTab>('history');
+  const [navTab, setNavTab] = useState<PublicNavTab>('diagnostics');
   const [openHistoryOrder, setOpenHistoryOrder] = useState<string | null>(null);
-  const navTabInitedRef = useRef<string | null>(null);
+  const userPickedTabRef = useRef(false);
   const previousFingerprintRef = useRef<string | null>(null);
   const ignoreUpdatesUntilRef = useRef(0);
 
@@ -270,24 +285,17 @@ export function PublicRepairPage() {
   useEffect(() => {
     setNoticeAccepted(publicToken ? hasAcceptedPublicPdnNotice(publicToken) : false);
     previousFingerprintRef.current = null;
-    navTabInitedRef.current = null;
+    userPickedTabRef.current = false;
     setOpenHistoryOrder(null);
   }, [publicToken]);
 
   useEffect(() => {
-    if (!vehicle || !publicToken || navTabInitedRef.current === publicToken) {
+    if (!vehicle || userPickedTabRef.current) {
       return;
     }
 
-    navTabInitedRef.current = publicToken;
-    setNavTab(
-      vehicle.current_repair
-        ? 'works'
-        : vehicle.previous_repairs.length > 0
-          ? 'history'
-          : 'diagnostics',
-    );
-  }, [publicToken, vehicle]);
+    setNavTab(defaultPublicNavTab(vehicle));
+  }, [vehicle]);
 
   useEffect(() => {
     if (!vehicle) {
@@ -880,7 +888,10 @@ export function PublicRepairPage() {
                 className={clsx(styles.tab, navTab === item.id && styles.tabActive)}
                 key={item.id}
                 type="button"
-                onClick={() => setNavTab(item.id)}
+                onClick={() => {
+                  userPickedTabRef.current = true;
+                  setNavTab(item.id);
+                }}
               >
                 {item.label}
               </button>

@@ -37,7 +37,7 @@
 
 .vehicleResult {
   display: grid;
-  grid-template-columns: 140px 1fr 1.2fr 1fr;
+  grid-template-columns: minmax(196px, auto) 1fr 1.2fr 1fr;
   gap: 12px;
   align-items: center;
   width: 100%;
@@ -57,15 +57,11 @@
 }
 
 .vehicleResultPlate {
-  display: inline-flex;
-  justify-content: center;
-  border: 2px solid var(--dvsh-ink);
-  border-radius: 8px;
-  padding: 6px 8px;
-  color: var(--dvsh-ink);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  justify-self: start;
+
+  > * {
+    margin-bottom: 0;
+  }
 }
 
 .vehicleResultShared {
@@ -88,8 +84,6 @@
 
   .vehicleResultPlate {
     justify-self: start;
-    max-width: 100%;
-    overflow-wrap: anywhere;
   }
 }
 

@@ -32,11 +32,21 @@ export function splitWhatsNewItems(announcement: WhatsNewAnnouncement): {
 }
 
 export const currentWhatsNew: WhatsNewAnnouncement = {
-  id: '2026-09-08-changelog-points',
+  id: '2026-09-08-diagnostics',
   eyebrow: 'Что нового',
   title: 'Последние обновления',
   archiveBefore: '2026-09-08',
   items: [
+    {
+      date: '2026-09-08',
+      title: 'Диагностика без заказ-наряда',
+      points: [
+        'На дашборде кнопка «Диагностика» рядом с «Новый ремонт»',
+        'Поиск авто по госномеру, VIN или клиенту — по всем СТО',
+        'Список осмотра можно завести без оформления заказа',
+        'Клиенту сразу отдаётся публичная ссылка с результатами',
+      ],
+    },
     {
       date: '2026-09-08',
       title: 'Пароль и почта',
