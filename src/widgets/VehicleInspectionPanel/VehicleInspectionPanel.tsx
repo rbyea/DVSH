@@ -24,6 +24,8 @@ type VehicleInspectionPanelProps = {
   vehicleId: string;
   /** Без внешней «карточки» — для встраивания в карточку клиента */
   embedded?: boolean;
+  /** Сразу открыть форму пункта — после заведения нового авто */
+  startWithForm?: boolean;
 };
 
 type DraftForm = {
@@ -83,6 +85,7 @@ function urgencyColor(urgency: InspectionUrgency): string {
 export function VehicleInspectionPanel({
   vehicleId,
   embedded = false,
+  startWithForm = false,
 }: VehicleInspectionPanelProps) {
   const navigate = useNavigate();
   const { data: items = [], isLoading } = useGetVehicleInspectionsQuery(vehicleId);
@@ -91,7 +94,7 @@ export function VehicleInspectionPanel({
 
   const [draft, setDraft] = useState<DraftForm>(emptyDraft);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(startWithForm);
 
   const openItems = useMemo(() => items.filter((item) => item.status === 'open'), [items]);
   const otherItems = useMemo(() => items.filter((item) => item.status !== 'open'), [items]);
@@ -224,6 +227,7 @@ export function VehicleInspectionPanel({
   return (
     <section
       className={[styles.root, embedded ? styles.rootEmbedded : null].filter(Boolean).join(' ')}
+      id="inspection"
     >
       <div className={styles.header}>
         <div>

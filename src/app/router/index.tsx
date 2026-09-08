@@ -9,6 +9,7 @@ import {
   VerifyEmailPage,
 } from '@/pages/auth';
 import { BillingPage } from '@/pages/BillingPage';
+import { DiagnosticCreatePage } from '@/pages/DiagnosticCreatePage';
 import { DashboardPage } from '@/pages/Dashboard';
 import { OfferPage, PersonalDataConsentPage, PrivacyPolicyPage } from '@/pages/legal';
 import { NotFoundPage } from '@/pages/NotFound';
@@ -117,6 +118,10 @@ export const appRouter = createBrowserRouter([
                   {
                     path: '/vehicles/:vehicleId',
                     Component: VehicleDetailsPage,
+                  },
+                  {
+                    path: '/diagnostics/new',
+                    Component: DiagnosticCreatePage,
                   },
                   {
                     path: '/repairs/new',

@@ -1,0 +1,119 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form :global(.ant-form-item-row) {
+  display: block;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.form :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+.form :global(.ant-card-body) {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+}
+
+.form :global(.ant-form-item-label) {
+  padding-bottom: 4px;
+  text-align: left;
+}
+
+.form :global(.ant-form-item-label > label) {
+  height: auto;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.section {
+  border: 1px solid var(--dvsh-line) !important;
+  border-radius: var(--dvsh-radius-lg) !important;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.sectionTitle {
+  margin: 0 !important;
+  color: var(--dvsh-ink);
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fieldLabel {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px 6px;
+}
+
+.requiredMark {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.numberInput {
+  width: 100%;
+}
+
+.plateInput {
+  font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace !important;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.plateFlag {
+  width: 18px;
+  height: 12px;
+}
+
+.idSwitchButton {
+  height: auto !important;
+  margin: -4px 0 0;
+  padding: 0 !important;
+  color: var(--dvsh-accent) !important;
+  font-weight: 600;
+}
+
+.consentHint {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.consentText {
+  color: var(--dvsh-ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.consentLink {
+  color: var(--dvsh-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .form :global(.ant-card-body) {
+    padding: 16px 14px;
+  }
+}

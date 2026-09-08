@@ -17,6 +17,7 @@ type StationVehiclesListProps = {
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
+  getTo?: (vehicleId: string) => string;
 };
 
 function formatUpdatedAt(value: string): string {
@@ -47,6 +48,7 @@ export function StationVehiclesList({
   pageSize,
   total,
   onPageChange,
+  getTo,
 }: StationVehiclesListProps) {
   const showPagination = total > pageSize;
 
@@ -58,7 +60,7 @@ export function StationVehiclesList({
 
           return (
             <li key={vehicle.id}>
-              <Link className={styles.card} to={`/vehicles/${vehicle.id}`}>
+              <Link className={styles.card} to={getTo?.(vehicle.id) ?? `/vehicles/${vehicle.id}`}>
                 <div className={styles.cardTop}>
                   <span className={styles.modelRow}>
                     <CarBrandMark carModel={vehicle.car_model} />

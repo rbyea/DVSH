@@ -1,11 +1,16 @@
 import { Button, Result, Spin, Tag } from 'antd';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { repairStatusColors, repairStatusLabels, type RepairStatus } from '@/entities/repair-order';
 import { useGetVehicleQuery } from '@/entities/vehicle';
 import { ClientCardForm } from '@/features/client/update';
+import {
+  INSPECTION_HASH,
+  type VehicleDetailsDiagnosticState,
+} from '@/features/vehicle/start-diagnostic';
 import { VehicleCardForm } from '@/features/vehicle/update';
 import { pickLatestDiagnostic } from '@/shared/lib/diagnostics';
 import { ClientVehiclesPanel } from '@/widgets/ClientVehiclesPanel';
@@ -42,7 +47,11 @@ function formatMoney(value: number | null | undefined): string {
 
 export function VehicleDetailsPage() {
   const { vehicleId = '' } = useParams<{ vehicleId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
+  const openInspectionForm = Boolean(
+    (location.state as VehicleDetailsDiagnosticState | null)?.openInspectionForm,
+  );
   const {
     data: vehicle,
     isLoading,
@@ -51,6 +60,15 @@ export function VehicleDetailsPage() {
   } = useGetVehicleQuery(vehicleId, {
     skip: !vehicleId,
   });
+
+  useEffect(() => {
+    if (location.hash.replace('#', '') !== INSPECTION_HASH || !vehicle) {
+      return;
+    }
+
+    const node = document.getElementById('inspection');
+    node?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location.hash, vehicle]);
 
   if (isLoading) {
     return (
@@ -131,7 +149,7 @@ export function VehicleDetailsPage() {
         />
       ) : null}
 
-      <VehicleInspectionPanel vehicleId={vehicle.id} />
+      <VehicleInspectionPanel startWithForm={openInspectionForm} vehicleId={vehicle.id} />
 
       <RepairDiagnosticsPanel
         latestDiagnostic={latestDiagnostic}

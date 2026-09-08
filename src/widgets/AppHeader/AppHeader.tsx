@@ -37,6 +37,10 @@ function getSelectedKey(pathname: string, hash: string): string {
     return 'vehicles';
   }
 
+  if (pathname.startsWith('/diagnostics/')) {
+    return 'dashboard';
+  }
+
   if (pathname.startsWith('/repairs/') && pathname !== '/repairs/new') {
     return 'dashboard';
   }

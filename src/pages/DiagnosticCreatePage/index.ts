@@ -1,0 +1,1 @@
+export { DiagnosticCreatePage } from './DiagnosticCreatePage';

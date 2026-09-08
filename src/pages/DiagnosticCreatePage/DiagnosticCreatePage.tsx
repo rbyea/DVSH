@@ -3,13 +3,19 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useGetVehiclesQuery } from '@/entities/vehicle';
+import {
+  getDiagnosticVehiclePath,
+  NewVehicleDiagnosticForm,
+} from '@/features/vehicle/start-diagnostic';
+import { AppInfo } from '@/widgets/AppInfo';
 import { StationVehiclesList } from '@/widgets/StationVehiclesList';
 
-import styles from './VehiclesPage.module.scss';
+import styles from './DiagnosticCreatePage.module.scss';
 
 const PAGE_SIZE = 8;
 
-export function VehiclesPage() {
+export function DiagnosticCreatePage() {
+  const [mode, setMode] = useState<'pick' | 'new'>('pick');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -39,33 +45,42 @@ export function VehiclesPage() {
   const isEmpty = !isFetching && !isError && vehicles.length === 0;
   const hasSearch = Boolean(debouncedSearch);
 
+  if (mode === 'new') {
+    return (
+      <main className={styles.page}>
+        <div className={styles.toolbar}>
+          <Button type="link" onClick={() => setMode('pick')}>
+            ← К выбору авто
+          </Button>
+        </div>
+        <AppInfo
+          eyebrow="Диагностика"
+          subtitle="Заведите клиента и машину — сразу откроется список работ. Заказ-наряд не создаётся."
+          title="Этого авто ещё нет"
+        />
+        <NewVehicleDiagnosticForm />
+      </main>
+    );
+  }
+
   return (
     <main className={styles.page}>
-      <section className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Ваша СТО</p>
-          <h1 className={styles.title}>Гараж</h1>
-          <p className={styles.subtitle}>
-            Машины, которые завели в Вашем СТО. Откройте карточку — клиент, история заказов и
-            диагностика.
-          </p>
-        </div>
-        <div className={styles.heroActions}>
-          <Link to="/diagnostics/new">
-            <Button size="large">Диагностика</Button>
-          </Link>
-          <Link to="/repairs/new">
-            <Button size="large" type="primary">
-              Новый ремонт
-            </Button>
-          </Link>
-        </div>
-      </section>
+      <div className={styles.toolbar}>
+        <Link className={styles.back} to="/dashboard">
+          ← К ремонтам
+        </Link>
+      </div>
 
-      <section className={styles.controls} aria-label="Поиск автомобилей">
+      <AppInfo
+        eyebrow="Диагностика"
+        subtitle="Выберите машину из гаража по госномеру или клиенту. VIN нужен только если авто ещё нет в базе."
+        title="Какая машина?"
+      />
+
+      <section className={styles.controls} aria-label="Поиск автомобиля">
         <Input
           allowClear
-          placeholder="Госномер, VIN, модель или клиент"
+          placeholder="Госномер или клиент"
           size="large"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -83,14 +98,14 @@ export function VehiclesPage() {
       {isError ? (
         <Card className={styles.block} variant="borderless">
           <Result
-            status="error"
-            title="Не удалось загрузить автомобили"
-            subTitle="Проверьте соединение и попробуйте ещё раз."
             extra={
               <Button type="primary" onClick={() => void refetch()}>
                 Повторить
               </Button>
             }
+            status="error"
+            subTitle="Проверьте соединение и попробуйте ещё раз."
+            title="Не удалось загрузить автомобили"
           />
         </Card>
       ) : isFetching && vehicles.length === 0 ? (
@@ -101,27 +116,32 @@ export function VehiclesPage() {
         <Card className={styles.block} variant="borderless">
           <Empty
             description={
-              hasSearch ? 'По запросу ничего не найдено' : 'В Вашем СТО пока нет автомобилей'
+              hasSearch ? 'По запросу ничего не найдено' : 'В гараже пока нет автомобилей'
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
-            {hasSearch ? (
-              <Button onClick={() => setSearch('')}>Сбросить поиск</Button>
-            ) : (
-              <Link to="/repairs/new">
-                <Button type="primary">Создать первый ремонт</Button>
-              </Link>
-            )}
+            <Button type="primary" onClick={() => setMode('new')}>
+              Этого авто ещё нет
+            </Button>
           </Empty>
         </Card>
       ) : (
         <StationVehiclesList
+          getTo={getDiagnosticVehiclePath}
           page={page}
           pageSize={PAGE_SIZE}
           total={total}
           vehicles={vehicles}
           onPageChange={setPage}
         />
+      )}
+
+      {isEmpty ? null : (
+        <div className={styles.footer}>
+          <Button size="large" type="link" onClick={() => setMode('new')}>
+            Этого авто ещё нет
+          </Button>
+        </div>
       )}
     </main>
   );

@@ -133,11 +133,16 @@ export const DashboardPage = () => {
           </p>
         </div>
 
-        <Link to="/repairs/new">
-          <Button size="large" type="primary">
-            Новый ремонт
-          </Button>
-        </Link>
+        <div className={styles.heroActions}>
+          <Link to="/diagnostics/new">
+            <Button size="large">Диагностика</Button>
+          </Link>
+          <Link to="/repairs/new">
+            <Button size="large" type="primary">
+              Новый ремонт
+            </Button>
+          </Link>
+        </div>
       </section>
 
       <section className={styles.controls} aria-label="Фильтры ремонтов">
