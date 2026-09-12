@@ -50,6 +50,7 @@ export type {
   PaginationMeta,
   PublicCurrentRepair,
   PublicInspectionItem,
+  PublicMaintenanceItem,
   PublicLinkResponse,
   PublicRepair,
   PublicRepairHistoryItem,

@@ -1,1 +1,6 @@
-export { extractPublicToken, getPublicRepairAppUrl, getPublicRepairPath } from './publicRepairUrl';
+export {
+  extractPublicToken,
+  getPublicRepairAppUrl,
+  getPublicRepairPath,
+  getPublicRepairPreviewUrl,
+} from './publicRepairUrl';

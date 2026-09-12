@@ -60,15 +60,15 @@ function validateVehicleForm(
   }
 
   if (useChassisNumber) {
-    if (!isValidChassisNumber(form.chassisNumber)) {
+    if (form.chassisNumber.trim() && !isValidChassisNumber(form.chassisNumber)) {
       errors.chassisNumber = 'Номер шасси: 5–25 символов (латиница, цифры)';
     }
-  } else if (!isValidVin(form.vin)) {
+  } else if (form.vin.trim() && !isValidVin(form.vin)) {
     errors.vin = 'VIN должен содержать 17 символов (без I, O, Q)';
   }
 
-  if (typeof form.mileage !== 'number') {
-    errors.mileage = 'Укажите пробег автомобиля';
+  if (typeof form.mileage === 'number' && form.mileage < 0) {
+    errors.mileage = 'Пробег не может быть отрицательным';
   }
 
   return errors;
@@ -179,8 +179,6 @@ export function ClientVehiclesPanel({
       return;
     }
 
-    const mileage: number = vehicleForm.mileage as number;
-
     const payload = buildCreateVehicleRequest({
       clientId: resolvedClientId,
       clientName: clientName?.trim() || clientCard?.name,
@@ -191,7 +189,7 @@ export function ClientVehiclesPanel({
       vin,
       chassisNumber,
       useChassisNumber,
-      mileage,
+      mileage: vehicleForm.mileage,
     });
 
     try {
@@ -402,7 +400,6 @@ export function ClientVehiclesPanel({
               <Form.Item
                 className={styles.formItem}
                 label="VIN"
-                required
                 validateStatus={fieldErrors.vin ? 'error' : undefined}
                 help={fieldErrors.vin}
               >
@@ -423,7 +420,6 @@ export function ClientVehiclesPanel({
               <Form.Item
                 className={styles.formItem}
                 label="Номер шасси"
-                required
                 validateStatus={fieldErrors.chassisNumber ? 'error' : undefined}
                 help={fieldErrors.chassisNumber}
               >
@@ -443,7 +439,6 @@ export function ClientVehiclesPanel({
             <Form.Item
               className={styles.formItem}
               label="Пробег автомобиля"
-              required
               validateStatus={fieldErrors.mileage ? 'error' : undefined}
               help={fieldErrors.mileage}
             >

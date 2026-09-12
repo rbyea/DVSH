@@ -257,8 +257,11 @@ export function StationSubscriptionPanel() {
               <h3 className={styles.includesGroupTitle}>{group.title}</h3>
               <ul className={styles.includesList}>
                 {group.items.map((item) => (
-                  <li className={styles.includesItem} key={item}>
-                    {item}
+                  <li className={styles.includesItem} key={item.text}>
+                    <span className={styles.includesItemText}>
+                      {item.text}
+                      {item.isNew ? <span className={styles.includesNew}>новое</span> : null}
+                    </span>
                   </li>
                 ))}
               </ul>

@@ -14,8 +14,7 @@ export type RepairCreateFormValues = {
   licensePlate: string;
   vin: string;
   chassisNumber: string;
-  /** Required on submit; empty until filled in the form. */
-  mileage: number | undefined;
+  mileage?: number;
   status: RepairCreateStatus;
   plannedReadyAt?: Dayjs | null;
   total?: number;

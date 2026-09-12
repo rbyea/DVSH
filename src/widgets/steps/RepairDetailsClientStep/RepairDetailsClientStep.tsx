@@ -195,7 +195,7 @@ export const RepairDetailsClientStep = () => {
           <div id={getCreateFieldElementId('vin')}>
             <Form.Item
               help={errors.vin?.message}
-              label={requiredLabel('VIN номер')}
+              label="VIN номер"
               validateStatus={getAntdValidateStatus(Boolean(errors.vin))}
             >
               <Controller
@@ -229,7 +229,7 @@ export const RepairDetailsClientStep = () => {
           <div id={getCreateFieldElementId('chassisNumber')}>
             <Form.Item
               help={errors.chassisNumber?.message}
-              label={requiredLabel('Номер шасси')}
+              label="Номер шасси"
               validateStatus={getAntdValidateStatus(Boolean(errors.chassisNumber))}
             >
               <Controller
@@ -268,7 +268,7 @@ export const RepairDetailsClientStep = () => {
                 : 'Пробег на момент этих работ'
             }
             help={errors.mileage?.message}
-            label={requiredLabel('Пробег автомобиля')}
+            label="Пробег автомобиля"
             validateStatus={getAntdValidateStatus(Boolean(errors.mileage))}
           >
             <Controller

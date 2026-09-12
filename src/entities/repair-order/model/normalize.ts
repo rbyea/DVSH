@@ -42,6 +42,7 @@ export function normalizePublicVehicle(data: PublicVehicle): PublicVehicle {
     return {
       ...data,
       inspections: data.inspections ?? [],
+      maintenance: data.maintenance ?? [],
       latest_diagnostic: latestDiagnostic,
     };
   }
@@ -54,6 +55,7 @@ export function normalizePublicVehicle(data: PublicVehicle): PublicVehicle {
   return {
     ...data,
     inspections: data.inspections ?? [],
+    maintenance: data.maintenance ?? [],
     latest_diagnostic: latestDiagnostic,
     current_repair: {
       ...currentRepair,

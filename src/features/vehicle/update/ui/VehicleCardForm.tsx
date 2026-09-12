@@ -6,7 +6,7 @@ import { Bounce, toast } from 'react-toastify';
 import { CarModelAutoComplete, type VehicleCard } from '@/entities/vehicle';
 import { getAntdValidateStatus } from '@/shared/lib/antd';
 import { copyTextToClipboard } from '@/shared/lib/clipboard';
-import { getPublicRepairAppUrl } from '@/shared/lib/public-repair';
+import { getPublicRepairAppUrl, getPublicRepairPreviewUrl } from '@/shared/lib/public-repair';
 import {
   formatChassisNumberInput,
   formatMileageKm,
@@ -52,6 +52,9 @@ export function VehicleCardForm({ vehicle }: VehicleCardFormProps) {
     useChassisNumber,
   } = useUpdateVehicleForm(vehicle, () => setIsEditing(false));
   const publicUrl = vehicle.public_token ? getPublicRepairAppUrl(vehicle.public_token) : '';
+  const publicPreviewUrl = vehicle.public_token
+    ? getPublicRepairPreviewUrl(vehicle.public_token)
+    : '';
 
   const handleCopyPublicLink = async () => {
     if (!publicUrl) {
@@ -292,7 +295,7 @@ export function VehicleCardForm({ vehicle }: VehicleCardFormProps) {
             <Button
               size="large"
               onClick={() => {
-                window.open(publicUrl, '_blank', 'noopener,noreferrer');
+                window.open(publicPreviewUrl, '_blank', 'noopener,noreferrer');
               }}
             >
               Открыть

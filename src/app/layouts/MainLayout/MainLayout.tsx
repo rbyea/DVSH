@@ -2,6 +2,7 @@ import { Link, Outlet } from 'react-router-dom';
 
 import { useAppSelector } from '@/app/store';
 import { getTrialDaysLeft } from '@/entities/session';
+import { OPERATOR_REQUISITES } from '@/shared/config';
 import { AppHeader } from '@/widgets/AppHeader';
 
 import styles from './MainLayout.module.scss';
@@ -28,17 +29,27 @@ export const MainLayout = () => {
       </main>
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <Link className={styles.footerLink} to="/legal/privacy">
-            Политика ПДн
-          </Link>
-          <span aria-hidden>·</span>
-          <Link className={styles.footerLink} to="/legal/consent">
-            Согласие
-          </Link>
-          <span aria-hidden>·</span>
-          <Link className={styles.footerLink} to="/legal/offer">
-            Оферта
-          </Link>
+          <a
+            className={styles.footerSupport}
+            href={OPERATOR_REQUISITES.supportTelegram}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Написать нам
+          </a>
+          <nav aria-label="Правовые документы" className={styles.footerLegal}>
+            <Link className={styles.footerLink} to="/legal/privacy">
+              Политика ПДн
+            </Link>
+            <span aria-hidden>·</span>
+            <Link className={styles.footerLink} to="/legal/consent">
+              Согласие
+            </Link>
+            <span aria-hidden>·</span>
+            <Link className={styles.footerLink} to="/legal/offer">
+              Оферта
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>

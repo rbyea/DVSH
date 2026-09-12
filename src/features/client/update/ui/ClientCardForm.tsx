@@ -1,5 +1,5 @@
 import { Button, Form, Input } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Controller } from 'react-hook-form';
 
 import type { Client } from '@/entities/client';
@@ -12,6 +12,7 @@ import styles from './ClientCardForm.module.scss';
 type ClientCardFormProps = {
   client: Client;
   repairsCount?: number;
+  footer?: ReactNode;
 };
 
 function phoneHref(phone: string): string {
@@ -22,7 +23,7 @@ function displayPhone(phone: string): string {
   return formatRuPhoneInput(phone) || phone;
 }
 
-export function ClientCardForm({ client, repairsCount }: ClientCardFormProps) {
+export function ClientCardForm({ client, repairsCount, footer }: ClientCardFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { control, errors, isSubmitting, onSubmit, resetToClient } = useUpdateClientForm(
     client,
@@ -159,6 +160,8 @@ export function ClientCardForm({ client, repairsCount }: ClientCardFormProps) {
           </div>
         </>
       )}
+
+      {!isEditing && footer ? <div className={styles.footer}>{footer}</div> : null}
     </article>
   );
 }

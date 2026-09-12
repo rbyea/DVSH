@@ -62,16 +62,12 @@ export const repairCreateFormSchema = z
     mileage: z
       .union([
         z
-          .number({
-            error: 'Укажите пробег автомобиля',
-          })
+          .number()
           .int('Пробег должен быть целым числом')
           .min(0, 'Пробег не может быть отрицательным'),
         z.undefined(),
       ])
-      .refine((value): value is number => typeof value === 'number', {
-        message: 'Укажите пробег автомобиля',
-      }),
+      .optional(),
     status: z.enum(['new', 'pending_approval', 'revision', 'in_progress', 'waiting_parts']),
     plannedReadyAt: z
       .union([
@@ -113,41 +109,22 @@ export const repairCreateFormSchema = z
   .superRefine((data, ctx) => {
     const vin = formatVinInput(data.vin ?? '');
     const chassisNumber = formatChassisNumberInput(data.chassisNumber ?? '');
-    const hasVin = isValidVin(vin);
-    const hasChassis = isValidChassisNumber(chassisNumber);
 
-    if (hasVin || hasChassis) {
-      return;
-    }
-
-    if (chassisNumber.length > 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Номер шасси: 5–25 символов (латиница, цифры)',
-        path: ['chassisNumber'],
-      });
-      return;
-    }
-
-    if (vin.length > 0) {
+    if (vin.length > 0 && !isValidVin(vin)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'VIN должен содержать 17 символов (без I, O, Q)',
         path: ['vin'],
       });
-      return;
     }
 
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Укажите VIN или номер шасси',
-      path: ['vin'],
-    });
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Укажите номер шасси, если нет VIN',
-      path: ['chassisNumber'],
-    });
+    if (chassisNumber.length > 0 && !isValidChassisNumber(chassisNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Номер шасси: 5–25 символов (латиница, цифры)',
+        path: ['chassisNumber'],
+      });
+    }
   });
 
 export type RepairCreateSchemaValues = z.infer<typeof repairCreateFormSchema>;

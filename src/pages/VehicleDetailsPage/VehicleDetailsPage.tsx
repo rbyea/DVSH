@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { repairStatusColors, repairStatusLabels, type RepairStatus } from '@/entities/repair-order';
 import { useGetVehicleQuery } from '@/entities/vehicle';
+import { DeleteClientButton } from '@/features/client/delete';
 import { ClientCardForm } from '@/features/client/update';
 import {
   INSPECTION_HASH,
@@ -16,6 +17,7 @@ import { pickLatestDiagnostic } from '@/shared/lib/diagnostics';
 import { ClientVehiclesPanel } from '@/widgets/ClientVehiclesPanel';
 import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
 import { VehicleInspectionPanel } from '@/widgets/VehicleInspectionPanel';
+import { VehicleMaintenancePanel } from '@/widgets/VehicleMaintenancePanel';
 
 import styles from './VehicleDetailsPage.module.scss';
 
@@ -112,7 +114,17 @@ export function VehicleDetailsPage() {
       <section className={styles.hero}>
         <VehicleCardForm vehicle={vehicle} />
         {vehicle.client?.id ? (
-          <ClientCardForm client={vehicle.client} repairsCount={vehicle.repairs.length} />
+          <ClientCardForm
+            client={vehicle.client}
+            footer={
+              <DeleteClientButton
+                client={vehicle.client}
+                knownRepairsCount={vehicle.repairs.length}
+                onDeleted={() => navigate('/vehicles')}
+              />
+            }
+            repairsCount={vehicle.repairs.length}
+          />
         ) : (
           <article className={styles.missingClient}>
             <h2 className={styles.missingClientTitle}>Клиент</h2>
@@ -148,6 +160,8 @@ export function VehicleDetailsPage() {
           }}
         />
       ) : null}
+
+      <VehicleMaintenancePanel mileage={vehicle.mileage} vehicleId={vehicle.id} />
 
       <VehicleInspectionPanel startWithForm={openInspectionForm} vehicleId={vehicle.id} />
 

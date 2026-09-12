@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bounce, toast } from 'react-toastify';
 
+import { mergeStationProfile, useGetStationQuery } from '@/entities/master';
 import {
   buildInspectionWorkTitle,
   inspectionActionLabels,
@@ -11,10 +12,12 @@ import {
   useCreateVehicleInspectionItemMutation,
   useDeleteVehicleInspectionItemMutation,
   useGetVehicleInspectionsQuery,
+  useGetVehicleQuery,
   type InspectionAction,
   type InspectionUrgency,
   type VehicleInspectionItem,
 } from '@/entities/vehicle';
+import { printInspection } from '@/features/vehicle/print-inspection';
 import { getErrorMessage } from '@/shared/lib/api';
 import { parseMoney } from '@/shared/lib/money';
 
@@ -88,6 +91,8 @@ export function VehicleInspectionPanel({
   startWithForm = false,
 }: VehicleInspectionPanelProps) {
   const navigate = useNavigate();
+  const { data: vehicle } = useGetVehicleQuery(vehicleId);
+  const { data: station } = useGetStationQuery();
   const { data: items = [], isLoading } = useGetVehicleInspectionsQuery(vehicleId);
   const [createItem, { isLoading: isCreating }] = useCreateVehicleInspectionItemMutation();
   const [deleteItem] = useDeleteVehicleInspectionItemMutation();
@@ -159,6 +164,25 @@ export function VehicleInspectionPanel({
         }
       },
     });
+  };
+
+  const handlePrint = () => {
+    if (!vehicle) {
+      toast.error('Не удалось открыть печать. Попробуйте ещё раз', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+      return;
+    }
+
+    const printed = printInspection(vehicle, items, station ? mergeStationProfile(station) : null);
+
+    if (!printed) {
+      toast.error('Не удалось открыть печать. Попробуйте ещё раз', {
+        position: 'top-right',
+        transition: Bounce,
+      });
+    }
   };
 
   const handleCreateRepair = async () => {
@@ -247,6 +271,9 @@ export function VehicleInspectionPanel({
               {selectedIds.length > 0 ? ` · ${selectedIds.length}` : ''}
             </Button>
           ) : null}
+          <Button disabled={items.length === 0 || !vehicle} onClick={handlePrint}>
+            Распечатать диагностику
+          </Button>
           <Button type="default" onClick={() => setIsFormOpen((open) => !open)}>
             {isFormOpen ? 'Скрыть форму' : 'Добавить пункт'}
           </Button>

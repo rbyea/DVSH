@@ -139,7 +139,7 @@ export function NewVehicleDiagnosticForm() {
           <>
             <Form.Item
               help={errors.chassisNumber?.message}
-              label={requiredLabel('Номер шасси')}
+              label="Номер шасси"
               validateStatus={getAntdValidateStatus(Boolean(errors.chassisNumber))}
             >
               <Controller
@@ -176,7 +176,7 @@ export function NewVehicleDiagnosticForm() {
           <>
             <Form.Item
               help={errors.vin?.message}
-              label={requiredLabel('VIN номер')}
+              label="VIN номер"
               validateStatus={getAntdValidateStatus(Boolean(errors.vin))}
             >
               <Controller
@@ -215,7 +215,7 @@ export function NewVehicleDiagnosticForm() {
         <Form.Item
           extra="Пробег на момент осмотра"
           help={errors.mileage?.message}
-          label={requiredLabel('Пробег автомобиля')}
+          label="Пробег автомобиля"
           validateStatus={getAntdValidateStatus(Boolean(errors.mileage))}
         >
           <Controller

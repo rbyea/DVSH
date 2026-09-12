@@ -7,7 +7,6 @@ import { Bounce, toast } from 'react-toastify';
 import { useAppDispatch } from '@/app/store';
 import { setSession, useLoginMutation, getPostAuthPath } from '@/entities/session';
 import { setAccessToken } from '@/shared/lib/auth';
-import { storeEmployeePdnConsent } from '@/shared/lib/legal';
 
 import { loginFormSchema, type LoginFormValues } from './schema';
 
@@ -73,7 +72,6 @@ export function useLoginForm() {
     defaultValues: {
       email: '',
       password: '',
-      acceptPersonalData: false,
     },
   });
 
@@ -86,7 +84,6 @@ export function useLoginForm() {
 
       setAccessToken();
       dispatch(setSession(data.user));
-      storeEmployeePdnConsent();
       navigate(getPostAuthPath(data.user), { replace: true });
     } catch (error) {
       toast.error(getLoginErrorMessage(error), {

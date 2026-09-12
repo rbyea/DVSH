@@ -48,6 +48,14 @@ function publicRepairTagsFromRepair(
   return [{ type: 'PublicRepair' }];
 }
 
+function repairLineMutationTags(repairId: string): TagDescription[] {
+  return [
+    { type: 'Repair', id: repairId },
+    { type: 'Repair', id: 'LIST' },
+    { type: 'PublicRepair' },
+  ];
+}
+
 export const repairsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getRepairs: build.query<RepairListResponse, GetRepairsParams | void>({
@@ -225,8 +233,7 @@ export const repairsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiDataResponse<RepairWorkItem>) => response.data,
       invalidatesTags: (_result, _error, { repairId }) => [
-        { type: 'Repair', id: repairId },
-        { type: 'PublicRepair' },
+        ...repairLineMutationTags(repairId),
         ...workTitleTags,
       ],
     }),
@@ -241,9 +248,7 @@ export const repairsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiDataResponse<RepairWorkItem>) => response.data,
       invalidatesTags: (_result, _error, { repairId }) => [
-        { type: 'Repair', id: repairId },
-        { type: 'Repair', id: 'LIST' },
-        { type: 'PublicRepair' },
+        ...repairLineMutationTags(repairId),
         ...workTitleTags,
       ],
     }),
@@ -260,9 +265,7 @@ export const repairsApi = baseApi.injectEndpoints({
         },
       }),
       invalidatesTags: (_result, _error, { repairId }) => [
-        { type: 'Repair', id: repairId },
-        { type: 'Repair', id: 'LIST' },
-        { type: 'PublicRepair' },
+        ...repairLineMutationTags(repairId),
         ...workTitleTags,
       ],
     }),
@@ -273,7 +276,7 @@ export const repairsApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiDataResponse<RepairPart>) => response.data,
-      invalidatesTags: (_result, _error, { repairId }) => [{ type: 'Repair', id: repairId }],
+      invalidatesTags: (_result, _error, { repairId }) => repairLineMutationTags(repairId),
     }),
     updatePart: build.mutation<
       RepairPart,
@@ -285,7 +288,7 @@ export const repairsApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiDataResponse<RepairPart>) => response.data,
-      invalidatesTags: (_result, _error, { repairId }) => [{ type: 'Repair', id: repairId }],
+      invalidatesTags: (_result, _error, { repairId }) => repairLineMutationTags(repairId),
     }),
     deletePart: build.mutation<void, { repairId: string; partId: string }>({
       query: ({ repairId, partId }) => ({
@@ -299,7 +302,7 @@ export const repairsApi = baseApi.injectEndpoints({
           return response.json();
         },
       }),
-      invalidatesTags: (_result, _error, { repairId }) => [{ type: 'Repair', id: repairId }],
+      invalidatesTags: (_result, _error, { repairId }) => repairLineMutationTags(repairId),
     }),
   }),
 });

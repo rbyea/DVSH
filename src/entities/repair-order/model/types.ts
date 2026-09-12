@@ -297,6 +297,13 @@ export type PublicInspectionItem = {
   price?: number | null;
 };
 
+export type PublicMaintenanceItem = {
+  title: string;
+  every_km: number;
+  next_due_km: number;
+  last_done_km?: number | null;
+};
+
 export type PublicVehicle = {
   car_model: string;
   license_plate: string;
@@ -304,10 +311,13 @@ export type PublicVehicle = {
   chassis_number?: string | null;
   /** Fallback name when not nested in current_repair. */
   client_name?: string | null;
+  mileage?: number | null;
   station?: PublicStationContacts | null;
   latest_diagnostic?: VehicleDiagnostic | null;
   /** Open defect-list items from the station. */
   inspections?: PublicInspectionItem[];
+  /** Shop-defined TO schedule for this vehicle. */
+  maintenance?: PublicMaintenanceItem[];
   current_repair: PublicCurrentRepair | null;
   previous_repairs: PublicRepairHistoryItem[];
   /**

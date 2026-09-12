@@ -1,0 +1,39 @@
+.root {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--dvsh-card) 94%, var(--dvsh-ink) 3%);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.title {
+  margin: 0 0 4px;
+  color: var(--dvsh-ink);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.hint {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.mileage {
+  margin: 0;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}

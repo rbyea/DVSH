@@ -2,7 +2,9 @@ export {
   clientsApi,
   useCreateClientWithVehicleMutation,
   useCreateVehicleForClientMutation,
+  useDeleteClientMutation,
   useGetClientQuery,
+  useImportClientsMutation,
   useUpdateClientMutation,
 } from './api/clientsApi';
 export type {
@@ -10,6 +12,8 @@ export type {
   ClientCard,
   ClientVehicleSummary,
   CreateVehicleForClientRequest,
+  ImportClientRowRequest,
+  ImportClientsResult,
   IntakeClientWithVehicleRequest,
   IntakeResponse,
   IntakeVehicle,

@@ -15,7 +15,11 @@ import { useSendQuoteForApproval } from '@/features/repair-order';
 import { MAX_BOT_URL } from '@/shared/config';
 import { getErrorMessage } from '@/shared/lib/api';
 import { copyTextToClipboard } from '@/shared/lib/clipboard';
-import { extractPublicToken, getPublicRepairAppUrl } from '@/shared/lib/public-repair';
+import {
+  extractPublicToken,
+  getPublicRepairAppUrl,
+  getPublicRepairPreviewUrl,
+} from '@/shared/lib/public-repair';
 
 import styles from './RepairPublicLinkPanel.module.scss';
 
@@ -40,6 +44,7 @@ export function RepairPublicLinkPanel({
 }: RepairPublicLinkPanelProps) {
   const token = extractPublicToken(publicToken, publicUrl);
   const appUrl = token ? getPublicRepairAppUrl(token) : '';
+  const previewUrl = token ? getPublicRepairPreviewUrl(token) : '';
   const [updateRepair, { isLoading: isSending }] = useUpdateRepairMutation();
   const { sendQuoteForApproval } = useSendQuoteForApproval(repairId, repairStatus);
   const autoSentRef = useRef(false);
@@ -156,7 +161,7 @@ export function RepairPublicLinkPanel({
       });
     }
 
-    window.open(appUrl, '_blank', 'noopener,noreferrer');
+    window.open(previewUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (

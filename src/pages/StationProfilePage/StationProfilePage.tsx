@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAppSelector } from '@/app/store';
 import { isSubscriptionBlocked } from '@/entities/session';
+import { ImportClientsPanel } from '@/features/client/import';
 import { StationReferralCard } from '@/features/station/referral';
 import { StationProfileForm } from '@/features/station/update';
 import { BillingPaymentHistory } from '@/widgets/BillingPaymentHistory';
@@ -15,10 +16,12 @@ import { StationSubscriptionPanel } from '@/widgets/StationSubscriptionPanel';
 
 import styles from './StationProfilePage.module.scss';
 
-type StationSection = 'station' | 'subscription' | 'payments' | 'masters' | 'works' | 'payouts';
+type StationSection =
+  'station' | 'import' | 'subscription' | 'payments' | 'masters' | 'works' | 'payouts';
 
 const STATION_ITEMS: Array<{ key: StationSection; label: string }> = [
   { key: 'station', label: 'Станция' },
+  { key: 'import', label: 'Загрузить клиентов' },
   { key: 'masters', label: 'Мастера' },
   { key: 'works', label: 'Работы' },
   { key: 'payouts', label: 'Выплаты' },
@@ -123,8 +126,13 @@ export function StationProfilePage() {
       <div className={styles.content}>
         <header className={styles.contentHead}>
           <p className={styles.eyebrow}>Профиль</p>
-          <h1 className={styles.pageTitle}>{sectionTitle}</h1>
+          <h1 className={styles.pageTitle}>
+            {sectionTitle}
+            {activeSection === 'import' ? <span className={styles.titleBeta}>бета</span> : null}
+          </h1>
         </header>
+
+        {activeSection === 'import' ? <ImportClientsPanel /> : null}
 
         {activeSection === 'station' ? (
           <>

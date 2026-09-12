@@ -17,6 +17,7 @@ export type ClientVehicleSummary = {
 /** GET /clients/{id} — client card with vehicles. */
 export type ClientCard = Client & {
   vehicles: ClientVehicleSummary[];
+  repairs_count?: number;
 };
 
 export type UpdateClientRequest = {
@@ -62,4 +63,23 @@ export type IntakeVehicle = {
 export type IntakeResponse = {
   client: Client;
   vehicle: IntakeVehicle;
+};
+
+export type ImportClientRowRequest = {
+  source_row?: number;
+  client_name?: string;
+  client_phone?: string | null;
+  client_email?: string | null;
+  car_model?: string | null;
+  license_plate?: string | null;
+  vin?: string | null;
+  chassis_number?: string | null;
+  mileage?: number | null;
+};
+
+export type ImportClientsResult = {
+  created_clients: number;
+  created_vehicles: number;
+  skipped: number;
+  errors: Array<{ row: number; message: string }>;
 };

@@ -17,18 +17,18 @@ export function buildCreateVehicleRequest(input: {
   clientEmail?: string | null;
   carModel: string;
   licensePlate: string;
-  vin: string;
-  chassisNumber: string;
-  useChassisNumber: boolean;
-  mileage: number;
+  vin?: string | null;
+  chassisNumber?: string | null;
+  useChassisNumber?: boolean;
+  mileage?: number | null;
 }): CreateVehicleForClientRequest {
   const body: CreateVehicleForClientRequest = {
     client_id: resolveClientId(input.clientId),
     car_model: input.carModel,
     license_plate: input.licensePlate,
-    vin: input.useChassisNumber ? null : input.vin,
-    chassis_number: input.useChassisNumber ? input.chassisNumber : null,
-    mileage: input.mileage,
+    vin: input.useChassisNumber ? null : input.vin || null,
+    chassis_number: input.useChassisNumber ? input.chassisNumber || null : null,
+    mileage: input.mileage ?? null,
   };
 
   const clientName = input.clientName?.trim();

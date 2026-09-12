@@ -43,8 +43,7 @@ export function WhatsNewCard() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const { fresh, archive } = splitWhatsNewItems(currentWhatsNew);
 
-  const hasSeenCurrent =
-    user?.whats_new_seen_id === undefined || user.whats_new_seen_id === currentWhatsNew.id;
+  const hasSeenCurrent = user?.whats_new_seen_id === currentWhatsNew.id;
 
   if (!user || hasSeenCurrent || isHiding) {
     return null;

@@ -64,6 +64,18 @@
   cursor: pointer;
 }
 
+.titleBeta {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: color-mix(in srgb, var(--dvsh-accent) 16%, transparent);
+  color: var(--dvsh-accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .navButton:hover {
   background: var(--dvsh-soft);
 }
@@ -96,6 +108,10 @@
 }
 
 .pageTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   color: var(--dvsh-ink);
   font-size: 28px;

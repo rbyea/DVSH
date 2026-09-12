@@ -13,6 +13,8 @@ import type {
   Client,
   ClientCard,
   CreateVehicleForClientRequest,
+  ImportClientRowRequest,
+  ImportClientsResult,
   IntakeClientWithVehicleRequest,
   IntakeResponse,
   IntakeVehicle,
@@ -34,6 +36,20 @@ export const clientsApi = baseApi.injectEndpoints({
       serializeQueryArgs: ({ queryArgs }) => String(queryArgs),
       transformResponse: (response: unknown) => normalizeClientCard(response),
       providesTags: (_result, _error, id) => [{ type: 'Client', id: String(id) }],
+    }),
+    importClients: build.mutation<ImportClientsResult, ImportClientRowRequest[]>({
+      query: (rows) => ({
+        url: '/clients/import',
+        method: 'POST',
+        body: { rows },
+      }),
+      transformResponse: (response: ApiDataResponse<ImportClientsResult>) => response.data,
+      invalidatesTags: [
+        { type: 'Client', id: 'LIST' },
+        { type: 'Vehicle', id: 'SEARCH' },
+        { type: 'Vehicle', id: 'MODELS' },
+        { type: 'Vehicle', id: 'LIST' },
+      ],
     }),
     createClientWithVehicle: build.mutation<IntakeResponse, IntakeClientWithVehicleRequest>({
       query: (body) => ({
@@ -57,6 +73,18 @@ export const clientsApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiDataResponse<Client>) => response.data,
       invalidatesTags: (_result, _error, { id }) => [
+        { type: 'Client', id: String(id) },
+        { type: 'Client', id: 'LIST' },
+        { type: 'Vehicle' },
+        { type: 'Repair' },
+      ],
+    }),
+    deleteClient: build.mutation<void, string>({
+      query: (id) => ({
+        url: `/clients/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, _error, id) => [
         { type: 'Client', id: String(id) },
         { type: 'Client', id: 'LIST' },
         { type: 'Vehicle' },
@@ -155,7 +183,9 @@ export const clientsApi = baseApi.injectEndpoints({
 
 export const {
   useGetClientQuery,
+  useImportClientsMutation,
   useCreateClientWithVehicleMutation,
   useUpdateClientMutation,
+  useDeleteClientMutation,
   useCreateVehicleForClientMutation,
 } = clientsApi;

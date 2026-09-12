@@ -1,0 +1,47 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--dvsh-card);
+  box-shadow: var(--dvsh-shadow);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hint,
+.fileName,
+.dropHint {
+  margin: 0;
+  color: var(--dvsh-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.fileName {
+  color: var(--dvsh-ink);
+  font-weight: 600;
+}
+
+.dropTitle {
+  margin: 0 0 4px;
+  color: var(--dvsh-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.table {
+  overflow: auto;
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: 16px;
+  }
+}

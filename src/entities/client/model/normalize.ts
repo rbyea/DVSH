@@ -84,12 +84,15 @@ export function normalizeClientCard(response: unknown): ClientCard {
   const record = isRecord(data) ? data : {};
   const vehicles = normalizeVehicleList(record.vehicles);
 
+  const repairsCount = parseOptionalNumber(record.repairs_count);
+
   return {
     id: String(record.id ?? ''),
     name: readString(record.name),
     phone: typeof record.phone === 'string' ? record.phone : null,
     email: typeof record.email === 'string' ? record.email : null,
     vehicles: vehicles.length > 0 ? vehicles : normalizeVehicleList(record.vehicle),
+    repairs_count: repairsCount == null ? undefined : repairsCount,
   };
 }
 

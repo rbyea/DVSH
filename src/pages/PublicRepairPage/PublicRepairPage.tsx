@@ -40,6 +40,7 @@ import { BrandMark } from '@/shared/ui/BrandMark';
 import { CarBrandMark } from '@/shared/ui/CarBrandMark';
 import { MaxLogo } from '@/shared/ui/MaxLogo';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
+import { PublicMaintenancePanel } from '@/widgets/PublicMaintenancePanel';
 import { PublicMileageChart } from '@/widgets/PublicMileageChart';
 import { RepairDiagnosticsPanel } from '@/widgets/RepairDiagnosticsPanel';
 
@@ -82,6 +83,8 @@ function getVehicleFingerprint(vehicle: PublicVehicle): string {
     station: vehicle.station,
     latestDiagnostic: vehicle.latest_diagnostic,
     inspections: vehicle.inspections,
+    maintenance: vehicle.maintenance,
+    mileage: vehicle.mileage,
   });
 }
 
@@ -566,6 +569,17 @@ export function PublicRepairPage() {
         </section>
 
         <PublicMileageChart currentRepair={currentRepair} previousRepairs={previousRepairs} />
+
+        <PublicMaintenancePanel
+          items={vehicle.maintenance}
+          licensePlate={vehicle.license_plate}
+          mileage={
+            vehicle.mileage ??
+            currentRepair?.mileage ??
+            previousRepairs.find((repair) => typeof repair.mileage === 'number')?.mileage
+          }
+          vin={vehicle.vin}
+        />
 
         {hasStationContacts(vehicle.station) ? (
           <section className={styles.panel}>

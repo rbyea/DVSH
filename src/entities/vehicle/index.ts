@@ -15,6 +15,10 @@ export {
   useUpdateVehicleInspectionItemMutation,
   useDeleteVehicleInspectionItemMutation,
   useMarkVehicleInspectionsInOrderMutation,
+  useGetVehicleMaintenanceQuery,
+  useCreateVehicleMaintenanceItemMutation,
+  useUpdateVehicleMaintenanceItemMutation,
+  useDeleteVehicleMaintenanceItemMutation,
   vehiclesApi,
 } from './api/vehiclesApi';
 export type {
@@ -49,4 +53,22 @@ export {
   inspectionStatusLabels,
   inspectionUrgencyLabels,
 } from './model/inspection';
+export {
+  buildMaintenancePlan,
+  formatMaintenanceAttention,
+  formatMaintenanceRowHint,
+  formatMaintenanceStopLabel,
+  maintenanceTitleSuggestions,
+  nextDueFromCurrent,
+} from './model/maintenance';
+export type {
+  CreateVehicleMaintenanceRequest,
+  MaintenancePlan,
+  MaintenancePlanSource,
+  MaintenanceRow,
+  MaintenanceStatus,
+  UpdateVehicleMaintenanceRequest,
+  VehicleMaintenanceItem,
+} from './model/maintenance';
 export { CarModelAutoComplete } from './ui/CarModelAutoComplete';
+export { MaintenanceScheduleChart } from './ui/MaintenanceScheduleChart';

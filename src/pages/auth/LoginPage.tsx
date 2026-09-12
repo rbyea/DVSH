@@ -1,4 +1,4 @@
-import { Button, Card, Checkbox, Form, Input } from 'antd';
+import { Button, Card, Form, Input } from 'antd';
 import { Controller } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 
@@ -69,38 +69,6 @@ export function LoginPage() {
                 Забыли пароль?
               </Link>
             </div>
-
-            <Form.Item
-              className={styles.consentItem}
-              help={errors.acceptPersonalData?.message}
-              validateStatus={getAntdValidateStatus(Boolean(errors.acceptPersonalData))}
-            >
-              <Controller
-                control={control}
-                name="acceptPersonalData"
-                render={({ field }) => (
-                  <Checkbox
-                    checked={field.value}
-                    onChange={(event) => field.onChange(event.target.checked)}
-                  >
-                    <span className={styles.consentText}>
-                      Согласен с{' '}
-                      <Link className={styles.consentLink} to="/legal/privacy">
-                        Политикой обработки ПДн
-                      </Link>
-                      ,{' '}
-                      <Link className={styles.consentLink} to="/legal/consent">
-                        Согласием
-                      </Link>{' '}
-                      и{' '}
-                      <Link className={styles.consentLink} to="/legal/offer">
-                        Офертой
-                      </Link>
-                    </span>
-                  </Checkbox>
-                )}
-              />
-            </Form.Item>
 
             <Form.Item>
               <Button block htmlType="submit" loading={isLoading} type="primary" size="large">

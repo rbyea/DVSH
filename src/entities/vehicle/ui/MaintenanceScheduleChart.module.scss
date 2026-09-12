@@ -1,0 +1,229 @@
+.root {
+  display: grid;
+  gap: 10px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--dvsh-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.chartScroll {
+  overflow-x: auto;
+  border: 1px solid var(--dvsh-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--dvsh-card) 92%, var(--dvsh-ink) 4%);
+}
+
+.chart {
+  --label-w: 188px;
+  --col-min: 80px;
+  --axis-h: 40px;
+  --cols: 1;
+  --marker: 0.5;
+  position: relative;
+  min-width: calc(var(--label-w) + var(--cols) * var(--col-min));
+  padding: 10px 12px 14px;
+}
+
+.root[data-compact] .chart {
+  --label-w: 132px;
+  --col-min: 58px;
+  --axis-h: 38px;
+  padding: 8px 8px 10px;
+}
+
+.marker {
+  position: absolute;
+  top: calc(10px + var(--axis-h));
+  bottom: 12px;
+  left: calc(12px + var(--label-w) + var(--marker) * (100% - 24px - var(--label-w)));
+  z-index: 2;
+  width: 0;
+  border-left: 2px dashed color-mix(in srgb, var(--dvsh-accent) 75%, var(--dvsh-ink));
+  pointer-events: none;
+}
+
+.root[data-compact] .marker {
+  top: calc(8px + var(--axis-h));
+  left: calc(8px + var(--label-w) + var(--marker) * (100% - 16px - var(--label-w)));
+}
+
+.axis,
+.chartRow {
+  display: grid;
+  grid-template-columns: var(--label-w) repeat(var(--cols), minmax(var(--col-min), 1fr));
+  align-items: center;
+}
+
+.axis {
+  min-height: var(--axis-h);
+  margin-bottom: 4px;
+}
+
+.labelCell,
+.stopCell {
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+
+.labelCell {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  padding: 0 10px 8px 4px;
+  background: color-mix(in srgb, var(--dvsh-card) 92%, var(--dvsh-ink) 4%);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stopCell {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 0 4px 8px;
+  text-align: center;
+}
+
+.stopCell small {
+  border-radius: 999px;
+  padding: 1px 6px;
+  background: var(--dvsh-accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.stopCell[data-current] {
+  color: var(--dvsh-accent);
+}
+
+.chartRow {
+  position: relative;
+  min-height: 52px;
+}
+
+.root[data-compact] .chartRow {
+  min-height: 46px;
+}
+
+.chartRow::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  left: var(--label-w);
+  z-index: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--dvsh-line) 85%, transparent);
+}
+
+.rowLabel {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px 8px 4px;
+  background: color-mix(in srgb, var(--dvsh-card) 92%, var(--dvsh-ink) 4%);
+}
+
+.rowLabel strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--dvsh-ink);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.rowLabel small {
+  color: var(--dvsh-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.chartRow[data-status='overdue'] .rowLabel strong {
+  color: #b91c1c;
+}
+
+.chartRow[data-status='due'] .rowLabel strong,
+.chartRow[data-status='soon'] .rowLabel strong {
+  color: var(--dvsh-accent);
+}
+
+.cell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+}
+
+.root[data-compact] .cell {
+  min-height: 46px;
+}
+
+.dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dvsh-card) 88%, transparent);
+}
+
+.dotNext {
+  background: var(--dvsh-accent);
+  border-color: var(--dvsh-accent);
+}
+
+.dotFuture {
+  background: var(--dvsh-card);
+  border-color: color-mix(in srgb, var(--dvsh-accent) 70%, var(--dvsh-line));
+}
+
+.dotPast {
+  width: 9px;
+  height: 9px;
+  background: color-mix(in srgb, var(--dvsh-muted) 55%, var(--dvsh-card));
+  border-color: color-mix(in srgb, var(--dvsh-muted) 55%, var(--dvsh-card));
+}
+
+.dotOverdue {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+@media (width < 720px) {
+  .chart {
+    --label-w: 148px;
+    --col-min: 68px;
+  }
+
+  .root[data-compact] .chart {
+    --label-w: 118px;
+    --col-min: 54px;
+  }
+}
